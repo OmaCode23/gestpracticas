@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#e8ecf8] text-[#1a1f36] font-sans;
+  }
+
+  input, select, textarea {
+    @apply font-sans;
+  }
+
+  /* Estilos de tabla — necesario porque Tailwind Preflight resetea todo */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #8b93b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #f4f6fb;
+    border-bottom: 1px solid #d8ddef;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f0f2f8;
+    transition: background 0.12s;
+  }
+
+  tbody tr:hover { background: #f4f6fb; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td {
+    padding: 11px 16px;
+    font-size: 0.85rem;
+    color: #1a1f36;
+  }
+}
