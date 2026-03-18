@@ -26,10 +26,10 @@ const CICLO_BADGE: Record<string, BadgeVariant> = {
   ADG: "gray",
 };
 
-const PER_PAGE = 5;
-
 interface AlumnosTableProps {
   alumnos: Alumno[];
+  total: number;
+  perPage: number;
   ciclo: string;
   curso: string;
   search: string;
@@ -44,6 +44,8 @@ interface AlumnosTableProps {
 
 export default function AlumnosTable({
   alumnos,
+  total,
+  perPage,
   ciclo,
   curso,
   search,
@@ -55,15 +57,7 @@ export default function AlumnosTable({
   onEditar,
   onEliminar,
 }: AlumnosTableProps) {
-  const filtered = alumnos.filter(a =>
-    (!ciclo || a.ciclo === ciclo) &&
-    (!curso || a.curso === curso) &&
-    (!search ||
-      a.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      a.nia.includes(search))
-  );
-
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const rows = alumnos;
 
   return (
     <>
@@ -124,7 +118,7 @@ export default function AlumnosTable({
               </tr>
             </thead>
             <tbody>
-              {paginated.length === 0 ? (
+              {rows.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -134,7 +128,7 @@ export default function AlumnosTable({
                   </td>
                 </tr>
               ) : (
-                paginated.map(a => (
+                rows.map(a => (
                   <tr key={a.id}>
                     <td>
                       <strong>{a.nombre}</strong>
@@ -177,8 +171,8 @@ export default function AlumnosTable({
 
         <Pagination
           page={page}
-          total={filtered.length}
-          perPage={PER_PAGE}
+          total={total}
+          perPage={perPage}
           onPageChange={onPageChange}
         />
       </Card>

@@ -19,9 +19,12 @@ const EMPTY = {
   curso: "",
 };
 
+const PER_PAGE = 10;
+
 export default function AlumnosContainer() {
   const [form, setForm] = useState(EMPTY);
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
+  const [total, setTotal] = useState(0);
   const [ciclo, setCiclo] = useState("");
   const [curso, setCurso] = useState("");
   const [search, setSearch] = useState("");
@@ -31,29 +34,33 @@ export default function AlumnosContainer() {
   const setFormField = (field: keyof typeof EMPTY, value: string) =>
     setForm(f => ({ ...f, [field]: value }));
 
-  // Cargar alumnos desde la API
-  useEffect(() => {
-    async function load() {
-      const params = new URLSearchParams();
-      if (ciclo) params.set("ciclo", ciclo);
-      if (curso) params.set("curso", curso);
-      if (search) params.set("search", search);
-      params.set("page", String(page));
+  const load = async (opts?: { pageOverride?: number }) => {
+    const currentPage = opts?.pageOverride ?? page;
 
-      const res = await fetch(`/api/alumnos?${params.toString()}`, {
-        cache: "no-store",
-      });
-      const json = await res.json();
-      if (json.ok) setAlumnos(json.data);
+    const params = new URLSearchParams();
+    if (ciclo) params.set("ciclo", ciclo);
+    if (curso) params.set("curso", curso);
+    if (search) params.set("search", search);
+    params.set("page", String(currentPage));
+    params.set("perPage", String(PER_PAGE));
+
+    const res = await fetch(`/api/alumnos?${params.toString()}`, {
+      cache: "no-store",
+    });
+    const json = await res.json();
+    if (json.ok) {
+      setAlumnos(json.data.data);
+      setTotal(json.data.total);
     }
+  };
 
+  useEffect(() => {
     load();
   }, [ciclo, curso, search, page]);
 
-  const reload = async () => {
-    const res = await fetch("/api/alumnos");
-    const json = await res.json();
-    if (json.ok) setAlumnos(json.data);
+  const reloadToFirstPage = async () => {
+    setPage(1);
+    await load({ pageOverride: 1 });
   };
 
   const handleGuardar = async () => {
@@ -73,8 +80,7 @@ export default function AlumnosContainer() {
     }
 
     setForm(EMPTY);
-    setPage(1);
-    await reload();
+    await reloadToFirstPage();
   };
 
   const handleActualizar = async () => {
@@ -93,7 +99,7 @@ export default function AlumnosContainer() {
 
     setEditingId(null);
     setForm(EMPTY);
-    await reload();
+    await load();
   };
 
   const handleEliminar = async (id: number) => {
@@ -108,7 +114,9 @@ export default function AlumnosContainer() {
       return alert(json.error ?? "Error al eliminar");
     }
 
-    await reload();
+    // Si borras el último de la página, podrías querer ajustar page,
+    // pero de momento recargamos la página actual:
+    await load();
   };
 
   const handleEditar = (alumno: Alumno) => {
@@ -150,16 +158,27 @@ export default function AlumnosContainer() {
 
       <AlumnosTable
         alumnos={alumnos}
+        total={total}
+        perPage={PER_PAGE}
         ciclo={ciclo}
         curso={curso}
         search={search}
         page={page}
-        onChangeCiclo={setCiclo}
-        onChangeCurso={setCurso}
-        onChangeSearch={setSearch}
+        onChangeCiclo={v => {
+          setCiclo(v);
+          setPage(1);
+        }}
+        onChangeCurso={v => {
+          setCurso(v);
+          setPage(1);
+        }}
+        onChangeSearch={v => {
+          setSearch(v);
+          setPage(1);
+        }}
         onPageChange={setPage}
         onEditar={handleEditar}
-        onEliminar={handleEliminar}
+        onEliminar={onId => void handleEliminar(onId)}
       />
     </div>
   );
