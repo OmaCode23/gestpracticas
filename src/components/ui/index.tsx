@@ -1,25 +1,40 @@
-/**
- * components/ui/index.tsx
- * Componentes reutilizables de interfaz.
- * Sin lógica de negocio — solo presentación.
- */
 import React from "react";
 
 // ─── BADGE ────────────────────────────────────────────────────
-export type BadgeVariant = "blue" | "green" | "amber" | "purple" | "red" | "gray";
+export type BadgeVariant =
+  | "blue"
+  | "green"
+  | "amber"
+  | "purple"
+  | "red"
+  | "gray"
+  | "teal"
+  | "pink"
+  | "indigo"
+  | "orange";
 
-const BADGE_CLASSES: Record<BadgeVariant, string> = {
-  blue:   "bg-blue-100 text-blue-700",
-  green:  "bg-green-100 text-green-700",
-  amber:  "bg-amber-100 text-amber-700",
-  purple: "bg-purple-100 text-purple-700",
-  red:    "bg-red-100 text-red-700",
-  gray:   "bg-slate-100 text-slate-600",
+const BADGE_STYLES: Record<
+  BadgeVariant,
+  { backgroundColor: string; color: string; borderColor: string }
+> = {
+  blue:   { backgroundColor: "#eaf2ff", color: "#2457d6", borderColor: "#bfd3ff" },
+  green:  { backgroundColor: "#dcfce7", color: "#15803d", borderColor: "#bbf7d0" },
+  amber:  { backgroundColor: "#fef3c7", color: "#b45309", borderColor: "#fde68a" },
+  purple: { backgroundColor: "#f3e8ff", color: "#7e22ce", borderColor: "#d8b4fe" },
+  red:    { backgroundColor: "#fee2e2", color: "#b91c1c", borderColor: "#fca5a5" },
+  gray:   { backgroundColor: "#f1f5f9", color: "#475569", borderColor: "#cbd5e1" },
+  teal:   { backgroundColor: "#e6fffb", color: "#0f766e", borderColor: "#99f6e4" },
+  pink:   { backgroundColor: "#fdf2f8", color: "#be185d", borderColor: "#f9a8d4" },
+  indigo: { backgroundColor: "#eef2ff", color: "#4338ca", borderColor: "#c7d2fe" },
+  orange: { backgroundColor: "#fff7ed", color: "#c2410c", borderColor: "#fdba74" },
 };
 
 export function Badge({ variant = "gray", children }: { variant?: BadgeVariant; children: React.ReactNode }) {
   return (
-    <span className={`inline-block px-2.5 py-0.5 rounded-full text-[0.72rem] font-semibold ${BADGE_CLASSES[variant]}`}>
+    <span
+      className="inline-flex items-center rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold leading-none shadow-sm"
+      style={BADGE_STYLES[variant]}
+    >
       {children}
     </span>
   );

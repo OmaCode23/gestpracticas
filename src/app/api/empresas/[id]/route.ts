@@ -9,6 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getEmpresaById } from "@/modules/empresas/actions/queries";
 import { updateEmpresa, deleteEmpresa } from "@/modules/empresas/actions/mutations";
 import { empresaSchema } from "@/modules/empresas/types/schema";
@@ -95,6 +96,8 @@ export async function PATCH(
     }
 
     const empresa = await updateEmpresa(id, parsed.data);
+    revalidatePath("/");
+    revalidatePath("/empresas");
 
     return NextResponse.json<ApiResponse<typeof empresa>>({
       ok: true,
@@ -141,6 +144,8 @@ export async function DELETE(
     }
 
     await deleteEmpresa(id);
+    revalidatePath("/");
+    revalidatePath("/empresas");
 
     return NextResponse.json<ApiResponse<null>>({
       ok: true,

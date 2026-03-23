@@ -16,6 +16,11 @@ function normalizeOptionalString(value?: string) {
   return trimmed === "" ? null : trimmed;
 }
 
+function normalizeOptionalEmail(value?: string) {
+  const normalized = normalizeOptionalString(value);
+  return typeof normalized === "string" ? normalized.toLowerCase() : normalized;
+}
+
 export async function createEmpresa(data: EmpresaInput) {
   return prisma.empresa.create({
     data: {
@@ -26,9 +31,9 @@ export async function createEmpresa(data: EmpresaInput) {
       sector: data.sector.trim(),
       cicloFormativo: normalizeOptionalString(data.cicloFormativo),
       telefono: normalizeOptionalString(data.telefono),
-      email: normalizeOptionalString(data.email),
+      email: normalizeOptionalEmail(data.email),
       contacto: normalizeOptionalString(data.contacto),
-      emailContacto: normalizeOptionalString(data.emailContacto),
+      emailContacto: normalizeOptionalEmail(data.emailContacto),
     },
   });
 }
@@ -50,12 +55,12 @@ export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
       ...(data.telefono !== undefined
         ? { telefono: normalizeOptionalString(data.telefono) }
         : {}),
-      ...(data.email !== undefined ? { email: normalizeOptionalString(data.email) } : {}),
+      ...(data.email !== undefined ? { email: normalizeOptionalEmail(data.email) } : {}),
       ...(data.contacto !== undefined
         ? { contacto: normalizeOptionalString(data.contacto) }
         : {}),
       ...(data.emailContacto !== undefined
-        ? { emailContacto: normalizeOptionalString(data.emailContacto) }
+        ? { emailContacto: normalizeOptionalEmail(data.emailContacto) }
         : {}),
     },
   });

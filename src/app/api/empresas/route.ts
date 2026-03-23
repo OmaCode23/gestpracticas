@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getEmpresas } from "@/modules/empresas/actions/queries";
 import { createEmpresa } from "@/modules/empresas/actions/mutations";
 import { empresaFilterSchema, empresaSchema } from "@/modules/empresas/types/schema";
@@ -61,6 +62,8 @@ export async function POST(req: NextRequest) {
     }
 
     const empresa = await createEmpresa(parsed.data);
+    revalidatePath("/");
+    revalidatePath("/empresas");
 
     return NextResponse.json<ApiResponse<typeof empresa>>(
       { ok: true, data: empresa },

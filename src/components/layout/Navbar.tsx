@@ -30,6 +30,7 @@ export default function Navbar() {
           <Link
             key={href}
             href={href}
+            prefetch={href === "/" ? false : undefined}
             className={[
               "text-sm font-medium px-3.5 py-1.5 rounded-md transition-all duration-150 no-underline",
               isActive
