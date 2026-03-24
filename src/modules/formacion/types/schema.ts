@@ -3,8 +3,12 @@
  */
 
 import { z } from "zod";
+import { CURSOS } from "@/shared/catalogs/academico";
 
-// Para crear una formación en empresa (POST)
+const TEXTO_UTIL = /[\p{L}\p{N}]/u;
+const CONTACTO_REGEX = /^[\p{L}\s'.-]+$/u;
+const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
+
 export const formacionSchema = z.object({
   empresaId: z
     .number({
@@ -12,7 +16,7 @@ export const formacionSchema = z.object({
       invalid_type_error: "El ID de empresa debe ser numérico",
     })
     .int()
-    .positive("El ID de empresa debe ser positivo"),
+    .positive(),
 
   alumnoId: z
     .number({
@@ -20,18 +24,21 @@ export const formacionSchema = z.object({
       invalid_type_error: "El ID de alumno debe ser numérico",
     })
     .int()
-    .positive("El ID de alumno debe ser positivo"),
+    .positive(),
 
   curso: z
     .string()
     .trim()
-    .min(1, "El curso académico es obligatorio"),
+    .min(1, "El curso es obligatorio")
+    .refine((value) => CURSOS.includes(value), "El curso no es válido"),
 
   periodo: z
     .string()
     .trim()
     .min(1, "El periodo es obligatorio")
-    .max(100, "El periodo no puede superar los 100 caracteres"),
+    .max(120, "El periodo no puede superar los 120 caracteres")
+    .refine((v) => TEXTO_UTIL.test(v), "El periodo debe contener texto útil")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El periodo contiene símbolos repetidos"),
 
   descripcion: z
     .string()
@@ -43,12 +50,11 @@ export const formacionSchema = z.object({
   contacto: z
     .string()
     .trim()
-    .max(120, "La persona de contacto no puede superar los 120 caracteres")
     .optional()
-    .or(z.literal("")),
+    .or(z.literal(""))
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no válidos")
+    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener números"),
 });
 
-// Para actualizar una formación (PATCH)
+// PATCH
 export const formacionUpdateSchema = formacionSchema.partial();
-
-

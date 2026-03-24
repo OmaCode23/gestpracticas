@@ -8,24 +8,31 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getEmpresas }   from "@/modules/empresas/actions/queries";
+import { revalidatePath } from "next/cache";
+import { getEmpresas } from "@/modules/empresas/actions/queries";
 import { createEmpresa } from "@/modules/empresas/actions/mutations";
-import { empresaSchema } from "@/modules/empresas/types/schema";
+import { empresaFilterSchema, empresaSchema } from "@/modules/empresas/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
 
-// ─── GET /api/empresas ────────────────────────────────────────
 export async function GET(req: NextRequest) {
   try {
-    // Leemos los filtros desde los query params de la URL
     const { searchParams } = req.nextUrl;
-    const filtros = {
-      sector:    searchParams.get("sector")    ?? undefined,
-      localidad: searchParams.get("localidad") ?? undefined,
-      search:    searchParams.get("search")    ?? undefined,
-      page:      Number(searchParams.get("page") ?? 1),
-    };
 
-    const result = await getEmpresas(filtros);
+    const parsedFilters = empresaFilterSchema.safeParse({
+      sector: searchParams.get("sector") || undefined,
+      localidad: searchParams.get("localidad") || undefined,
+      search: searchParams.get("search") || undefined,
+      page: searchParams.get("page") || 1,
+    });
+
+    if (!parsedFilters.success) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: parsedFilters.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const result = await getEmpresas(parsedFilters.data);
 
     return NextResponse.json<ApiResponse<typeof result>>({
       ok: true,
@@ -33,6 +40,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("[GET /api/empresas]", error);
+
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al obtener las empresas" },
       { status: 500 }
@@ -40,13 +48,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ─── POST /api/empresas ───────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Validamos con Zod antes de tocar la BD
     const parsed = empresaSchema.safeParse(body);
+
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
@@ -55,20 +62,23 @@ export async function POST(req: NextRequest) {
     }
 
     const empresa = await createEmpresa(parsed.data);
+    revalidatePath("/");
+    revalidatePath("/empresas");
 
     return NextResponse.json<ApiResponse<typeof empresa>>(
       { ok: true, data: empresa },
       { status: 201 }
     );
   } catch (error: any) {
-    // Código P2002 de Prisma = violación de unique constraint (CIF duplicado)
     if (error?.code === "P2002") {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: "Ya existe una empresa con ese CIF" },
         { status: 409 }
       );
     }
+
     console.error("[POST /api/empresas]", error);
+
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al crear la empresa" },
       { status: 500 }

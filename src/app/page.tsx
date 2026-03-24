@@ -1,47 +1,128 @@
 import Link from "next/link";
+import { unstable_noStore as noStore } from "next/cache";
 import StatCard from "@/components/ui/StatCard";
 import { SectionLabel } from "@/components/ui";
-import { MOCK_EMPRESAS, MOCK_ALUMNOS, MOCK_FORMACIONES } from "@/shared/mockData";
+import { prisma } from "@/database/prisma";
 
-// TODO: Reemplazar estos contadores por queries reales de Prisma
-const stats = {
-  empresas:   MOCK_EMPRESAS.length,
-  alumnos:    MOCK_ALUMNOS.length,
-  formaciones: MOCK_FORMACIONES.length,
-};
+export const dynamic = "force-dynamic";
 
-const MENU_CARDS = [
-  { href: "/empresas",     color: "#3b6ef8", bg: "bg-blue-100",   icon: "🏢", title: "Empresas",            desc: "Alta, edición y consulta de empresas colaboradoras. Filtros por sector y localidad.", count: `${stats.empresas} registros` },
-  { href: "/alumnos",      color: "#22c55e", bg: "bg-green-100",  icon: "👩‍🎓", title: "Alumnos",             desc: "Registro de alumnos en prácticas. Filtros por ciclo formativo y curso académico.",   count: `${stats.alumnos} alumnos` },
-  { href: "/formacion",    color: "#e8a838", bg: "bg-amber-100",  icon: "📋", title: "Formación Empresa",   desc: "Gestión de formaciones en empresa. Consulta y filtrado por curso académico.",         count: `${stats.formaciones} formaciones` },
-  { href: "/importexport", color: "#8b5cf6", bg: "bg-purple-100", icon: "🔄", title: "Importar / Exportar", desc: "Carga masiva de datos con plantillas Excel y exportación de registros actuales.",     count: null },
-  { href: "#",             color: "#14b8a6", bg: "bg-teal-100",   icon: "📊", title: "Informes",            desc: "Genera informes de asignación, cobertura por sector y seguimiento por ciclo.",      count: null },
-  { href: "#",             color: "#ef4444", bg: "bg-red-100",    icon: "⚙️", title: "Configuración",       desc: "Parámetros del sistema, ciclos formativos, cursos académicos y usuarios.",           count: null },
-] as const;
+export default async function HomePage() {
+  noStore();
 
-export default function HomePage() {
+  const [empresas, alumnos, formaciones] = await Promise.all([
+    prisma.empresa.count(),
+    prisma.alumno.count(),
+    prisma.formacionEmpresa.count(),
+  ]);
+
+  const menuCards = [
+    {
+      href: "/empresas",
+      color: "#3b6ef8",
+      bg: "bg-blue-100",
+      icon: "🏢",
+      title: "Empresas",
+      desc: "Alta, edición y consulta de empresas colaboradoras. Filtros por sector y localidad.",
+      count: `${empresas} registros`,
+    },
+    {
+      href: "/alumnos",
+      color: "#22c55e",
+      bg: "bg-green-100",
+      icon: "👩‍🎓",
+      title: "Alumnos",
+      desc: "Registro de alumnos en prácticas. Filtros por ciclo formativo y curso académico.",
+      count: `${alumnos} alumnos`,
+    },
+    {
+      href: "/formacion",
+      color: "#e8a838",
+      bg: "bg-amber-100",
+      icon: "📋",
+      title: "Formación Empresa",
+      desc: "Gestión de formaciones en empresa. Consulta y filtrado por curso académico.",
+      count: `${formaciones} formaciones`,
+    },
+    {
+      href: "/importexport",
+      color: "#8b5cf6",
+      bg: "bg-purple-100",
+      icon: "🔄",
+      title: "Importar / Exportar",
+      desc: "Carga masiva de datos con plantillas Excel y exportación de registros actuales.",
+      count: null,
+    },
+    {
+      href: "#",
+      color: "#14b8a6",
+      bg: "bg-teal-100",
+      icon: "📊",
+      title: "Informes",
+      desc: "Genera informes de asignación, cobertura por sector y seguimiento por ciclo.",
+      count: null,
+    },
+    {
+      href: "#",
+      color: "#ef4444",
+      bg: "bg-red-100",
+      icon: "⚙️",
+      title: "Configuración",
+      desc: "Parámetros del sistema, ciclos formativos, cursos académicos y usuarios.",
+      count: null,
+    },
+  ] as const;
+
   return (
     <div>
       <div className="mb-8">
-        <p className="text-[0.78rem] text-text-light mb-2">Instituto <span className="text-blue">/ Inicio</span></p>
-        <h1 className="font-display text-[1.75rem] text-navy font-bold leading-tight">Panel de Gestión de Prácticas</h1>
-        <p className="text-text-mid text-[0.9rem] mt-1.5">Bienvenido. Gestiona empresas, alumnos y formaciones desde aquí.</p>
+        <p className="text-[0.78rem] text-text-light mb-2">
+          Instituto <span className="text-blue">/ Inicio</span>
+        </p>
+        <h1 className="font-display text-[1.75rem] text-navy font-bold leading-tight">
+          Panel de Gestión de Prácticas
+        </h1>
+        <p className="text-text-mid text-[0.9rem] mt-1.5">
+          Bienvenido. Gestiona empresas, alumnos y formaciones desde aquí.
+        </p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-[18px] mb-7">
-        <StatCard icon="🏢"  variant="blue"   value={stats.empresas}    label="Empresas registradas"  trend="↑ +12 este curso" trendUp />
-        <StatCard icon="👩‍🎓" variant="green"  value={stats.alumnos}     label="Alumnos en prácticas"  trend="↑ +28 este curso" trendUp />
-        <StatCard icon="📋"  variant="amber"  value={stats.formaciones}  label="Formaciones activas"   trend="Curso 2024–25" />
-        <StatCard icon="✅"  variant="purple" value="94%"                label="Tasa de asignación"    trend="↑ +3% vs. año anterior" trendUp />
+        <StatCard
+          icon="🏢"
+          variant="blue"
+          value={empresas}
+          label="Empresas registradas"
+          trend="Datos actuales"
+        />
+        <StatCard
+          icon="👩‍🎓"
+          variant="green"
+          value={alumnos}
+          label="Alumnos registrados"
+          trend="Datos actuales"
+        />
+        <StatCard
+          icon="📋"
+          variant="amber"
+          value={formaciones}
+          label="Formaciones registradas"
+          trend="Datos actuales"
+        />
+        <StatCard
+          icon="✅"
+          variant="purple"
+          value={empresas + alumnos + formaciones}
+          label="Registros totales"
+          trend="Suma de módulos"
+        />
       </div>
 
-      {/* Menu */}
       <SectionLabel>Accesos rápidos</SectionLabel>
       <div className="grid grid-cols-3 gap-[22px] mt-2">
-        {MENU_CARDS.map(card => (
+        {menuCards.map((card) => (
           <Link
-            key={card.title} href={card.href}
+            key={card.title}
+            href={card.href}
             className="bg-white rounded-2xl p-8 border-[1.5px] border-border shadow-card relative overflow-hidden block no-underline transition-all duration-200 hover:-translate-y-1 hover:shadow-card-lg hover:border-transparent"
           >
             <div className="absolute top-0 left-0 right-0 h-1" style={{ background: card.color }} />
