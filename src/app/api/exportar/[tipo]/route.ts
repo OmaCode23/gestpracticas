@@ -33,6 +33,7 @@ export async function GET(
       accion: "Exportacion",
       registros: data.length,
       estado: "Completado",
+      detalle: `${data.length} registro(s) exportado(s) correctamente.`,
     });
 
     return NextResponse.json<ApiResponse<typeof data>>({ ok: true, data });

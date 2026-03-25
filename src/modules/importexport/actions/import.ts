@@ -112,7 +112,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<EmpresaI
       accion: "Importacion",
       registros: 0,
       estado: "Fallido",
-      detalle: errors.slice(0, 5).join(" | "),
+      detalle: errors.join("\n"),
     });
     return { ok: false, message, importedCount: 0, errors };
   }
@@ -125,6 +125,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<EmpresaI
     accion: "Importacion",
     registros: result.count,
     estado: "Completado",
+    detalle: `${result.count} registro(s) importado(s) correctamente.`,
   });
 
   return { ok: true, message, importedCount: result.count };

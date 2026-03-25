@@ -1,20 +1,31 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getImportExportLogs } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const logs = await getImportExportLogs();
-    const serializedLogs = logs.map((log) => ({
-      id: log.id,
-      entidad: log.entidad,
-      accion: log.accion,
-      registros: log.registros,
-      estado: log.estado,
-      usuario: log.usuario?.nombre ?? log.usuarioNombre,
-      detalle: log.detalle,
-      createdAt: log.createdAt.toISOString(),
-    }));
+    const { searchParams } = req.nextUrl;
+    const paginatedLogs = await getImportExportLogs({
+      page: Number(searchParams.get("page") || 1),
+      limit: Number(searchParams.get("limit") || 5),
+      entidad: searchParams.get("entidad") || undefined,
+      accion: searchParams.get("accion") || undefined,
+      estado: searchParams.get("estado") || undefined,
+    });
+
+    const serializedLogs = {
+      ...paginatedLogs,
+      items: paginatedLogs.items.map((log) => ({
+        id: log.id,
+        entidad: log.entidad,
+        accion: log.accion,
+        registros: log.registros,
+        estado: log.estado,
+        usuario: log.usuario?.nombre ?? log.usuarioNombre,
+        detalle: log.detalle,
+        createdAt: log.createdAt.toISOString(),
+      })),
+    };
 
     return NextResponse.json<ApiResponse<typeof serializedLogs>>({
       ok: true,
