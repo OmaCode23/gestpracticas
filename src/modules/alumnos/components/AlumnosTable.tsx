@@ -1,7 +1,3 @@
-/**
- * modules/alumnos/components/AlumnosTable.tsx  —  Client Component
- */
-
 "use client";
 
 import {
@@ -14,17 +10,8 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import { CICLOS, CURSOS } from "@/shared/mockData";
-import type { BadgeVariant } from "@/components/ui";
+import { CICLOS, CURSOS, CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
 import type { Alumno } from "@/modules/alumnos/types";
-
-const CICLO_BADGE: Record<string, BadgeVariant> = {
-  DAM: "blue",
-  DAW: "amber",
-  ASIR: "green",
-  SMR: "purple",
-  ADG: "gray",
-};
 
 interface AlumnosTableProps {
   alumnos: Alumno[];
@@ -57,51 +44,50 @@ export default function AlumnosTable({
   onEditar,
   onEliminar,
 }: AlumnosTableProps) {
-  const rows = alumnos;
-
   return (
     <>
       <SectionLabel>Listado de alumnos</SectionLabel>
+
       <Card>
         <TableFilters>
           <span className="text-[0.78rem] text-text-light font-medium">
             Filtrar por:
           </span>
+
           <FilterSelect
             value={ciclo}
-            onChange={v => {
+            onChange={(v) => {
               onChangeCiclo(v);
               onPageChange(1);
             }}
           >
             <option value="">Todos los ciclos</option>
-            {CICLOS.map(c => (
+            {CICLOS.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </FilterSelect>
+
           <FilterSelect
             value={curso}
-            onChange={v => {
+            onChange={(v) => {
               onChangeCurso(v);
               onPageChange(1);
             }}
           >
             <option value="">Todos los cursos</option>
-            {CURSOS.map(c => (
+            {CURSOS.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </FilterSelect>
+
           <SearchBox
             value={search}
-            onChange={v => {
+            onChange={(v) => {
               onChangeSearch(v);
               onPageChange(1);
             }}
             placeholder="Buscar alumno o NIA..."
           />
-          <Button variant="primary" size="sm" className="ml-auto">
-            + Nuevo alumno
-          </Button>
         </TableFilters>
 
         <div className="overflow-x-auto">
@@ -117,53 +103,62 @@ export default function AlumnosTable({
                 <th>Acciones</th>
               </tr>
             </thead>
+
             <tbody>
-              {rows.length === 0 ? (
+              {alumnos.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="text-center py-6 text-text-light"
-                  >
+                  <td colSpan={7} className="text-center py-6 text-text-light">
                     No se encontraron alumnos.
                   </td>
                 </tr>
               ) : (
-                rows.map(a => (
-                  <tr key={a.id}>
-                    <td>
-                      <strong>{a.nombre}</strong>
-                    </td>
-                    <td className="text-text-mid">{a.nia}</td>
-                    <td>
-                      <Badge variant={CICLO_BADGE[a.ciclo] ?? "gray"}>
-                        {a.ciclo}
-                      </Badge>
-                    </td>
-                    <td>{a.curso}</td>
-                    <td>{a.telefono}</td>
-                    <td className="text-blue-600 text-[0.82rem]">
-                      {a.email}
-                    </td>
-                    <td>
-                      <TdActions>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => onEditar(a)}
-                        >
-                          ✏️
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => onEliminar(a.id)}
-                        >
-                          🗑️
-                        </Button>
-                      </TdActions>
-                    </td>
-                  </tr>
-                ))
+                alumnos.map((a) => {
+                  const cicloCode = CICLO_LABEL[a.ciclo] ?? a.ciclo;
+
+                  return (
+                    <tr key={a.id}>
+                      <td>
+                        <strong>{a.nombre}</strong>
+                      </td>
+
+                      <td className="text-text-mid">{a.nia}</td>
+
+                      <td>
+                        <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
+                          {cicloCode}
+                        </Badge>
+                      </td>
+
+                      <td>{a.curso}</td>
+
+                      <td>{a.telefono ?? "—"}</td>
+
+                      <td className="text-blue-600 text-[0.82rem]">
+                        {a.email ?? "—"}
+                      </td>
+
+                      <td>
+                        <TdActions>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onEditar(a)}
+                          >
+                            ✏️
+                          </Button>
+
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => onEliminar(a.id)}
+                          >
+                            🗑️
+                          </Button>
+                        </TdActions>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

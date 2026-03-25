@@ -46,13 +46,16 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const parsed = alumnoSchema.safeParse(body);
+
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
         { status: 400 }
       );
     }
+
     const alumno = await createAlumno(parsed.data);
+
     return NextResponse.json<ApiResponse<typeof alumno>>(
       { ok: true, data: alumno },
       { status: 201 }
@@ -64,6 +67,7 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       );
     }
+
     console.error("[POST /api/alumnos]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al crear el alumno" },

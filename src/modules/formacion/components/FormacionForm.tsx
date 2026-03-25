@@ -1,8 +1,3 @@
-/**
- * src/modules/formacion/components/FormacionForm.tsx  —  Client Component
- *
- */
-
 "use client";
 
 import {

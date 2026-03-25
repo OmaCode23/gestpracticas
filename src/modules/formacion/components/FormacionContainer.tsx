@@ -1,7 +1,3 @@
-/**
- * src/modules/formacion/components/FormacionContainer.tsx  —  Client Component
- */
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -56,7 +52,7 @@ export default function FormacionContainer() {
     const json = await res.json();
     if (json.ok) {
       setAlumnos(
-        json.data.data.map((a: any) => ({
+        json.data.items.map((a: any) => ({
           id: a.id,
           nombre: a.nombre,
           nia: a.nia,
