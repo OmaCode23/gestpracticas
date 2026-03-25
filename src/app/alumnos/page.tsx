@@ -1,3 +1,5 @@
+//src/app/alumnos/page.tsx
+
 import { PageHeader } from "@/components/ui";
 import AlumnosContainer from "@/modules/alumnos/components/AlumnosContainer";
 

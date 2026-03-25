@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader, SectionLabel } from "@/components/ui";
+import { SectionLabel } from "@/components/ui";
 import AlumnoForm from "./AlumnoForm";
 import AlumnosTable from "./AlumnosTable";
 import type { Alumno } from "@/modules/alumnos/types";
+import SuccessToast from "@/components/ui/SuccessToast";
 
 const EMPTY = {
   nombre: "",
@@ -39,9 +40,7 @@ export default function AlumnosContainer() {
   const setFormField = (field: keyof typeof EMPTY, value: string) =>
     setForm((f) => ({ ...f, [field]: value }));
 
-  // ------------------------------
   // Cargar alumnos
-  // ------------------------------
   async function load(opts?: { pageOverride?: number }) {
     try {
       setLoading(true);
@@ -85,12 +84,10 @@ export default function AlumnosContainer() {
     await load({ pageOverride: 1 });
   };
 
-  // ------------------------------
   // Guardar
-  // ------------------------------
   const handleGuardar = async () => {
-    if (!form.nombre || !form.nia || !form.ciclo || !form.curso) {
-      return alert("Rellena los campos obligatorios.");
+    if (!form.nombre || !form.nia || !form.telefono || !form.email || !form.ciclo || !form.curso) {
+      return alert("Rellena todos los campos obligatorios: nombre, NIA, teléfono, correo, ciclo y curso.");
     }
 
     try {
@@ -122,9 +119,7 @@ export default function AlumnosContainer() {
     }
   };
 
-  // ------------------------------
   // Actualizar
-  // ------------------------------
   const handleActualizar = async () => {
     if (!editingId) return;
 
@@ -158,9 +153,7 @@ export default function AlumnosContainer() {
     }
   };
 
-  // ------------------------------
   // Eliminar
-  // ------------------------------
   const handleEliminar = async (id: number) => {
     if (!confirm("¿Eliminar este alumno?")) return;
 
@@ -186,9 +179,7 @@ export default function AlumnosContainer() {
     }
   };
 
-  // ------------------------------
   // Editar
-  // ------------------------------
   const handleEditar = (alumno: Alumno) => {
     setEditingId(alumno.id);
     setForm({
@@ -208,9 +199,7 @@ export default function AlumnosContainer() {
     setForm(EMPTY);
   };
 
-  // ------------------------------
   // Notificación temporal
-  // ------------------------------
   useEffect(() => {
     if (!notification) return;
 
@@ -218,41 +207,10 @@ export default function AlumnosContainer() {
     return () => window.clearTimeout(timeoutId);
   }, [notification]);
 
-  return (
-    <div>
-      {notification && (
-        <div className="fixed top-5 right-5 z-50 w-full max-w-md animate-[fadeIn_0.2s_ease-out]">
-          <div className="rounded-2xl border border-green-200 bg-white px-4 py-4 shadow-[0_16px_40px_rgba(22,163,74,0.18)]">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg text-green-700">
-                ✓
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-green-600">
-                  Operación completada
-                </p>
-                <p className="mt-1 text-[0.92rem] font-medium text-navy">
-                  {notification}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setNotification("")}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-light transition-colors hover:bg-surface hover:text-navy"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      <PageHeader
-        breadcrumb="Inicio"
-        breadcrumbHighlight="/ Alumnos"
-        title="Gestión de Alumnos"
-        subtitle="Alta de alumnos en prácticas y consulta del censo por ciclo y curso."
-      />
+  return (
+    <>
+      <SuccessToast message={notification} onClose={() => setNotification("")} />
 
       <SectionLabel>Alta de alumno</SectionLabel>
 
@@ -290,6 +248,6 @@ export default function AlumnosContainer() {
         onEditar={handleEditar}
         onEliminar={handleEliminar}
       />
-    </div>
+    </>
   );
 }

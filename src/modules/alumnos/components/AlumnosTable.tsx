@@ -56,10 +56,7 @@ export default function AlumnosTable({
 
           <FilterSelect
             value={ciclo}
-            onChange={(v) => {
-              onChangeCiclo(v);
-              onPageChange(1);
-            }}
+            onChange={onChangeCiclo}
           >
             <option value="">Todos los ciclos</option>
             {CICLOS.map((c) => (
@@ -69,10 +66,7 @@ export default function AlumnosTable({
 
           <FilterSelect
             value={curso}
-            onChange={(v) => {
-              onChangeCurso(v);
-              onPageChange(1);
-            }}
+            onChange={onChangeCurso}
           >
             <option value="">Todos los cursos</option>
             {CURSOS.map((c) => (
@@ -82,10 +76,7 @@ export default function AlumnosTable({
 
           <SearchBox
             value={search}
-            onChange={(v) => {
-              onChangeSearch(v);
-              onPageChange(1);
-            }}
+            onChange={onChangeSearch}
             placeholder="Buscar alumno o NIA..."
           />
         </TableFilters>

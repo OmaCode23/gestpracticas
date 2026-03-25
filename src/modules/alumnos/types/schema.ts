@@ -29,16 +29,14 @@ export const alumnoSchema = z.object({
   telefono: z
     .string()
     .trim()
-    .regex(/^[6789]\d{8}$/, "El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9.")
-    .optional()
-    .or(z.literal("")),
+    .min(1, "El teléfono es obligatorio.")
+    .regex(/^[6789]\d{8}$/, "El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9."),
 
   email: z
     .string()
     .trim()
-    .email("El email no es válido.")
-    .optional()
-    .or(z.literal("")),
+    .min(1, "El correo electrónico es obligatorio.")
+    .email("El email no es válido."),
 
   ciclo: z
     .string()
@@ -56,4 +54,12 @@ export const alumnoSchema = z.object({
 // PATCH
 export const alumnoUpdateSchema = alumnoSchema.partial();
 
+// Filtros para GET /api/alumnos
+export const alumnoFilterSchema = z.object({
+  ciclo: z.string().trim().optional(),
+  curso: z.string().trim().optional(),
+  search: z.string().trim().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  perPage: z.coerce.number().int().positive().default(10),
+});
 

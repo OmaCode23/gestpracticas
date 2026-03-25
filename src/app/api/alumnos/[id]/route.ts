@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAlumnoById } from "@/modules/alumnos/actions/queries";
 import { updateAlumno, deleteAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoUpdateSchema } from "@/modules/alumnos/types/schema";
@@ -69,6 +70,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const alumno = await updateAlumno(id, parsed.data);
+    revalidatePath("/");
+    revalidatePath("/alumnos");
 
     return NextResponse.json<ApiResponse<typeof alumno>>({
       ok: true,
@@ -102,6 +105,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     }
 
     await deleteAlumno(id);
+    revalidatePath("/");
+    revalidatePath("/alumnos");
 
     return NextResponse.json<ApiResponse<null>>({
       ok: true,

@@ -1,4 +1,4 @@
-//app/formacion/page.tsx
+//src/app/formacion/page.tsx
 
 import { PageHeader } from "@/components/ui";
 import FormacionContainer from "@/modules/formacion/components/FormacionContainer";
