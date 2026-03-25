@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Usuario {
+  id         Int               @id @default(autoincrement())
+  nombre     String
+  email      String            @unique
+  iniciales  String?
+  activo     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  logs       ImportExportLog[]
+
+  @@map("usuarios")
+}
+
 model Empresa {
   id            Int      @id @default(autoincrement())
   nombre        String
@@ -55,4 +68,19 @@ model FormacionEmpresa {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   @@map("formaciones_empresa")
+}
+
+model ImportExportLog {
+  id        Int      @id @default(autoincrement())
+  entidad   String
+  accion    String
+  registros Int
+  estado    String
+  usuarioId Int?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioNombre String @map("usuario")
+  detalle   String?
+  createdAt DateTime @default(now())
+
+  @@map("import_export_logs")
 }

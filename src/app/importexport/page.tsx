@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import {
   Alert,
@@ -10,11 +10,26 @@ import {
   SectionLabel,
   type BadgeVariant,
 } from "@/components/ui";
-import { MOCK_IMPORT_LOG } from "@/shared/mockData";
 import type { ApiResponse } from "@/shared/types/api";
 
 type Entidad = "alumnos" | "empresas" | "formacion";
 type SheetRow = Record<string, string>;
+type ImportExportLogRow = {
+  id: number;
+  entidad: string;
+  accion: string;
+  registros: number;
+  estado: string;
+  usuario: string;
+  detalle: string | null;
+  createdAt: string;
+};
+type BusyAction = "plantilla" | "importacion" | "exportacion" | null;
+type ImportResponse = {
+  message: string;
+  importedCount: number;
+};
+type ImportErrorResponse = ApiResponse<never, string[]>;
 
 interface CardConfig {
   entidad: Entidad;
@@ -26,7 +41,6 @@ interface CardConfig {
   requiredColumns: string[];
   fileName: string;
   importPath: string;
-  toPayload: (row: SheetRow) => Record<string, string>;
   enabled: boolean;
   pendingMessage?: string;
 }
@@ -42,16 +56,8 @@ const CARDS: CardConfig[] = [
     requiredColumns: ["NIA", "Nombre", "Ciclo", "Curso"],
     fileName: "alumnos",
     importPath: "/api/alumnos",
-    toPayload: (row) => ({
-      nia: row.NIA,
-      nombre: row.Nombre,
-      telefono: normalizePhone(row.Telefono),
-      email: row.Correo,
-      ciclo: row.Ciclo,
-      curso: row.Curso,
-    }),
     enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo del compañero.",
+    pendingMessage: "Pendiente de integracion con el modulo del companero.",
   },
   {
     entidad: "empresas",
@@ -62,30 +68,18 @@ const CARDS: CardConfig[] = [
     columnas: [
       "CIF",
       "Nombre",
-      "Dirección",
+      "Direccion",
       "Localidad",
       "Sector",
       "Ciclo Formativo",
-      "Teléfono",
+      "Telefono",
       "Correo Empresa",
       "Contacto",
       "Correo Contacto",
     ],
     requiredColumns: ["CIF", "Nombre", "Localidad", "Sector"],
     fileName: "empresas",
-    importPath: "/api/empresas",
-    toPayload: (row) => ({
-      cif: row.CIF,
-      nombre: row.Nombre,
-      direccion: row["Dirección"],
-      localidad: row.Localidad,
-      sector: row.Sector,
-      cicloFormativo: row["Ciclo Formativo"],
-      telefono: normalizePhone(row["Teléfono"]),
-      email: row["Correo Empresa"],
-      contacto: row.Contacto,
-      emailContacto: row["Correo Contacto"],
-    }),
+    importPath: "/api/importar/empresas",
     enabled: true,
   },
   {
@@ -98,16 +92,8 @@ const CARDS: CardConfig[] = [
     requiredColumns: ["Empresa", "Alumno", "Curso"],
     fileName: "formacion_empresa",
     importPath: "/api/formacion",
-    toPayload: (row) => ({
-      empresa: row.Empresa,
-      alumno: row.Alumno,
-      periodo: row.Periodo,
-      descripcion: row.Descripcion,
-      contacto: row.Contacto,
-      curso: row.Curso,
-    }),
     enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo del compañero.",
+    pendingMessage: "Pendiente de integracion con el modulo del companero.",
   },
 ];
 
@@ -115,6 +101,11 @@ const ENTIDAD_BADGE: Record<string, BadgeVariant> = {
   Alumnos: "blue",
   Empresas: "green",
   "Form. Empresa": "purple",
+};
+
+const ESTADO_BADGE: Record<string, BadgeVariant> = {
+  Completado: "green",
+  Fallido: "red",
 };
 
 function normalizePhone(value: string) {
@@ -139,6 +130,13 @@ function createEmptyRow(columns: string[]) {
 
 function formatDateStamp(date = new Date()) {
   return date.toISOString().slice(0, 10);
+}
+
+function formatLogDate(value: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
 }
 
 function buildSheetRows(rawRows: Record<string, unknown>[], config: CardConfig) {
@@ -192,6 +190,29 @@ function findDuplicateValues(rows: SheetRow[], column: string) {
   return duplicates;
 }
 
+function getMissingHeaders(headers: string[], config: CardConfig) {
+  const normalizedHeaders = new Set(headers.map((header) => normalizeHeader(header)));
+
+  return config.requiredColumns.filter(
+    (column) => !normalizedHeaders.has(normalizeHeader(column))
+  );
+}
+
+function mapEmpresaRows(rows: SheetRow[]) {
+  return rows.map((row) => ({
+    cif: row.CIF,
+    nombre: row.Nombre,
+    direccion: row.Direccion,
+    localidad: row.Localidad,
+    sector: row.Sector,
+    cicloFormativo: row["Ciclo Formativo"],
+    telefono: normalizePhone(row.Telefono),
+    email: row["Correo Empresa"],
+    contacto: row.Contacto,
+    emailContacto: row["Correo Contacto"],
+  }));
+}
+
 function downloadWorkbook(rows: SheetRow[], columns: string[], fileName: string) {
   const exportRows = rows.length > 0 ? rows : [createEmptyRow(columns)];
   const worksheet = XLSX.utils.json_to_sheet(exportRows, { header: columns });
@@ -200,23 +221,82 @@ function downloadWorkbook(rows: SheetRow[], columns: string[], fileName: string)
   XLSX.writeFile(workbook, fileName);
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Ha ocurrido un error inesperado.";
+}
+
+function getErrorDetails(error: ImportErrorResponse) {
+  return Array.isArray(error.details) ? error.details : [];
+}
+
 export default function ImportExportPage() {
   const [status, setStatus] = useState<Record<Entidad, string>>({
     alumnos: "",
     empresas: "",
     formacion: "",
   });
+  const [busyByEntity, setBusyByEntity] = useState<Record<Entidad, BusyAction>>({
+    alumnos: null,
+    empresas: null,
+    formacion: null,
+  });
+  const [errorDetails, setErrorDetails] = useState<Record<Entidad, string[]>>({
+    alumnos: [],
+    empresas: [],
+    formacion: [],
+  });
+  const [logs, setLogs] = useState<ImportExportLogRow[]>([]);
+  const [logsError, setLogsError] = useState("");
+
+  const loadLogs = async () => {
+    try {
+      const res = await fetch("/api/importexport/logs", { cache: "no-store" });
+      const json: ApiResponse<ImportExportLogRow[]> = await res.json();
+
+      if (!json.ok) {
+        throw new Error(json.error);
+      }
+
+      setLogs(json.data);
+      setLogsError("");
+    } catch (error) {
+      setLogsError(getErrorMessage(error));
+    }
+  };
+
+  useEffect(() => {
+    void loadLogs();
+  }, []);
+
+  const setEntityStatus = (entidad: Entidad, message: string) => {
+    setStatus((current) => ({ ...current, [entidad]: message }));
+  };
+
+  const setEntityBusy = (entidad: Entidad, action: BusyAction) => {
+    setBusyByEntity((current) => ({ ...current, [entidad]: action }));
+  };
+
+  const setEntityErrors = (entidad: Entidad, details: string[]) => {
+    setErrorDetails((current) => ({ ...current, [entidad]: details }));
+  };
+
+  const clearEntityFeedback = (entidad: Entidad) => {
+    setEntityStatus(entidad, "");
+    setEntityErrors(entidad, []);
+  };
 
   const handleExport = async (config: CardConfig) => {
     if (!config.enabled) {
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: config.pendingMessage ?? "Pendiente de integracion.",
-      }));
+      setEntityStatus(
+        config.entidad,
+        config.pendingMessage ?? "Pendiente de integracion."
+      );
       return;
     }
 
-    setStatus((current) => ({ ...current, [config.entidad]: "Exportando datos..." }));
+    setEntityBusy(config.entidad, "exportacion");
+    setEntityErrors(config.entidad, []);
+    setEntityStatus(config.entidad, "Exportando datos...");
 
     try {
       const res = await fetch(`/api/exportar/${config.entidad}`, {
@@ -241,47 +321,46 @@ export default function ImportExportPage() {
         `${config.fileName}_${formatDateStamp()}.xlsx`
       );
 
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: `Exportacion completada (${json.data.length} registros).`,
-      }));
+      setEntityStatus(
+        config.entidad,
+        `Exportacion completada (${json.data.length} registros).`
+      );
+      await loadLogs();
     } catch (error) {
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: `Error: ${getErrorMessage(error)}`,
-      }));
+      setEntityStatus(config.entidad, `Error: ${getErrorMessage(error)}`);
+    } finally {
+      setEntityBusy(config.entidad, null);
     }
   };
 
   const handlePlantilla = (config: CardConfig) => {
     if (!config.enabled) {
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: config.pendingMessage ?? "Pendiente de integracion.",
-      }));
+      setEntityStatus(
+        config.entidad,
+        config.pendingMessage ?? "Pendiente de integracion."
+      );
       return;
     }
 
+    clearEntityFeedback(config.entidad);
+    setEntityBusy(config.entidad, "plantilla");
     downloadWorkbook([], config.columnas, `plantilla_${config.fileName}.xlsx`);
-    setStatus((current) => ({
-      ...current,
-      [config.entidad]: "Plantilla descargada correctamente.",
-    }));
+    setEntityStatus(config.entidad, "Plantilla descargada correctamente.");
+    setEntityBusy(config.entidad, null);
   };
 
   const handleImport = async (config: CardConfig, file: File) => {
     if (!config.enabled) {
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: config.pendingMessage ?? "Pendiente de integracion.",
-      }));
+      setEntityStatus(
+        config.entidad,
+        config.pendingMessage ?? "Pendiente de integracion."
+      );
       return;
     }
 
-    setStatus((current) => ({
-      ...current,
-      [config.entidad]: `Leyendo ${file.name}...`,
-    }));
+    setEntityBusy(config.entidad, "importacion");
+    setEntityErrors(config.entidad, []);
+    setEntityStatus(config.entidad, `Leyendo ${file.name}...`);
 
     try {
       const data = await file.arrayBuffer();
@@ -293,6 +372,20 @@ export default function ImportExportPage() {
       }
 
       const worksheet = workbook.Sheets[sheetName];
+      const previewRows = XLSX.utils.sheet_to_json<(string | number)[]>(worksheet, {
+        header: 1,
+        defval: "",
+        blankrows: false,
+      });
+      const headerRow = (previewRows[0] ?? []).map((cell) => String(cell ?? "").trim());
+      const missingHeaders = getMissingHeaders(headerRow, config);
+
+      if (missingHeaders.length > 0) {
+        throw new Error(
+          `Faltan columnas obligatorias en la cabecera: ${missingHeaders.join(", ")}.`
+        );
+      }
+
       const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
         defval: "",
       });
@@ -323,33 +416,29 @@ export default function ImportExportPage() {
         }
       }
 
-      for (const [index, row] of rows.entries()) {
-        const payload = config.toPayload(row);
-        const res = await fetch(config.importPath, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        const json: ApiResponse<unknown> = await res.json();
+      const res = await fetch(config.importPath, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rows: config.entidad === "empresas" ? mapEmpresaRows(rows) : rows,
+        }),
+      });
+      const json: ApiResponse<ImportResponse, string[]> = await res.json();
 
-        if (!json.ok) {
-          throw new Error(
-            `Fallo al importar la fila ${index + 2} de ${rows.length + 1}: ${json.error}`
-          );
-        }
+      if (!json.ok) {
+        setEntityErrors(config.entidad, getErrorDetails(json));
+        throw new Error(json.error);
       }
 
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: `Importacion completada (${rows.length} registros).`,
-      }));
+      setEntityErrors(config.entidad, []);
+      setEntityStatus(config.entidad, json.data.message);
+      await loadLogs();
     } catch (error) {
-      setStatus((current) => ({
-        ...current,
-        [config.entidad]: `Error: ${getErrorMessage(error)}`,
-      }));
+      setEntityStatus(config.entidad, `Error: ${getErrorMessage(error)}`);
+    } finally {
+      setEntityBusy(config.entidad, null);
     }
   };
 
@@ -357,14 +446,14 @@ export default function ImportExportPage() {
     <div>
       <PageHeader
         breadcrumb="Inicio"
-        breadcrumbHighlight="/ Importar · Exportar"
+        breadcrumbHighlight="/ Importar / Exportar"
         title="Gestion de Datos"
         subtitle="Importacion masiva mediante plantillas Excel y exportacion de los datos actuales."
       />
 
       <Alert variant="info">
         Las plantillas incluyen las columnas necesarias. Respeta el formato antes de
-        importar.
+        importar para evitar errores de validacion.
       </Alert>
 
       <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -373,6 +462,8 @@ export default function ImportExportPage() {
             key={config.entidad}
             config={config}
             statusMsg={status[config.entidad]}
+            errorDetails={errorDetails[config.entidad]}
+            busyAction={busyByEntity[config.entidad]}
             onExport={() => handleExport(config)}
             onPlantilla={() => handlePlantilla(config)}
             onImport={(file) => handleImport(config, file)}
@@ -382,59 +473,78 @@ export default function ImportExportPage() {
 
       <SectionLabel>Actividad reciente de importaciones</SectionLabel>
       <Card>
-        <div className="overflow-x-auto">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Accion</th>
-                <th>Registros</th>
-                <th>Estado</th>
-                <th>Usuario</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_IMPORT_LOG.map((row, index) => (
-                <tr key={index}>
-                  <td className="text-text-mid">{row.fecha}</td>
-                  <td>
-                    <Badge variant={ENTIDAD_BADGE[row.tipo] ?? "gray"}>{row.tipo}</Badge>
-                  </td>
-                  <td>{row.accion}</td>
-                  <td>{row.registros}</td>
-                  <td>
-                    <Badge variant="green">{row.estado}</Badge>
-                  </td>
-                  <td>{row.usuario}</td>
+        {logsError ? (
+          <p className="text-sm text-red-500">Error al cargar el historial: {logsError}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Accion</th>
+                  <th>Registros</th>
+                  <th>Estado</th>
+                  <th>Usuario</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {logs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-text-light">
+                      Aun no hay operaciones registradas.
+                    </td>
+                  </tr>
+                ) : (
+                  logs.map((row) => (
+                    <tr key={row.id}>
+                      <td className="text-text-mid">{formatLogDate(row.createdAt)}</td>
+                      <td>
+                        <Badge variant={ENTIDAD_BADGE[row.entidad] ?? "gray"}>
+                          {row.entidad}
+                        </Badge>
+                      </td>
+                      <td>{row.accion}</td>
+                      <td>{row.registros} registros</td>
+                      <td>
+                        <Badge variant={ESTADO_BADGE[row.estado] ?? "gray"}>
+                          {row.estado}
+                        </Badge>
+                      </td>
+                      <td>{row.usuario}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </div>
   );
 }
 
-function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Ha ocurrido un error inesperado.";
-}
-
 function EntidadCard({
   config,
   statusMsg,
+  errorDetails,
+  busyAction,
   onExport,
   onPlantilla,
   onImport,
 }: {
   config: CardConfig;
   statusMsg: string;
+  errorDetails: string[];
+  busyAction: BusyAction;
   onExport: () => void;
   onPlantilla: () => void;
   onImport: (file: File) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const isBusy = busyAction !== null;
+  const visibleErrors = errorDetails.slice(0, 5);
+  const hiddenErrorsCount = Math.max(0, errorDetails.length - visibleErrors.length);
 
   return (
     <div className="overflow-hidden rounded-[13px] border-[1.5px] border-border bg-white shadow-card">
@@ -460,7 +570,7 @@ function EntidadCard({
           titulo="Descargar plantilla"
           desc={`Columnas: ${config.columnas.slice(0, 3).join(", ")}...`}
           onClick={onPlantilla}
-          disabled={!config.enabled}
+          disabled={!config.enabled || isBusy}
         />
 
         <Accion
@@ -470,7 +580,7 @@ function EntidadCard({
           titulo={`Importar ${config.titulo.toLowerCase()} desde Excel`}
           desc="Sube tu archivo .xlsx o .xls"
           onClick={() => fileRef.current?.click()}
-          disabled={!config.enabled}
+          disabled={!config.enabled || isBusy}
         />
         <input
           ref={fileRef}
@@ -491,7 +601,7 @@ function EntidadCard({
           titulo={`Exportar ${config.titulo.toLowerCase()} actuales`}
           desc="Descarga en formato Excel"
           onClick={onExport}
-          disabled={!config.enabled}
+          disabled={!config.enabled || isBusy}
         />
 
         {statusMsg && (
@@ -508,6 +618,24 @@ function EntidadCard({
           >
             {statusMsg}
           </p>
+        )}
+
+        {errorDetails.length > 0 && (
+          <div className="mt-3 rounded-[9px] border border-red-200 bg-red-50 px-3 py-3">
+            <p className="mb-2 text-[0.74rem] font-semibold text-red-700">
+              Incidencias detectadas en la importacion
+            </p>
+            <ul className="space-y-1 text-[0.74rem] text-red-700">
+              {visibleErrors.map((detail) => (
+                <li key={detail}>- {detail}</li>
+              ))}
+            </ul>
+            {hiddenErrorsCount > 0 && (
+              <p className="mt-2 text-[0.72rem] font-medium text-red-600">
+                Y {hiddenErrorsCount} incidencia(s) mas.
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>

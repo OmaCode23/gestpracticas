@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getEmpresasExport } from "@/modules/importexport/actions/export";
+import { createImportExportLog } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(
@@ -26,6 +27,13 @@ export async function GET(
     }
 
     const data = await getEmpresasExport();
+
+    await createImportExportLog({
+      entidad: "Empresas",
+      accion: "Exportacion",
+      registros: data.length,
+      estado: "Completado",
+    });
 
     return NextResponse.json<ApiResponse<typeof data>>({ ok: true, data });
   } catch (error) {
