@@ -13,7 +13,8 @@ import type { EmpresaFilters, PaginatedEmpresas } from "../types";
 const PER_PAGE = 5;
 
 export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmpresas> {
-  const page = Math.max(1, filters.page ?? 1)
+  const page = Math.max(1, filters.page ?? 1);
+  const perPage = filters.all ? undefined : filters.limit ?? PER_PAGE;
 
   const where = {
     ...(filters.sector ? { sector: filters.sector } : {}),
@@ -42,8 +43,12 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
     prisma.empresa.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * PER_PAGE,
-      take: PER_PAGE,
+      ...(perPage
+        ? {
+            skip: (page - 1) * perPage,
+            take: perPage,
+          }
+        : {}),
     }),
     prisma.empresa.count({ where }),
   ]);
@@ -52,8 +57,8 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
     items,
     total,
     page,
-    perPage: PER_PAGE,
-    totalPages: Math.ceil(total / PER_PAGE),
+    perPage: perPage ?? total,
+    totalPages: perPage ? Math.ceil(total / perPage) : (total > 0 ? 1 : 0),
   };
 };
 

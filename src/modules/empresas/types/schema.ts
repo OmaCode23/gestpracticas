@@ -111,6 +111,11 @@ export const empresaFilterSchema = z.object({
   localidad: z.string().trim().optional(),
   search: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(500).optional(),
+  all: z
+    .union([z.literal("true"), z.literal("false"), z.boolean()])
+    .optional()
+    .transform((value) => value === true || value === "true"),
 });
 
 export type EmpresaInput = z.infer<typeof empresaSchema>;

@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
       localidad: searchParams.get("localidad") || undefined,
       search: searchParams.get("search") || undefined,
       page: searchParams.get("page") || 1,
+      limit: searchParams.get("limit") || undefined,
+      all: searchParams.get("all") || undefined,
     });
 
     if (!parsedFilters.success) {
