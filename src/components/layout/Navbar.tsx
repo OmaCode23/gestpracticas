@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import graoLogo from "@/app/images/grao-gif.gif";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
@@ -16,46 +18,58 @@ export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="bg-navy sticky top-0 z-50 h-[60px] px-10 flex items-center gap-2 shadow-[0_2px_16px_rgba(0,0,0,0.22)]">
-      <div className="font-display text-white text-[1.18rem] font-bold tracking-tight mr-6 flex items-center gap-2">
-        <span className="text-[1.1rem]" aria-hidden="true">
-          🎓
-        </span>
-        <span>
-          <span className="text-accent">Gest</span>Practicas
-        </span>
-        <span className="bg-accent text-navy text-[0.6rem] font-bold px-1.5 py-0.5 rounded font-sans tracking-widest uppercase">
-          IES
-        </span>
+    <nav className="sticky top-0 z-50 flex flex-wrap items-center gap-3 border-b border-white/10 bg-navy px-4 py-4 shadow-[0_18px_50px_rgba(61,24,34,0.22)] backdrop-blur md:px-6 xl:flex-nowrap xl:px-10">
+      <div className="mr-2 flex min-w-0 items-center gap-3 xl:mr-5">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+          <Image
+            src={graoLogo}
+            alt="Logo IES El Grao Valencia"
+            className="h-full w-full object-contain"
+            priority
+          />
+        </div>
+        <div className="flex min-w-0 flex-col justify-center self-stretch py-0.5">
+          <span className="flex items-center font-display text-[1.05rem] font-bold tracking-[0.01em] text-white md:text-[1.22rem]">
+            <span className="text-white">Gest</span>
+            <span className="ml-1 text-[#f3d7de]">Practicas</span>
+          </span>
+          <span className="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.28em] text-white/58 md:text-[0.68rem] md:tracking-[0.34em]">
+            IES El Grao
+          </span>
+        </div>
       </div>
 
-      {NAV_LINKS.map(({ href, label }) => {
-        const isActive = pathname === href;
+      <div className="order-3 flex w-full flex-wrap gap-2 xl:order-none xl:w-auto">
+        {NAV_LINKS.map(({ href, label }) => {
+          const isActive = pathname === href;
 
-        return (
-          <Link
-            key={href}
-            href={href}
-            prefetch={href === "/" ? false : undefined}
-            className={[
-              "text-sm font-medium px-3.5 py-1.5 rounded-md transition-all duration-150 no-underline",
-              isActive
-                ? "bg-blue-light text-white"
-                : "text-white/60 hover:text-white hover:bg-white/10",
-            ].join(" ")}
-          >
-            {label}
-          </Link>
-        );
-      })}
+          return (
+            <Link
+              key={href}
+              href={href}
+              prefetch={href === "/" ? false : undefined}
+              className={[
+                "rounded-full px-3.5 py-2 text-sm font-medium no-underline transition-all duration-150",
+                isActive
+                  ? "bg-accent text-white shadow-[0_10px_30px_rgba(159,29,62,0.34)]"
+                  : "text-white/90 hover:bg-white/10 hover:text-white",
+              ].join(" ")}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </div>
 
-      <div className="flex-1" />
+      <div className="hidden flex-1 xl:block" />
 
-      <div className="flex items-center gap-2.5 text-white/70 text-[0.82rem]">
-        <div className="w-8 h-8 rounded-full bg-blue-light flex items-center justify-center text-white text-[0.8rem] font-bold">
+      <div className="ml-auto rounded-full border border-white/14 bg-white/10 px-2.5 py-1.5 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 text-[0.86rem] text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[0.8rem] font-bold text-navy shadow-sm">
           AC
+          </div>
+          <span className="hidden font-semibold tracking-[0.01em] text-white md:inline">Administrador</span>
         </div>
-        Administrador
       </div>
     </nav>
   );

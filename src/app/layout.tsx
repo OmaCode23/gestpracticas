@@ -3,8 +3,8 @@ import "../app/globals.css";
 import Navbar from "@/components/layout/Navbar";
 
 export const metadata: Metadata = {
-  title: "GestPrácticas — IES",
-  description: "Sistema de gestión de prácticas del instituto",
+  title: "GestPracticas - IES El Grao",
+  description: "Sistema de gestion de practicas del instituto",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -12,9 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body>
         <Navbar />
-        <main className="max-w-[1200px] mx-auto px-10 py-9">
-          {children}
-        </main>
+        <main className="mx-auto max-w-[1200px] px-4 py-6 md:px-6 md:py-8 xl:px-10 xl:py-9">{children}</main>
       </body>
     </html>
   );

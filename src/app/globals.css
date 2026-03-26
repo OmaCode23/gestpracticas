@@ -1,22 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-[#e8ecf8] text-[#1a1f36] font-sans;
+  :root {
+    --bg-main: #f6f0eb;
+    --bg-radial-top: rgba(159, 29, 62, 0.12);
+    --bg-radial-side: rgba(201, 170, 131, 0.15);
+    --text-main: #2b1c20;
   }
 
-  input, select, textarea {
+  html {
+    min-height: 100%;
+    background:
+      radial-gradient(circle at top left, var(--bg-radial-top), transparent 34%),
+      radial-gradient(circle at right 18%, var(--bg-radial-side), transparent 24%),
+      linear-gradient(180deg, #f9f5f1 0%, var(--bg-main) 100%);
+  }
+
+  body {
+    @apply font-sans;
+    min-height: 100vh;
+    background: transparent;
+    color: var(--text-main);
+  }
+
+  input,
+  select,
+  textarea {
     @apply font-sans;
   }
 
-  /* Estilos de tabla — necesario porque Tailwind Preflight resetea todo */
+  main {
+    position: relative;
+  }
+
+  main::before {
+    content: "";
+    position: fixed;
+    top: 110px;
+    right: -70px;
+    width: 320px;
+    height: 320px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(159, 29, 62, 0.08), transparent 68%);
+    filter: blur(16px);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  table,
+  .glass-panel {
+    backdrop-filter: blur(14px);
+  }
+
   table {
     width: 100%;
     border-collapse: collapse;
+    overflow: hidden;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.76);
   }
 
   thead th {
@@ -24,24 +69,29 @@
     text-align: left;
     font-size: 0.72rem;
     font-weight: 700;
-    color: #8b93b8;
+    color: #8b6f72;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    background: #f4f6fb;
-    border-bottom: 1px solid #d8ddef;
+    background: #f6efeb;
+    border-bottom: 1px solid #dbc8c3;
   }
 
   tbody tr {
-    border-bottom: 1px solid #f0f2f8;
+    border-bottom: 1px solid #efe6e1;
     transition: background 0.12s;
   }
 
-  tbody tr:hover { background: #f4f6fb; }
-  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover {
+    background: #fbf6f2;
+  }
+
+  tbody tr:last-child {
+    border-bottom: none;
+  }
 
   tbody td {
     padding: 11px 16px;
     font-size: 0.85rem;
-    color: #1a1f36;
+    color: #2b1c20;
   }
 }
