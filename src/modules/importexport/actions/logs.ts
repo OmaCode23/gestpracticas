@@ -3,12 +3,18 @@ import { prisma } from "@/database/prisma";
 type LogAction = "Importacion" | "Exportacion";
 type LogStatus = "Completado" | "Fallido";
 
+/**
+ * Usuario tecnico utilizado mientras el modulo no tenga autenticacion real.
+ */
 const DEFAULT_USER = {
   nombre: "Administrador",
   email: "admin@gestpracticas.local",
   iniciales: "AD",
 };
 
+/**
+ * Garantiza que siempre exista un usuario asociado a los logs del modulo.
+ */
 async function getOrCreateDefaultUser() {
   return prisma.usuario.upsert({
     where: { email: DEFAULT_USER.email },
@@ -21,6 +27,9 @@ async function getOrCreateDefaultUser() {
   });
 }
 
+/**
+ * Crea una entrada en el historial de importaciones/exportaciones.
+ */
 export async function createImportExportLog(input: {
   entidad: string;
   accion: LogAction;
@@ -47,6 +56,9 @@ export async function createImportExportLog(input: {
   });
 }
 
+/**
+ * Recupera el historial paginado aplicando filtros opcionales por entidad, accion y estado.
+ */
 export async function getImportExportLogs(input?: {
   limit?: number;
   page?: number;

@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getImportExportLogs } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
+/**
+ * Devuelve el historial paginado del modulo de importacion/exportacion.
+ * Acepta filtros opcionales por query string.
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+
+    // La ruta convierte los parametros de URL en el contrato tipado del modulo.
     const paginatedLogs = await getImportExportLogs({
       page: Number(searchParams.get("page") || 1),
       limit: Number(searchParams.get("limit") || 5),
@@ -13,6 +19,7 @@ export async function GET(req: NextRequest) {
       estado: searchParams.get("estado") || undefined,
     });
 
+    // Se serializan fechas y nombre de usuario para que el cliente reciba un payload plano.
     const serializedLogs = {
       ...paginatedLogs,
       items: paginatedLogs.items.map((log) => ({

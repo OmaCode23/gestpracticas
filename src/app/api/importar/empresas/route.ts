@@ -7,6 +7,10 @@ type ImportBody = {
   rows?: EmpresaImportRow[];
 };
 
+/**
+ * Recibe un lote de empresas ya parseadas desde el cliente y delega la importacion
+ * completa al modulo de negocio.
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as ImportBody;
@@ -35,6 +39,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Se invalida cache de las vistas afectadas para reflejar los nuevos datos importados.
     revalidatePath("/");
     revalidatePath("/empresas");
     revalidatePath("/importexport");

@@ -1,6 +1,10 @@
 import type { BadgeVariant } from "@/components/ui";
 import type { CardConfig } from "./types";
 
+/**
+ * Configuracion visual y funcional de cada bloque del panel de importacion/exportacion.
+ * Cada tarjeta define sus columnas, endpoint asociado y si la funcionalidad esta disponible.
+ */
 export const CARDS: CardConfig[] = [
   {
     entidad: "alumnos",
@@ -13,7 +17,7 @@ export const CARDS: CardConfig[] = [
     fileName: "alumnos",
     importPath: "/api/alumnos",
     enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo del companero.",
+    pendingMessage: "Pendiente de integracion con el modulo Alumnos.",
   },
   {
     entidad: "empresas",
@@ -49,21 +53,31 @@ export const CARDS: CardConfig[] = [
     fileName: "formacion_empresa",
     importPath: "/api/formacion",
     enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo del companero.",
+    pendingMessage: "Pendiente de integracion con el modulo Formacion.",
   },
 ];
 
+/**
+ * Relaciona el nombre mostrado de cada entidad con la variante visual del badge.
+ */
 export const ENTIDAD_BADGE: Record<string, BadgeVariant> = {
   Alumnos: "blue",
   Empresas: "green",
   "Form. Empresa": "purple",
 };
 
+/**
+ * Colores de estado usados en el historial de operaciones.
+ */
 export const ESTADO_BADGE: Record<string, BadgeVariant> = {
   Completado: "green",
   Fallido: "red",
 };
 
+/**
+ * Opciones disponibles en los filtros del historial.
+ * Se centralizan aqui para reutilizarlas en la tabla y mantener consistencia.
+ */
 export const LOG_FILTER_OPTIONS = {
   entidad: [
     { value: "", label: "Todas las entidades" },

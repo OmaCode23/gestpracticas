@@ -53,7 +53,7 @@ export default async function HomePage() {
       count: null,
     },
     {
-      href: "#",
+      href: "/informes",
       color: "#14b8a6",
       bg: "bg-teal-100",
       icon: "📊",

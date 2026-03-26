@@ -11,6 +11,9 @@ import {
 import type { ImportExportLogRow, LogFilters } from "@/modules/importexport/types";
 import { formatLogDate } from "@/modules/importexport/utils";
 
+/**
+ * Tabla de actividad reciente con filtros, paginacion y acceso al detalle de cada log.
+ */
 export function ImportExportActivityTable({
   logs,
   logsError,
@@ -32,6 +35,7 @@ export function ImportExportActivityTable({
 }) {
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
 
+  // Se recalcula solo cuando cambian el listado cargado o el log seleccionado.
   const selectedLog = useMemo(
     () => logs.find((log) => log.id === selectedLogId) ?? null,
     [logs, selectedLogId]
@@ -146,6 +150,9 @@ export function ImportExportActivityTable({
   );
 }
 
+/**
+ * Select reutilizable para los filtros del historial.
+ */
 function FiltroSelect({
   label,
   value,
@@ -177,6 +184,9 @@ function FiltroSelect({
   );
 }
 
+/**
+ * Modal ligero para consultar el detalle completo de una operacion del historial.
+ */
 function DetalleLogModal({
   log,
   onClose,

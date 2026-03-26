@@ -26,6 +26,11 @@ import {
 } from "@/modules/importexport/utils";
 import type { ApiResponse } from "@/shared/types/api";
 
+/**
+ * Componente orquestador del modulo:
+ * maneja el estado de cada entidad, ejecuta importaciones/exportaciones
+ * y mantiene sincronizado el historial de actividad.
+ */
 export default function ImportExportPanel() {
   const [status, setStatus] = useState<Record<Entidad, string>>({
     alumnos: "",
@@ -53,6 +58,9 @@ export default function ImportExportPanel() {
     estado: "",
   });
 
+  /**
+   * Consulta el historial actual aplicando paginacion y filtros.
+   */
   const loadLogs = async () => {
     try {
       const params = new URLSearchParams();
@@ -82,14 +90,19 @@ export default function ImportExportPanel() {
     }
   };
 
+  // Recarga el historial cuando cambia cualquiera de los filtros o la pagina actual.
   useEffect(() => {
     void loadLogs();
   }, [logFilters.entidad, logFilters.accion, logFilters.estado, logsPage]);
 
+  // Al cambiar filtros volvemos a la primera pagina para evitar huecos de paginacion.
   useEffect(() => {
     setLogsPage(1);
   }, [logFilters.entidad, logFilters.accion, logFilters.estado]);
 
+  /**
+   * Helpers para actualizar solo la parte del estado asociada a una entidad concreta.
+   */
   const setEntityStatus = (entidad: Entidad, message: string) => {
     setStatus((current) => ({ ...current, [entidad]: message }));
   };
@@ -107,6 +120,9 @@ export default function ImportExportPanel() {
     setEntityErrors(entidad, []);
   };
 
+  /**
+   * Descarga los datos actuales de una entidad como Excel.
+   */
   const handleExport = async (config: CardConfig) => {
     if (!config.enabled) {
       setEntityStatus(
@@ -141,6 +157,7 @@ export default function ImportExportPanel() {
       const rows = json.data.map((row) => {
         const normalizedRow: Record<string, string> = {};
 
+        // La hoja final siempre sigue el orden exacto definido en la configuracion.
         for (const column of config.columnas) {
           normalizedRow[column] = String(row[column] ?? "");
         }
@@ -166,6 +183,9 @@ export default function ImportExportPanel() {
     }
   };
 
+  /**
+   * Descarga una plantilla vacia para que el usuario rellene datos con el formato correcto.
+   */
   const handlePlantilla = (config: CardConfig) => {
     if (!config.enabled) {
       setEntityStatus(
@@ -182,6 +202,9 @@ export default function ImportExportPanel() {
     setEntityBusy(config.entidad, null);
   };
 
+  /**
+   * Lee el Excel, valida su contenido y lo envia a la API de importacion correspondiente.
+   */
   const handleImport = async (config: CardConfig, file: File) => {
     if (!config.enabled) {
       setEntityStatus(
@@ -205,6 +228,8 @@ export default function ImportExportPanel() {
       }
 
       const worksheet = workbook.Sheets[sheetName];
+
+      // Primero se inspecciona la cabecera real para validar columnas obligatorias.
       const previewRows = XLSX.utils.sheet_to_json<(string | number)[]>(worksheet, {
         header: 1,
         defval: "",
@@ -235,6 +260,7 @@ export default function ImportExportPanel() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          // Solo empresas necesita una transformacion adicional al contrato del backend.
           rows: config.entidad === "empresas" ? mapEmpresaRows(rows) : rows,
         }),
       });

@@ -1,5 +1,9 @@
 import { prisma } from "@/database/prisma";
 
+/**
+ * Obtiene las empresas de la base de datos y las transforma al formato de columnas
+ * consumido por la exportacion Excel.
+ */
 export async function getEmpresasExport() {
   const empresas = await prisma.empresa.findMany({
     orderBy: { createdAt: "desc" },

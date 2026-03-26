@@ -4,6 +4,9 @@ import { empresaSchema } from "@/modules/empresas/types/schema";
 import type { EmpresaInput } from "@/modules/empresas/types";
 import { createImportExportLog } from "./logs";
 
+/**
+ * Fila cruda recibida desde el cliente para la importacion de empresas.
+ */
 export type EmpresaImportRow = {
   cif: string;
   nombre: string;
@@ -17,10 +20,17 @@ export type EmpresaImportRow = {
   emailContacto?: string;
 };
 
+/**
+ * Resultado final del proceso de importacion, con exito o con incidencias detalladas.
+ */
 export type EmpresaImportResult =
   | { ok: true; message: string; importedCount: number }
   | { ok: false; message: string; importedCount: number; errors: string[] };
 
+/**
+ * Garantiza que todas las propiedades opcionales lleguen con string y no con null/undefined,
+ * para poder validarlas de forma uniforme con Zod.
+ */
 function normalizeImportRow(row: EmpresaImportRow): EmpresaInput {
   return {
     cif: row.cif ?? "",
@@ -36,6 +46,9 @@ function normalizeImportRow(row: EmpresaImportRow): EmpresaInput {
   };
 }
 
+/**
+ * Detecta CIF duplicados dentro del propio Excel antes de consultar la base de datos.
+ */
 function buildDuplicateErrors(rows: EmpresaInput[]) {
   const seen = new Map<string, number>();
   const errors: string[] = [];
@@ -61,6 +74,13 @@ function buildDuplicateErrors(rows: EmpresaInput[]) {
   return errors;
 }
 
+/**
+ * Orquesta la importacion de empresas:
+ * 1. Normaliza filas.
+ * 2. Valida contenido.
+ * 3. Comprueba duplicados en Excel y en base de datos.
+ * 4. Inserta el lote y registra la operacion en el historial.
+ */
 export async function importEmpresas(rows: EmpresaImportRow[]): Promise<EmpresaImportResult> {
   const normalizedRows = rows.map(normalizeImportRow);
   const errors: string[] = [];
@@ -79,6 +99,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<EmpresaI
 
   errors.push(...buildDuplicateErrors(normalizedRows));
 
+  // Se valida fila a fila para poder devolver mensajes concretos al usuario.
   normalizedRows.forEach((row, index) => {
     const parsed = empresaSchema.safeParse(row);
 
@@ -90,6 +111,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<EmpresaI
   const cifs = normalizedRows.map((row) => row.cif.trim().toUpperCase()).filter(Boolean);
 
   if (cifs.length > 0) {
+    // Antes de insertar, se comprueba si alguno de los CIF ya existe en la BD.
     const existingCompanies = await prisma.empresa.findMany({
       where: { cif: { in: cifs } },
       select: { cif: true },

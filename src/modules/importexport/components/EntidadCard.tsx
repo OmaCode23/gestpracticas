@@ -3,6 +3,10 @@
 import { useRef } from "react";
 import type { BusyAction, CardConfig } from "@/modules/importexport/types";
 
+/**
+ * Tarjeta principal de cada entidad con sus tres acciones:
+ * descargar plantilla, importar y exportar.
+ */
 export function EntidadCard({
   config,
   statusMsg,
@@ -65,6 +69,7 @@ export function EntidadCard({
           accept=".xlsx,.xls"
           className="hidden"
           onChange={(event) => {
+            // Se resetea el valor para permitir subir el mismo archivo varias veces seguidas.
             const file = event.target.files?.[0];
             if (file) onImport(file);
             event.target.value = "";
@@ -114,6 +119,9 @@ export function EntidadCard({
   );
 }
 
+/**
+ * Boton reutilizable para representar cada accion disponible en la tarjeta.
+ */
 function Accion({
   icono,
   iconoBg,
