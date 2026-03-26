@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  SectionLabel,
   Card,
   CardHeader,
   CardTitle,
@@ -58,105 +59,109 @@ export default function AlumnoForm({
   };
 
   return (
-    <Card className="mb-7">
-      <CardHeader>
-        <CardTitle icon="👩‍🎓" iconVariant="green">
-          {isEditing ? "Editar alumno" : "Nuevo Alumno"}
-        </CardTitle>
-        <Tag>{isEditing ? "✏️ Modo edición" : "📝 Formulario de alta"}</Tag>
-      </CardHeader>
+    <>
+      <SectionLabel>Alta de alumno</SectionLabel>
 
-      <div className="p-6">
-        <FormRow cols={2}>
-          <FormGroup label="Nombre completo *">
-            <input
-              className={INPUT_CLS}
-              value={form.nombre}
-              onChange={(e) => onChange("nombre", sanitizeNombre(e.target.value))}
-              placeholder="Nombre y apellidos"
-              maxLength={80}
-            />
-          </FormGroup>
+      <Card className="mb-7">
+        <CardHeader>
+          <CardTitle icon="👩‍🎓" iconVariant="green">
+            {isEditing ? "Editar alumno" : "Nuevo Alumno"}
+          </CardTitle>
+          <Tag>{isEditing ? "✏️ Modo edición" : "📝 Formulario de alta"}</Tag>
+        </CardHeader>
 
-          <FormGroup label="NIA *">
-            <input
-              className={INPUT_CLS}
-              value={form.nia}
-              onChange={(e) => onChange("nia", sanitizeNia(e.target.value))}
-              placeholder="Número de identificación"
-              maxLength={20}
-            />
-          </FormGroup>
-        </FormRow>
+        <div className="p-6">
+          <FormRow cols={2}>
+            <FormGroup label="Nombre completo *">
+              <input
+                className={INPUT_CLS}
+                value={form.nombre}
+                onChange={(e) => onChange("nombre", sanitizeNombre(e.target.value))}
+                placeholder="Nombre y apellidos"
+                maxLength={80}
+              />
+            </FormGroup>
 
-        <FormRow cols={2}>
-          <FormGroup label="Teléfono *">
-            <input
-              className={INPUT_CLS}
-              inputMode="numeric"
-              value={form.telefono}
-              onChange={(e) => onChange("telefono", sanitizeTelefono(e.target.value))}
-              placeholder="600000000"
-              maxLength={9}
-            />
-          </FormGroup>
+            <FormGroup label="NIA *">
+              <input
+                className={INPUT_CLS}
+                value={form.nia}
+                onChange={(e) => onChange("nia", sanitizeNia(e.target.value))}
+                placeholder="Número de identificación"
+                maxLength={20}
+              />
+            </FormGroup>
+          </FormRow>
 
-          <FormGroup label="Correo electrónico *">
-            <input
-              className={INPUT_CLS}
-              type="email"
-              value={form.email}
-              onChange={(e) => onChange("email", sanitizeEmail(e.target.value))}
-              placeholder="alumno@educa.gva.es"
-              maxLength={120}
-            />
-          </FormGroup>
-        </FormRow>
+          <FormRow cols={2}>
+            <FormGroup label="Teléfono *">
+              <input
+                className={INPUT_CLS}
+                inputMode="numeric"
+                value={form.telefono}
+                onChange={(e) => onChange("telefono", sanitizeTelefono(e.target.value))}
+                placeholder="600000000"
+                maxLength={9}
+              />
+            </FormGroup>
 
-        <FormRow cols={2}>
-          <FormGroup label="Ciclo formativo *">
-            <select
-              className={INPUT_CLS}
-              value={form.ciclo}
-              onChange={(e) => onChange("ciclo", e.target.value)}
-            >
-              <option value="">— Seleccionar ciclo —</option>
-              {CICLOS.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </FormGroup>
+            <FormGroup label="Correo electrónico *">
+              <input
+                className={INPUT_CLS}
+                type="email"
+                value={form.email}
+                onChange={(e) => onChange("email", sanitizeEmail(e.target.value))}
+                placeholder="alumno@educa.gva.es"
+                maxLength={120}
+              />
+            </FormGroup>
+          </FormRow>
 
-          <FormGroup label="Curso académico *">
-            <select
-              className={INPUT_CLS}
-              value={form.curso}
-              onChange={(e) => onChange("curso", e.target.value)}
-            >
-              <option value="">— Seleccionar curso —</option>
-              {CURSOS.map((c) => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-          </FormGroup>
-        </FormRow>
-      </div>
+          <FormRow cols={2}>
+            <FormGroup label="Ciclo formativo *">
+              <select
+                className={INPUT_CLS}
+                value={form.ciclo}
+                onChange={(e) => onChange("ciclo", e.target.value)}
+              >
+                <option value="">— Seleccionar ciclo —</option>
+                {CICLOS.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </FormGroup>
 
-      <div className="px-6 pb-6 flex gap-2.5 justify-end">
-        {isEditing && (
-          <Button variant="secondary" onClick={onCancelarEdicion}>
-            Cancelar edición
+            <FormGroup label="Curso académico *">
+              <select
+                className={INPUT_CLS}
+                value={form.curso}
+                onChange={(e) => onChange("curso", e.target.value)}
+              >
+                <option value="">— Seleccionar curso —</option>
+                {CURSOS.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </FormGroup>
+          </FormRow>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-2.5 justify-end">
+          {isEditing && (
+            <Button variant="secondary" onClick={onCancelarEdicion}>
+              Cancelar edición
+            </Button>
+          )}
+
+          <Button variant="secondary" onClick={onLimpiar}>
+            ✕ Limpiar
           </Button>
-        )}
 
-        <Button variant="secondary" onClick={onLimpiar}>
-          ✕ Limpiar
-        </Button>
-
-        <Button variant="primary" onClick={handleSubmit}>
-          {isEditing ? "✓ Actualizar alumno" : "✓ Guardar alumno"}
-        </Button>
-      </div>
-    </Card>
+          <Button variant="primary" onClick={handleSubmit}>
+            {isEditing ? "✓ Actualizar alumno" : "✓ Guardar alumno"}
+          </Button>
+        </div>
+      </Card>
+    </>
   );
 }

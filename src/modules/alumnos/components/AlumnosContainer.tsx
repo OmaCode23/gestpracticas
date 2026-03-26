@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SectionLabel } from "@/components/ui";
 import AlumnoForm from "./AlumnoForm";
 import AlumnosTable from "./AlumnosTable";
 import type { Alumno } from "@/modules/alumnos/types";
@@ -207,12 +206,9 @@ export default function AlumnosContainer() {
     return () => window.clearTimeout(timeoutId);
   }, [notification]);
 
-
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
-
-      <SectionLabel>Alta de alumno</SectionLabel>
 
       <AlumnoForm
         form={form}

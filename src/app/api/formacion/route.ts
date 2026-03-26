@@ -6,24 +6,31 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getFormacionesPaginated } from "@/modules/formacion/actions/queries";
 import { createFormacion } from "@/modules/formacion/actions/mutations";
-import { formacionSchema } from "@/modules/formacion/types/schema";
+import { formacionSchema, formacionFilterSchema } from "@/modules/formacion/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
 
-    const curso  = searchParams.get("curso")  ?? undefined;
-    const search = searchParams.get("search") ?? undefined;
-    const page   = Number(searchParams.get("page") ?? 1);
-
-    const result = await getFormacionesPaginated({
-      curso,
-      search,
-      page,
+    const parsedFilters = formacionFilterSchema.safeParse({
+      curso: searchParams.get("curso") || undefined,
+      search: searchParams.get("search") || undefined,
+      page: searchParams.get("page") || 1,
+      perPage: searchParams.get("perPage") || 10,
     });
+
+    if (!parsedFilters.success) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: parsedFilters.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const result = await getFormacionesPaginated(parsedFilters.data);
 
     return NextResponse.json<ApiResponse<typeof result>>({
       ok: true,
@@ -51,6 +58,8 @@ export async function POST(req: NextRequest) {
     }
 
     const formacion = await createFormacion(parsed.data);
+    revalidatePath("/");
+    revalidatePath("/formacion");
 
     return NextResponse.json<ApiResponse<typeof formacion>>(
       { ok: true, data: formacion },

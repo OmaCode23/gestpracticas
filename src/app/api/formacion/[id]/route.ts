@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getFormacionById } from "@/modules/formacion/actions/queries";
 import { updateFormacion, deleteFormacion } from "@/modules/formacion/actions/mutations";
 import { formacionUpdateSchema } from "@/modules/formacion/types/schema";
@@ -69,6 +70,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const formacion = await updateFormacion(id, parsed.data);
+    revalidatePath("/");
+    revalidatePath("/formacion");
 
     return NextResponse.json<ApiResponse<typeof formacion>>({
       ok: true,
@@ -102,6 +105,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     }
 
     await deleteFormacion(id);
+    revalidatePath("/");
+    revalidatePath("/formacion");
 
     return NextResponse.json<ApiResponse<null>>({
       ok: true,

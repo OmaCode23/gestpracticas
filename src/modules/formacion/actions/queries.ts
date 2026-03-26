@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/database/prisma";
+import { Prisma } from "@prisma/client";
 
 const PER_PAGE = 10;
 
@@ -18,13 +19,12 @@ export async function getFormacionesPaginated(params: {
   const page = Math.max(1, params.page ?? 1);
   const perPage = params.perPage ?? PER_PAGE;
 
-  const where: any = {
+  const where: Prisma.FormacionEmpresaWhereInput = {
     AND: [
       params.curso ? { curso: params.curso } : {},
       params.search
         ? {
             OR: [
-              // Buscar por nombre de empresa
               {
                 empresa: {
                   nombre: {
@@ -33,7 +33,6 @@ export async function getFormacionesPaginated(params: {
                   },
                 },
               },
-              // Buscar por nombre de alumno
               {
                 alumno: {
                   nombre: {
@@ -42,7 +41,6 @@ export async function getFormacionesPaginated(params: {
                   },
                 },
               },
-              // Buscar por NIA
               {
                 alumno: {
                   nia: {

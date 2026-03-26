@@ -58,3 +58,11 @@ export const formacionSchema = z.object({
 
 // PATCH
 export const formacionUpdateSchema = formacionSchema.partial();
+
+// Filtros para GET /api/formacion
+export const formacionFilterSchema = z.object({
+  curso: z.string().trim().optional(),
+  search: z.string().trim().optional(),
+  page: z.coerce.number().int().positive().default(1),
+  perPage: z.coerce.number().int().positive().default(10),
+});

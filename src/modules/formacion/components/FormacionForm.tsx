@@ -11,28 +11,22 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
+import type { FormacionInput } from "../types";
 
 type EmpresaOption = { id: number; nombre: string };
 type AlumnoOption = { id: number; nombre: string; nia: string };
 
-type FormacionFormProps = {
-  form: {
-    empresaId: number;
-    alumnoId: number;
-    curso: string;
-    periodo: string;
-    descripcion?: string;
-    contacto?: string;
-  };
+interface FormacionFormProps {
+  form: FormacionInput;
   saving: boolean;
   editingId: number | null;
   empresas: EmpresaOption[];
   alumnos: AlumnoOption[];
   cursos: string[];
-  onChange: (key: keyof FormacionFormProps["form"], value: any) => void;
+  onChange: (key: keyof FormacionInput, value: string | number) => void;
   onClear: () => void;
   onSave: () => void;
-};
+}
 
 export default function FormacionForm({
   form,
@@ -126,7 +120,7 @@ export default function FormacionForm({
             <FormGroup label="Descripción">
               <textarea
                 className={`${INPUT_CLS} h-28 resize-none`}
-                value={form.descripcion}
+                value={form.descripcion ?? ""}
                 onChange={(e) => onChange("descripcion", e.target.value)}
                 placeholder="Descripción de la formación..."
               />
@@ -138,7 +132,7 @@ export default function FormacionForm({
             <FormGroup label="Persona de contacto">
               <input
                 className={INPUT_CLS}
-                value={form.contacto}
+                value={form.contacto ?? ""}
                 onChange={(e) =>
                   onChange("contacto", sanitizeContacto(e.target.value))
                 }
@@ -165,5 +159,3 @@ export default function FormacionForm({
     </>
   );
 }
-
-

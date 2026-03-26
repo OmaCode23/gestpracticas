@@ -3,13 +3,26 @@
  */
 
 import { z } from "zod";
-import { formacionSchema, formacionUpdateSchema } from "./schema";
+import { formacionSchema, formacionUpdateSchema, formacionFilterSchema } from "./schema";
 
-export type FormacionCreateInput = z.infer<typeof formacionSchema>;
+// Datos que introduce el usuario (POST)
+export type FormacionInput = z.infer<typeof formacionSchema>;
+
+// Datos que introduce el usuario (PATCH)
 export type FormacionUpdateInput = z.infer<typeof formacionUpdateSchema>;
 
-export interface FormacionEmpresa extends FormacionCreateInput {
+// Filtros para GET /api/formacion
+export type FormacionFilters = z.infer<typeof formacionFilterSchema>;
+
+// Datos que devuelve la API (incluye id, fechas y relaciones)
+export interface Formacion {
   id: number;
+  empresaId: number;
+  alumnoId: number;
+  curso: string;
+  periodo: string;
+  descripcion: string | null;
+  contacto: string | null;
   createdAt: string;
   updatedAt: string;
 
@@ -28,3 +41,11 @@ export interface FormacionEmpresa extends FormacionCreateInput {
     curso: string;
   } | null;
 }
+
+export type PaginatedFormaciones = {
+  items: Formacion[];
+  total: number;
+  page: number;
+  perPage: number;
+  totalPages: number;
+};

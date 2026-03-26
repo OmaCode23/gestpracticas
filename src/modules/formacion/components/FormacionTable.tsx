@@ -7,15 +7,14 @@ import {
   TdActions,
   Button,
   Badge,
-  type BadgeVariant,
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import type { FormacionEmpresa } from "../types";
+import type { Formacion } from "../types";
 import { CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
 
-type FormacionTableProps = {
-  formaciones: FormacionEmpresa[];
+interface FormacionTableProps {
+  formaciones: Formacion[];
   loading: boolean;
   page: number;
   total: number;
@@ -26,9 +25,9 @@ type FormacionTableProps = {
   onCursoChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number) => void;
-  onEdit: (f: FormacionEmpresa) => void;
+  onEdit: (f: Formacion) => void;
   onDelete: (id: number) => void;
-};
+}
 
 export default function FormacionTable({
   formaciones,
@@ -55,7 +54,6 @@ export default function FormacionTable({
             Filtrar por:
           </span>
 
-          {/* Filtro por curso */}
           <FilterSelect value={curso} onChange={onCursoChange}>
             <option value="">Todos los cursos</option>
             {cursos.map((c) => (
@@ -63,7 +61,6 @@ export default function FormacionTable({
             ))}
           </FilterSelect>
 
-          {/* Búsqueda */}
           <SearchBox
             value={search}
             onChange={onSearchChange}
@@ -87,17 +84,16 @@ export default function FormacionTable({
             </thead>
 
             <tbody>
-              {/* Sin resultados */}
-              {!loading && formaciones.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
-                    No se encontraron formaciones.
-                  </td>
-                </tr>
-              ) : loading ? (
+              {loading ? (
                 <tr>
                   <td colSpan={8} className="text-center py-6 text-text-light">
                     Cargando formaciones...
+                  </td>
+                </tr>
+              ) : formaciones.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-6 text-text-light">
+                    No se encontraron formaciones.
                   </td>
                 </tr>
               ) : (
@@ -168,5 +164,3 @@ export default function FormacionTable({
     </>
   );
 }
-
-

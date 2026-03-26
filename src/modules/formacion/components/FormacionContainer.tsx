@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURSOS } from "@/shared/catalogs/academico";
-import type { ApiResponse } from "@/shared/types/api";
-import type { FormacionEmpresa, FormacionCreateInput } from "../types";
+import SuccessToast from "@/components/ui/SuccessToast";
+import type { Formacion, FormacionInput } from "../types";
 import FormacionForm from "./FormacionForm";
 import FormacionTable from "./FormacionTable";
 
-const EMPTY_FORM: FormacionCreateInput = {
+const EMPTY_FORM: FormacionInput = {
   empresaId: 0,
   alumnoId: 0,
   curso: "",
@@ -22,8 +22,8 @@ const PER_PAGE = 10;
 export default function FormacionContainer() {
   const router = useRouter();
 
-  const [form, setForm] = useState<FormacionCreateInput>(EMPTY_FORM);
-  const [formaciones, setFormaciones] = useState<FormacionEmpresa[]>([]);
+  const [form, setForm] = useState<FormacionInput>(EMPTY_FORM);
+  const [formaciones, setFormaciones] = useState<Formacion[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
   const [alumnos, setAlumnos] = useState<{ id: number; nombre: string; nia: string }[]>([]);
 
@@ -36,7 +36,6 @@ export default function FormacionContainer() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
-
 
   // Cargar empresas y alumnos (para selects)
   async function cargarEmpresas() {
@@ -62,20 +61,23 @@ export default function FormacionContainer() {
   }
 
   // Cargar formaciones
-  async function cargarFormaciones() {
+  async function load(opts?: { pageOverride?: number }) {
     try {
       setLoading(true);
+
+      const currentPage = opts?.pageOverride ?? page;
 
       const params = new URLSearchParams();
       if (curso) params.set("curso", curso);
       if (search) params.set("search", search);
-      params.set("page", String(page));
+      params.set("page", String(currentPage));
+      params.set("perPage", String(PER_PAGE));
 
       const res = await fetch(`/api/formacion?${params.toString()}`, {
         cache: "no-store",
       });
 
-      const json: ApiResponse<any> = await res.json();
+      const json = await res.json();
 
       if (!json.ok) {
         alert(json.error);
@@ -98,8 +100,13 @@ export default function FormacionContainer() {
   }, []);
 
   useEffect(() => {
-    cargarFormaciones();
+    load();
   }, [curso, search, page]);
+
+  const reloadToFirstPage = async () => {
+    setPage(1);
+    await load({ pageOverride: 1 });
+  };
 
   // Guardar / Actualizar
   const handleGuardar = async () => {
@@ -121,7 +128,7 @@ export default function FormacionContainer() {
         }
       );
 
-      const json: ApiResponse<FormacionEmpresa> = await res.json();
+      const json = await res.json();
 
       if (!json.ok) {
         alert(json.error);
@@ -130,8 +137,7 @@ export default function FormacionContainer() {
 
       setForm(EMPTY_FORM);
       setEditingId(null);
-      setPage(1);
-      await cargarFormaciones();
+      await reloadToFirstPage();
       router.refresh();
 
       setNotification(
@@ -146,7 +152,7 @@ export default function FormacionContainer() {
   };
 
   // Editar
-  const handleEditar = (f: FormacionEmpresa) => {
+  const handleEditar = (f: Formacion) => {
     setForm({
       empresaId: f.empresaId,
       alumnoId: f.alumnoId,
@@ -166,14 +172,14 @@ export default function FormacionContainer() {
 
     try {
       const res = await fetch(`/api/formacion/${id}`, { method: "DELETE" });
-      const json: ApiResponse<null> = await res.json();
+      const json = await res.json();
 
       if (!json.ok) {
         alert(json.error);
         return;
       }
 
-      await cargarFormaciones();
+      await load();
       router.refresh();
       setNotification("Formación eliminada correctamente.");
     } catch (error) {
@@ -187,42 +193,9 @@ export default function FormacionContainer() {
     setEditingId(null);
   };
 
-  // Notificación temporal
-  useEffect(() => {
-    if (!notification) return;
-
-    const timeoutId = window.setTimeout(() => setNotification(""), 3000);
-    return () => window.clearTimeout(timeoutId);
-  }, [notification]);
-
   return (
     <>
-      {notification && (
-        <div className="fixed top-5 right-5 z-50 w-full max-w-md animate-[fadeIn_0.2s_ease-out]">
-          <div className="rounded-2xl border border-green-200 bg-white px-4 py-4 shadow-[0_16px_40px_rgba(22,163,74,0.18)]">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg text-green-700">
-                ✓
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-green-600">
-                  Operación completada
-                </p>
-                <p className="mt-1 text-[0.92rem] font-medium text-navy">
-                  {notification}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setNotification("")}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-light transition-colors hover:bg-surface hover:text-navy"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SuccessToast message={notification} onClose={() => setNotification("")} />
 
       <FormacionForm
         form={form}
@@ -260,4 +233,3 @@ export default function FormacionContainer() {
     </>
   );
 }
-
