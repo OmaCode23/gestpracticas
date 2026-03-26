@@ -21,20 +21,30 @@ function normalizeOptionalEmail(value?: string) {
   return typeof normalized === "string" ? normalized.toLowerCase() : normalized;
 }
 
+export function normalizeEmpresaData(data: EmpresaInput) {
+  return {
+    nombre: data.nombre.trim(),
+    cif: data.cif.trim().toUpperCase(),
+    direccion: normalizeOptionalString(data.direccion),
+    localidad: data.localidad.trim(),
+    sector: data.sector.trim(),
+    cicloFormativo: normalizeOptionalString(data.cicloFormativo),
+    telefono: normalizeOptionalString(data.telefono),
+    email: normalizeOptionalEmail(data.email),
+    contacto: normalizeOptionalString(data.contacto),
+    emailContacto: normalizeOptionalEmail(data.emailContacto),
+  };
+}
+
 export async function createEmpresa(data: EmpresaInput) {
   return prisma.empresa.create({
-    data: {
-      nombre: data.nombre.trim(),
-      cif: data.cif.trim(),
-      direccion: normalizeOptionalString(data.direccion),
-      localidad: data.localidad.trim(),
-      sector: data.sector.trim(),
-      cicloFormativo: normalizeOptionalString(data.cicloFormativo),
-      telefono: normalizeOptionalString(data.telefono),
-      email: normalizeOptionalEmail(data.email),
-      contacto: normalizeOptionalString(data.contacto),
-      emailContacto: normalizeOptionalEmail(data.emailContacto),
-    },
+    data: normalizeEmpresaData(data),
+  });
+}
+
+export async function createEmpresasBatch(data: EmpresaInput[]) {
+  return prisma.empresa.createMany({
+    data: data.map(normalizeEmpresaData),
   });
 }
 

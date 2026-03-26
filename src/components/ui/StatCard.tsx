@@ -1,26 +1,37 @@
 type IconVariant = "blue" | "green" | "amber" | "purple";
 
 const ICON_CLS: Record<IconVariant, string> = {
-  blue:   "bg-blue-100 text-blue-600",
-  green:  "bg-green-100 text-green-600",
-  amber:  "bg-amber-100 text-amber-600",
-  purple: "bg-purple-100 text-purple-600",
+  blue: "bg-[#f5dde4] text-[#9f1d3e]",
+  green: "bg-[#e7efe7] text-[#46634d]",
+  amber: "bg-[#f7ead5] text-[#986333]",
+  purple: "bg-[#eee4ea] text-[#75495a]",
 };
 
-export default function StatCard({ icon, variant = "blue", value, label, trend, trendUp }: {
-  icon: string; variant?: IconVariant; value: string | number;
-  label: string; trend?: string; trendUp?: boolean;
+export default function StatCard({
+  icon,
+  variant = "blue",
+  value,
+  label,
+  trend,
+  trendUp,
+}: {
+  icon: string;
+  variant?: IconVariant;
+  value: string | number;
+  label: string;
+  trend?: string;
+  trendUp?: boolean;
 }) {
   return (
-    <div className="bg-white rounded-xl p-5 border border-border shadow-card flex items-start gap-3.5">
-      <div className={`w-11 h-11 rounded-[10px] flex items-center justify-center text-xl shrink-0 ${ICON_CLS[variant]}`}>
+    <div className="glass-panel flex items-start gap-3.5 rounded-[24px] border border-white/70 bg-white/82 p-5 shadow-card">
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-xl ${ICON_CLS[variant]}`}>
         {icon}
       </div>
       <div>
-        <h3 className="text-[1.55rem] font-bold text-navy leading-none">{value}</h3>
-        <p className="text-[0.78rem] text-text-light mt-0.5">{label}</p>
+        <h3 className="text-[1.55rem] font-bold leading-none text-navy">{value}</h3>
+        <p className="mt-0.5 text-[0.78rem] text-text-light">{label}</p>
         {trend && (
-          <p className={`text-[0.72rem] font-semibold mt-1 ${trendUp ? "text-green-500" : "text-text-light"}`}>
+          <p className={`mt-1 text-[0.72rem] font-semibold ${trendUp ? "text-green-600" : "text-text-light"}`}>
             {trend}
           </p>
         )}

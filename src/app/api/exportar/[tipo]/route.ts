@@ -3,17 +3,12 @@
  *
  * Devuelve los datos en JSON para que el cliente los convierta a Excel.
  *
- * GET /api/exportar/alumnos
  * GET /api/exportar/empresas
- * GET /api/exportar/formacion
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAlumnosExport,
-  getEmpresasExport,
-  getFormacionesExport,
-} from "@/modules/importexport/actions/export";
+import { getEmpresasExport } from "@/modules/importexport/actions/export";
+import { createImportExportLog } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(
@@ -21,24 +16,25 @@ export async function GET(
   { params }: { params: { tipo: string } }
 ) {
   try {
-    let data: Record<string, string>[];
-
-    switch (params.tipo) {
-      case "alumnos":
-        data = await getAlumnosExport();
-        break;
-      case "empresas":
-        data = await getEmpresasExport();
-        break;
-      case "formacion":
-        data = await getFormacionesExport();
-        break;
-      default:
-        return NextResponse.json<ApiResponse<never>>(
-          { ok: false, error: `Tipo de exportación desconocido: ${params.tipo}` },
-          { status: 400 }
-        );
+    if (params.tipo !== "empresas") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: `Exportacion no disponible para "${params.tipo}". Solo empresas esta habilitado por ahora.`,
+        },
+        { status: 400 }
+      );
     }
+
+    const data = await getEmpresasExport();
+
+    await createImportExportLog({
+      entidad: "Empresas",
+      accion: "Exportacion",
+      registros: data.length,
+      estado: "Completado",
+      detalle: `${data.length} registro(s) exportado(s) correctamente.`,
+    });
 
     return NextResponse.json<ApiResponse<typeof data>>({ ok: true, data });
   } catch (error) {
