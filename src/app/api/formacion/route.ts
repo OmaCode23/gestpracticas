@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
 
     const parsedFilters = formacionFilterSchema.safeParse({
       curso: searchParams.get("curso") || undefined,
+      ciclo: searchParams.get("ciclo") || undefined,
       search: searchParams.get("search") || undefined,
       page: searchParams.get("page") || 1,
       perPage: searchParams.get("perPage") || 10,

@@ -217,7 +217,7 @@ export default function AlumnosContainer() {
         onActualizar={handleActualizar}
         onCancelarEdicion={handleCancelarEdicion}
         isEditing={editingId !== null}
-        onLimpiar={() => setForm(EMPTY)}
+        onLimpiar={handleCancelarEdicion}
       />
 
       <AlumnosTable

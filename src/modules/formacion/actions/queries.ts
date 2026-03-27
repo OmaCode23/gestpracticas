@@ -12,6 +12,7 @@ const PER_PAGE = 10;
 
 export async function getFormacionesPaginated(params: {
   curso?: string;
+  ciclo?: string;
   search?: string;
   page?: number;
   perPage?: number;
@@ -22,6 +23,9 @@ export async function getFormacionesPaginated(params: {
   const where: Prisma.FormacionEmpresaWhereInput = {
     AND: [
       params.curso ? { curso: params.curso } : {},
+      params.ciclo
+        ? { alumno: { ciclo: { contains: params.ciclo, mode: "insensitive" } } }
+        : {},
       params.search
         ? {
             OR: [

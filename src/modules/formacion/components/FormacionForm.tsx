@@ -57,23 +57,8 @@ export default function FormacionForm({
         </CardHeader>
 
         <div className="p-6">
-          {/* Empresa + Alumno */}
+          {/* Alumno + Empresa */}
           <FormRow cols={2}>
-            <FormGroup label="Empresa *">
-              <select
-                className={INPUT_CLS}
-                value={form.empresaId || ""}
-                onChange={(e) => onChange("empresaId", Number(e.target.value))}
-              >
-                <option value="">— Seleccionar empresa —</option>
-                {empresas.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.nombre}
-                  </option>
-                ))}
-              </select>
-            </FormGroup>
-
             <FormGroup label="Alumno *">
               <select
                 className={INPUT_CLS}
@@ -84,6 +69,21 @@ export default function FormacionForm({
                 {alumnos.map((al) => (
                   <option key={al.id} value={al.id}>
                     {al.nombre} — {al.nia}
+                  </option>
+                ))}
+              </select>
+            </FormGroup>
+
+            <FormGroup label="Empresa *">
+              <select
+                className={INPUT_CLS}
+                value={form.empresaId || ""}
+                onChange={(e) => onChange("empresaId", Number(e.target.value))}
+              >
+                <option value="">— Seleccionar empresa —</option>
+                {empresas.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.nombre}
                   </option>
                 ))}
               </select>
@@ -144,7 +144,7 @@ export default function FormacionForm({
 
         <div className="px-6 pb-6 flex gap-2.5 justify-end">
           <Button variant="secondary" onClick={onClear}>
-            ✕ Limpiar
+            {editingId !== null ? "✕ Cancelar" : "✕ Limpiar"}
           </Button>
 
           <Button variant="primary" onClick={onSave}>

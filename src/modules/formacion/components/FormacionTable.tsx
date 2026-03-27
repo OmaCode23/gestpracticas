@@ -20,9 +20,12 @@ interface FormacionTableProps {
   total: number;
   perPage: number;
   curso: string;
+  ciclo: string;
   search: string;
   cursos: string[];
+  ciclos: string[];
   onCursoChange: (value: string) => void;
+  onCicloChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number) => void;
   onEdit: (f: Formacion) => void;
@@ -36,9 +39,12 @@ export default function FormacionTable({
   total,
   perPage,
   curso,
+  ciclo,
   search,
   cursos,
+  ciclos,
   onCursoChange,
+  onCicloChange,
   onSearchChange,
   onPageChange,
   onEdit,
@@ -61,6 +67,15 @@ export default function FormacionTable({
             ))}
           </FilterSelect>
 
+          <FilterSelect value={ciclo} onChange={onCicloChange}>
+            <option value="">Todos los ciclos</option>
+            {ciclos.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </FilterSelect>
+
           <SearchBox
             value={search}
             onChange={onSearchChange}
@@ -72,12 +87,12 @@ export default function FormacionTable({
           <table>
             <thead>
               <tr>
-                <th>Empresa</th>
                 <th>Alumno</th>
                 <th>NIA</th>
                 <th>Ciclo</th>
                 <th>Curso</th>
                 <th>Periodo</th>
+                <th>Empresa</th>
                 <th>Contacto</th>
                 <th>Acciones</th>
               </tr>
@@ -106,12 +121,13 @@ export default function FormacionTable({
                   return (
                     <tr key={f.id}>
                       <td>
-                        <strong className="block max-w-[220px] truncate" title={f.empresa?.nombre}>
-                          {f.empresa?.nombre ?? "—"}
+                        <strong
+                          className="block max-w-[220px] truncate"
+                          title={f.alumno?.nombre}
+                        >
+                          {f.alumno?.nombre ?? "—"}
                         </strong>
                       </td>
-
-                      <td>{f.alumno?.nombre ?? "—"}</td>
 
                       <td className="text-text-mid">{f.alumno?.nia ?? "—"}</td>
 
@@ -124,6 +140,12 @@ export default function FormacionTable({
                       <td>{f.curso}</td>
 
                       <td>{f.periodo}</td>
+
+                      <td>
+                        <strong className="block max-w-[220px] truncate" title={f.empresa?.nombre}>
+                          {f.empresa?.nombre ?? "—"}
+                        </strong>
+                      </td>
 
                       <td>{f.contacto ?? "—"}</td>
 

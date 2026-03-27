@@ -147,14 +147,8 @@ export default function AlumnoForm({
         </div>
 
         <div className="px-6 pb-6 flex gap-2.5 justify-end">
-          {isEditing && (
-            <Button variant="secondary" onClick={onCancelarEdicion}>
-              Cancelar edición
-            </Button>
-          )}
-
-          <Button variant="secondary" onClick={onLimpiar}>
-            ✕ Limpiar
+          <Button variant="secondary" onClick={isEditing ? onCancelarEdicion : onLimpiar}>
+            {isEditing ? "✕ Cancelar" : "✕ Limpiar"}
           </Button>
 
           <Button variant="primary" onClick={handleSubmit}>

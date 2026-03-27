@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CURSOS } from "@/shared/catalogs/academico";
+import { CICLO_LABEL, CICLOS, CURSOS } from "@/shared/catalogs/academico";
 import SuccessToast from "@/components/ui/SuccessToast";
 import type { Formacion, FormacionInput } from "../types";
 import FormacionForm from "./FormacionForm";
@@ -25,9 +25,12 @@ export default function FormacionContainer() {
   const [form, setForm] = useState<FormacionInput>(EMPTY_FORM);
   const [formaciones, setFormaciones] = useState<Formacion[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
-  const [alumnos, setAlumnos] = useState<{ id: number; nombre: string; nia: string }[]>([]);
+  const [alumnos, setAlumnos] = useState<
+    { id: number; nombre: string; nia: string }[]
+  >([]);
 
   const [curso, setCurso] = useState("");
+  const [ciclo, setCiclo] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -37,12 +40,17 @@ export default function FormacionContainer() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
 
+  // Opciones de ciclo para el filtro (abreviatura visible)
+  const cicloOptions = CICLOS;
+
   // Cargar empresas y alumnos (para selects)
   async function cargarEmpresas() {
-    const res = await fetch("/api/empresas?perPage=9999", { cache: "no-store" });
+    const res = await fetch("/api/empresas?all=true", { cache: "no-store" });
     const json = await res.json();
     if (json.ok) {
-      setEmpresas(json.data.items.map((e: any) => ({ id: e.id, nombre: e.nombre })));
+      setEmpresas(
+        json.data.items.map((e: any) => ({ id: e.id, nombre: e.nombre }))
+      );
     }
   }
 
@@ -69,6 +77,7 @@ export default function FormacionContainer() {
 
       const params = new URLSearchParams();
       if (curso) params.set("curso", curso);
+      if (ciclo) params.set("ciclo", ciclo);
       if (search) params.set("search", search);
       params.set("page", String(currentPage));
       params.set("perPage", String(PER_PAGE));
@@ -101,7 +110,7 @@ export default function FormacionContainer() {
 
   useEffect(() => {
     load();
-  }, [curso, search, page]);
+  }, [curso, ciclo, search, page]);
 
   const reloadToFirstPage = async () => {
     setPage(1);
@@ -141,7 +150,9 @@ export default function FormacionContainer() {
       router.refresh();
 
       setNotification(
-        isEditing ? "Formación actualizada correctamente." : "Formación creada correctamente."
+        isEditing
+          ? "Formación actualizada correctamente."
+          : "Formación creada correctamente."
       );
     } catch (error) {
       console.error(error);
@@ -216,10 +227,16 @@ export default function FormacionContainer() {
         total={total}
         perPage={PER_PAGE}
         curso={curso}
+        ciclo={ciclo}
         search={search}
         cursos={CURSOS}
+        ciclos={cicloOptions}
         onCursoChange={(v) => {
           setCurso(v);
+          setPage(1);
+        }}
+        onCicloChange={(v) => {
+          setCiclo(v);
           setPage(1);
         }}
         onSearchChange={(v) => {
