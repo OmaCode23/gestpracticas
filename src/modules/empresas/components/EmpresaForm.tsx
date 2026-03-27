@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  SectionLabel,
   Card,
   CardHeader,
   CardTitle,
@@ -11,6 +10,7 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
+import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import type { EmpresaInput } from "../types";
 import LocalidadCombobox from "./LocalidadCombobox";
 
@@ -25,6 +25,10 @@ type EmpresaFormProps = {
   onClear: () => void;
   onSave: () => void;
 };
+
+const FIELD_BY_KEY = Object.fromEntries(
+  EMPRESA_FIELDS.map((field) => [field.key, field])
+) as Record<string, (typeof EMPRESA_FIELDS)[number]>;
 
 export default function EmpresaForm({
   form,
@@ -68,51 +72,48 @@ export default function EmpresaForm({
 
   return (
     <>
-      <SectionLabel>Alta de empresa</SectionLabel>
-      <Card className="mb-7">
+      <Card>
         <CardHeader>
-          <CardTitle icon="🏢" iconVariant="blue">
+          <CardTitle icon="Emp" iconVariant="blue">
             {editingId !== null ? "Editar Empresa" : "Nueva Empresa"}
           </CardTitle>
-          <Tag>
-            {editingId !== null ? "✏️ Modo edición" : "📝 Formulario de alta"}
-          </Tag>
+          <Tag>{editingId !== null ? "Modo edicion" : "Formulario de alta"}</Tag>
         </CardHeader>
 
         <div className="p-6">
           <FormRow cols={2}>
-            <FormGroup label="Nombre de la empresa *">
+            <FormGroup label={`${FIELD_BY_KEY.nombre.formLabel} *`}>
               <input
                 className={INPUT_CLS}
                 maxLength={80}
                 value={form.nombre}
                 onChange={(e) => handleNombreChange(e.target.value)}
-                placeholder="Ej: Tecnologías Mediterráneo S.L."
+                placeholder={FIELD_BY_KEY.nombre.placeholder}
               />
             </FormGroup>
 
-            <FormGroup label="CIF *">
+            <FormGroup label={`${FIELD_BY_KEY.cif.formLabel} *`}>
               <input
                 className={INPUT_CLS}
                 maxLength={9}
                 value={form.cif}
                 onChange={(e) => handleCifChange(e.target.value)}
-                placeholder="Ej: B12345678"
+                placeholder={FIELD_BY_KEY.cif.placeholder}
               />
             </FormGroup>
           </FormRow>
 
           <FormRow cols={2}>
-            <FormGroup label="Dirección">
+            <FormGroup label={FIELD_BY_KEY.direccion.formLabel ?? "Direccion"}>
               <input
                 className={INPUT_CLS}
                 value={form.direccion}
                 onChange={(e) => onChange("direccion", e.target.value)}
-                placeholder="Calle, número, piso..."
+                placeholder={FIELD_BY_KEY.direccion.placeholder}
               />
             </FormGroup>
 
-            <FormGroup label="Localidad *">
+            <FormGroup label={`${FIELD_BY_KEY.localidad.formLabel} *`}>
               <LocalidadCombobox
                 localidades={localidades}
                 size="form"
@@ -123,37 +124,37 @@ export default function EmpresaForm({
           </FormRow>
 
           <FormRow cols={3}>
-            <FormGroup label="Teléfono">
+            <FormGroup label={FIELD_BY_KEY.telefono.formLabel ?? "Telefono"}>
               <input
                 className={INPUT_CLS}
                 inputMode="numeric"
                 maxLength={9}
                 value={form.telefono}
                 onChange={(e) => handleTelefonoChange(e.target.value)}
-                placeholder="963000000"
+                placeholder={FIELD_BY_KEY.telefono.placeholder}
               />
             </FormGroup>
 
-            <FormGroup label="Sector *">
+            <FormGroup label={`${FIELD_BY_KEY.sector.formLabel} *`}>
               <select
                 className={INPUT_CLS}
                 value={form.sector}
                 onChange={(e) => onChange("sector", e.target.value)}
               >
-                <option value="">— Seleccionar —</option>
+                <option value="">- Seleccionar -</option>
                 {sectores.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
             </FormGroup>
 
-            <FormGroup label="Ciclo formativo">
+            <FormGroup label={FIELD_BY_KEY.cicloFormativo.formLabel ?? "Ciclo formativo"}>
               <select
                 className={INPUT_CLS}
                 value={form.cicloFormativo}
                 onChange={(e) => onChange("cicloFormativo", e.target.value)}
               >
-                <option value="">— Seleccionar —</option>
+                <option value="">- Seleccionar -</option>
                 {ciclosFormativos.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
@@ -162,23 +163,23 @@ export default function EmpresaForm({
           </FormRow>
 
           <FormRow cols={3}>
-            <FormGroup label="Persona de contacto">
+            <FormGroup label={FIELD_BY_KEY.contacto.formLabel ?? "Contacto"}>
               <input
                 className={INPUT_CLS}
                 value={form.contacto}
                 onChange={(e) => handleContactoChange(e.target.value)}
-                placeholder="Nombre y apellidos"
+                placeholder={FIELD_BY_KEY.contacto.placeholder}
               />
             </FormGroup>
 
-            <FormGroup label="Correo empresa">
+            <FormGroup label={FIELD_BY_KEY.email.formLabel ?? "Correo empresa"}>
               <div className="flex gap-2">
                 <input
                   className={INPUT_CLS}
                   type="email"
                   value={form.email}
                   onChange={(e) => onChange("email", e.target.value)}
-                  placeholder="contacto@empresa.com"
+                  placeholder={FIELD_BY_KEY.email.placeholder}
                 />
                 <button
                   type="button"
@@ -191,14 +192,14 @@ export default function EmpresaForm({
               </div>
             </FormGroup>
 
-            <FormGroup label="Correo contacto">
+            <FormGroup label={FIELD_BY_KEY.emailContacto.formLabel ?? "Correo contacto"}>
               <div className="flex gap-2">
                 <input
                   className={INPUT_CLS}
                   type="email"
                   value={form.emailContacto}
                   onChange={(e) => onChange("emailContacto", e.target.value)}
-                  placeholder="responsable@empresa.com"
+                  placeholder={FIELD_BY_KEY.emailContacto.placeholder}
                 />
                 <button
                   type="button"
@@ -213,17 +214,17 @@ export default function EmpresaForm({
           </FormRow>
         </div>
 
-        <div className="px-6 pb-6 flex gap-2.5 justify-end">
+        <div className="flex justify-end gap-2.5 px-6 pb-6">
           <Button variant="secondary" onClick={onClear}>
-            ✕ Limpiar
+            Limpiar
           </Button>
 
           <Button variant="primary" onClick={onSave}>
             {saving
               ? "Guardando..."
               : editingId !== null
-                ? "✓ Guardar cambios"
-                : "✓ Guardar empresa"}
+                ? "Guardar cambios"
+                : "Guardar empresa"}
           </Button>
         </div>
       </Card>

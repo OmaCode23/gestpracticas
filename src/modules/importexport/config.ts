@@ -1,5 +1,16 @@
 import type { BadgeVariant } from "@/components/ui";
+import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
+import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
+import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 import type { CardConfig } from "./types";
+
+function buildColumns(fields: { label: string }[]) {
+  return fields.map((field) => field.label);
+}
+
+function buildRequiredColumns(fields: { label: string; required?: boolean }[]) {
+  return fields.filter((field) => field.required).map((field) => field.label);
+}
 
 /**
  * Configuracion visual y funcional de cada bloque del panel de importacion/exportacion.
@@ -12,8 +23,8 @@ export const CARDS: CardConfig[] = [
     icono: "\u{1F393}",
     headerBg: "bg-blue-light",
     descripcion: "Importa o exporta el listado completo de alumnos.",
-    columnas: ["NIA", "Nombre", "Telefono", "Correo", "Ciclo", "Curso"],
-    requiredColumns: ["NIA", "Nombre", "Telefono", "Correo", "Ciclo", "Curso"],
+    columnas: buildColumns(ALUMNO_FIELDS),
+    requiredColumns: buildRequiredColumns(ALUMNO_FIELDS),
     fileName: "alumnos",
     importPath: "/api/alumnos",
     enabled: true,
@@ -24,19 +35,8 @@ export const CARDS: CardConfig[] = [
     icono: "\u{1F3E2}",
     headerBg: "bg-[#10b981]",
     descripcion: "Gestiona el directorio de empresas colaboradoras.",
-    columnas: [
-      "CIF",
-      "Nombre",
-      "Direccion",
-      "Localidad",
-      "Sector",
-      "Ciclo Formativo",
-      "Telefono",
-      "Correo Empresa",
-      "Contacto",
-      "Correo Contacto",
-    ],
-    requiredColumns: ["CIF", "Nombre", "Localidad", "Sector"],
+    columnas: buildColumns(EMPRESA_FIELDS),
+    requiredColumns: buildRequiredColumns(EMPRESA_FIELDS),
     fileName: "empresas",
     importPath: "/api/importar/empresas",
     enabled: true,
@@ -47,8 +47,8 @@ export const CARDS: CardConfig[] = [
     icono: "\u{1F4CB}",
     headerBg: "bg-purple-600",
     descripcion: "Importa o exporta las formaciones en empresa por curso.",
-    columnas: ["Empresa", "Alumno", "Periodo", "Descripcion", "Contacto", "Curso"],
-    requiredColumns: ["Empresa", "Alumno", "Periodo", "Curso"],
+    columnas: buildColumns(FORMACION_FIELDS),
+    requiredColumns: buildRequiredColumns(FORMACION_FIELDS),
     fileName: "formacion_empresa",
     importPath: "/api/formacion",
     enabled: true,

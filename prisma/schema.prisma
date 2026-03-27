@@ -24,34 +24,42 @@ model Usuario {
 }
 
 model Empresa {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  cif           String   @unique
-  direccion     String?
-  localidad     String
-  sector        String
-  cicloFormativo String?
-  telefono      String?
-  email         String?
-  contacto      String?
-  emailContacto String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  formaciones   FormacionEmpresa[]
+  id                Int              @id @default(autoincrement())
+  nombre            String
+  cif               String           @unique
+  direccion         String?
+  localidad         String
+  localidadId       Int?
+  localidadRef      Localidad?       @relation(fields: [localidadId], references: [id], onDelete: SetNull)
+  sector            String
+  sectorId          Int?
+  sectorRef         Sector?          @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  cicloFormativo    String?
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  telefono          String?
+  email             String?
+  contacto          String?
+  emailContacto     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  formaciones       FormacionEmpresa[]
   @@map("empresas")
 }
 
 model Alumno {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  nia       String   @unique
-  telefono  String?
-  email     String?
-  ciclo     String
-  curso     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  formaciones FormacionEmpresa[]
+  id                Int              @id @default(autoincrement())
+  nombre            String
+  nia               String           @unique
+  telefono          String?
+  email             String?
+  ciclo             String
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  curso             String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  formaciones       FormacionEmpresa[]
   @@map("alumnos")
 }
 
@@ -83,4 +91,39 @@ model ImportExportLog {
   createdAt DateTime @default(now())
 
   @@map("import_export_logs")
+}
+
+model Sector {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+
+  @@map("sectores")
+}
+
+model Localidad {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+
+  @@map("localidades")
+}
+
+model CicloFormativo {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  codigo    String?   @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+  alumnos   Alumno[]
+
+  @@map("ciclos_formativos")
 }

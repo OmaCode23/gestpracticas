@@ -11,6 +11,7 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
+import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 import type { FormacionInput } from "../types";
 
 type EmpresaOption = { id: number; nombre: string };
@@ -28,6 +29,10 @@ interface FormacionFormProps {
   onSave: () => void;
 }
 
+const FIELD_BY_KEY = Object.fromEntries(
+  FORMACION_FIELDS.map((field) => [field.key, field])
+) as Record<string, (typeof FORMACION_FIELDS)[number]>;
+
 export default function FormacionForm({
   form,
   saving,
@@ -44,28 +49,25 @@ export default function FormacionForm({
 
   return (
     <>
-      <SectionLabel>Alta de formación en empresa</SectionLabel>
+      <SectionLabel>Alta de formacion en empresa</SectionLabel>
 
       <Card className="mb-7">
         <CardHeader>
-          <CardTitle icon="🏭" iconVariant="purple">
-            {editingId !== null ? "Editar Formación" : "Nueva Formación"}
+          <CardTitle icon="For" iconVariant="purple">
+            {editingId !== null ? "Editar Formacion" : "Nueva Formacion"}
           </CardTitle>
-          <Tag>
-            {editingId !== null ? "✏️ Modo edición" : "📝 Formulario de alta"}
-          </Tag>
+          <Tag>{editingId !== null ? "Modo edicion" : "Formulario de alta"}</Tag>
         </CardHeader>
 
         <div className="p-6">
-          {/* Empresa + Alumno */}
           <FormRow cols={2}>
-            <FormGroup label="Empresa *">
+            <FormGroup label={`${FIELD_BY_KEY.empresa.formLabel} *`}>
               <select
                 className={INPUT_CLS}
                 value={form.empresaId || ""}
                 onChange={(e) => onChange("empresaId", Number(e.target.value))}
               >
-                <option value="">— Seleccionar empresa —</option>
+                <option value="">- Seleccionar empresa -</option>
                 {empresas.map((emp) => (
                   <option key={emp.id} value={emp.id}>
                     {emp.nombre}
@@ -74,85 +76,80 @@ export default function FormacionForm({
               </select>
             </FormGroup>
 
-            <FormGroup label="Alumno *">
+            <FormGroup label={`${FIELD_BY_KEY.alumno.formLabel} *`}>
               <select
                 className={INPUT_CLS}
                 value={form.alumnoId || ""}
                 onChange={(e) => onChange("alumnoId", Number(e.target.value))}
               >
-                <option value="">— Seleccionar alumno —</option>
+                <option value="">- Seleccionar alumno -</option>
                 {alumnos.map((al) => (
                   <option key={al.id} value={al.id}>
-                    {al.nombre} — {al.nia}
+                    {al.nombre} - {al.nia}
                   </option>
                 ))}
               </select>
             </FormGroup>
           </FormRow>
 
-          {/* Curso + Periodo */}
           <FormRow cols={2}>
-            <FormGroup label="Curso académico *">
+            <FormGroup label={`${FIELD_BY_KEY.curso.formLabel} *`}>
               <select
                 className={INPUT_CLS}
                 value={form.curso}
                 onChange={(e) => onChange("curso", e.target.value)}
               >
-                <option value="">— Seleccionar curso —</option>
+                <option value="">- Seleccionar curso -</option>
                 {cursos.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
             </FormGroup>
 
-            <FormGroup label="Periodo *">
+            <FormGroup label={`${FIELD_BY_KEY.periodo.formLabel} *`}>
               <input
                 className={INPUT_CLS}
                 value={form.periodo}
                 onChange={(e) => onChange("periodo", e.target.value)}
-                placeholder="Ej: Marzo - Junio"
+                placeholder={FIELD_BY_KEY.periodo.placeholder}
               />
             </FormGroup>
           </FormRow>
 
-          {/* Descripción */}
           <FormRow cols={1}>
-            <FormGroup label="Descripción">
+            <FormGroup label={FIELD_BY_KEY.descripcion.formLabel ?? "Descripcion"}>
               <textarea
                 className={`${INPUT_CLS} h-28 resize-none`}
                 value={form.descripcion ?? ""}
                 onChange={(e) => onChange("descripcion", e.target.value)}
-                placeholder="Descripción de la formación..."
+                placeholder={FIELD_BY_KEY.descripcion.placeholder}
               />
             </FormGroup>
           </FormRow>
 
-          {/* Contacto */}
           <FormRow cols={1}>
-            <FormGroup label="Persona de contacto">
+            <FormGroup label={FIELD_BY_KEY.contacto.formLabel ?? "Contacto"}>
               <input
                 className={INPUT_CLS}
                 value={form.contacto ?? ""}
-                onChange={(e) =>
-                  onChange("contacto", sanitizeContacto(e.target.value))
-                }
-                placeholder="Nombre y apellidos"
+                onChange={(e) => onChange("contacto", sanitizeContacto(e.target.value))}
+                placeholder={FIELD_BY_KEY.contacto.placeholder}
               />
             </FormGroup>
           </FormRow>
         </div>
 
-        <div className="px-6 pb-6 flex gap-2.5 justify-end">
+        <div className="flex justify-end gap-2.5 px-6 pb-6">
           <Button variant="secondary" onClick={onClear}>
-            ✕ Limpiar
+            Limpiar
           </Button>
 
           <Button variant="primary" onClick={onSave}>
             {saving
               ? "Guardando..."
               : editingId !== null
-              ? "✓ Guardar cambios"
-              : "✓ Guardar formación"}
+                ? "Guardar cambios"
+                : "Guardar formacion"}
           </Button>
         </div>
       </Card>

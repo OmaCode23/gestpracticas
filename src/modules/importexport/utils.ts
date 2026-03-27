@@ -1,8 +1,23 @@
 import * as XLSX from "xlsx";
+import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
+import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
+import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 import type { CardConfig, ImportErrorResponse, SheetRow } from "./types";
 import { CICLOS_FORMATIVOS } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
+
+function mapRowsByFieldConfig(
+  rows: SheetRow[],
+  fields: Array<{ key: string; label: string }>
+) {
+  return rows.map((row) =>
+    fields.reduce<Record<string, string>>((acc, field) => {
+      acc[field.key] = row[field.label] ?? "";
+      return acc;
+    }, {})
+  );
+}
 
 /**
  * Elimina espacios intermedios para guardar telefonos con un formato consistente.
@@ -178,40 +193,21 @@ export function collectExcelValidationErrors(input: {
  * Adapta las filas tipadas del Excel al payload esperado por la importacion de empresas.
  */
 export function mapEmpresaRows(rows: SheetRow[]) {
-  return rows.map((row) => ({
-    cif: row.CIF,
-    nombre: row.Nombre,
-    direccion: row.Direccion,
-    localidad: row.Localidad,
-    sector: row.Sector,
-    cicloFormativo: row["Ciclo Formativo"],
-    telefono: normalizePhone(row.Telefono),
-    email: row["Correo Empresa"],
-    contacto: row.Contacto,
-    emailContacto: row["Correo Contacto"],
+  return mapRowsByFieldConfig(rows, EMPRESA_FIELDS).map((row) => ({
+    ...row,
+    telefono: normalizePhone(row.telefono),
   }));
 }
 
 export function mapAlumnoRows(rows: SheetRow[]) {
-  return rows.map((row) => ({
-    nia: row.NIA,
-    nombre: row.Nombre,
-    telefono: normalizePhone(row.Telefono),
-    email: row.Correo,
-    ciclo: row.Ciclo,
-    curso: row.Curso,
+  return mapRowsByFieldConfig(rows, ALUMNO_FIELDS).map((row) => ({
+    ...row,
+    telefono: normalizePhone(row.telefono),
   }));
 }
 
 export function mapFormacionRows(rows: SheetRow[]) {
-  return rows.map((row) => ({
-    empresa: row.Empresa,
-    alumno: row.Alumno,
-    periodo: row.Periodo,
-    descripcion: row.Descripcion,
-    contacto: row.Contacto,
-    curso: row.Curso,
-  }));
+  return mapRowsByFieldConfig(rows, FORMACION_FIELDS);
 }
 
 /**
