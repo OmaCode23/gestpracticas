@@ -22,7 +22,9 @@ import {
   formatDateStamp,
   getErrorDetails,
   getErrorMessage,
+  mapAlumnoRows,
   mapEmpresaRows,
+  mapFormacionRows,
 } from "@/modules/importexport/utils";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -260,8 +262,14 @@ export default function ImportExportPanel() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          // Solo empresas necesita una transformacion adicional al contrato del backend.
-          rows: config.entidad === "empresas" ? mapEmpresaRows(rows) : rows,
+          rows:
+            config.entidad === "empresas"
+              ? mapEmpresaRows(rows)
+              : config.entidad === "alumnos"
+                ? mapAlumnoRows(rows)
+                : config.entidad === "formacion"
+                  ? mapFormacionRows(rows)
+                  : rows,
         }),
       });
       const json: ApiResponse<ImportResponse, string[]> = await res.json();

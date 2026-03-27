@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { getAlumnosPaginated } from "@/modules/alumnos/actions/queries";
 import { createAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
+import { importAlumnos, type AlumnoImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
@@ -49,6 +50,27 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    if (Array.isArray(body.rows)) {
+      const result = await importAlumnos(body.rows as AlumnoImportRow[]);
+
+      if (!result.ok) {
+        return NextResponse.json<ApiResponse<never, string[]>>(
+          { ok: false, error: result.message, details: result.errors },
+          { status: 400 }
+        );
+      }
+
+      revalidatePath("/");
+      revalidatePath("/alumnos");
+      revalidatePath("/importexport");
+
+      return NextResponse.json<ApiResponse<typeof result>>({
+        ok: true,
+        data: result,
+      });
+    }
+
     const parsed = alumnoSchema.safeParse(body);
 
     if (!parsed.success) {

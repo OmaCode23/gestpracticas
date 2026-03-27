@@ -7,7 +7,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getEmpresasExport } from "@/modules/importexport/actions/export";
+import {
+  getAlumnosExport,
+  getEmpresasExport,
+  getFormacionExport,
+} from "@/modules/importexport/actions/export";
 import { createImportExportLog } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -16,20 +20,28 @@ export async function GET(
   { params }: { params: { tipo: string } }
 ) {
   try {
-    if (params.tipo !== "empresas") {
+    const exportConfig = {
+      empresas: { entidad: "Empresas", getData: getEmpresasExport },
+      alumnos: { entidad: "Alumnos", getData: getAlumnosExport },
+      formacion: { entidad: "Form. Empresa", getData: getFormacionExport },
+    } as const;
+
+    const currentExport = exportConfig[params.tipo as keyof typeof exportConfig];
+
+    if (!currentExport) {
       return NextResponse.json<ApiResponse<never>>(
         {
           ok: false,
-          error: `Exportacion no disponible para "${params.tipo}". Solo empresas esta habilitado por ahora.`,
+          error: `Exportacion no disponible para "${params.tipo}".`,
         },
         { status: 400 }
       );
     }
 
-    const data = await getEmpresasExport();
+    const data = await currentExport.getData();
 
     await createImportExportLog({
-      entidad: "Empresas",
+      entidad: currentExport.entidad,
       accion: "Exportacion",
       registros: data.length,
       estado: "Completado",

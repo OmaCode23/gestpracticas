@@ -22,3 +22,41 @@ export async function getEmpresasExport() {
     "Correo Contacto": empresa.emailContacto ?? "",
   }));
 }
+
+export async function getAlumnosExport() {
+  const alumnos = await prisma.alumno.findMany({
+    orderBy: { nombre: "asc" },
+  });
+
+  return alumnos.map((alumno) => ({
+    NIA: alumno.nia,
+    Nombre: alumno.nombre,
+    Telefono: alumno.telefono ?? "",
+    Correo: alumno.email ?? "",
+    Ciclo: alumno.ciclo,
+    Curso: alumno.curso,
+  }));
+}
+
+export async function getFormacionExport() {
+  const formaciones = await prisma.formacionEmpresa.findMany({
+    include: {
+      empresa: {
+        select: { nombre: true },
+      },
+      alumno: {
+        select: { nombre: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return formaciones.map((formacion) => ({
+    Empresa: formacion.empresa.nombre,
+    Alumno: formacion.alumno?.nombre ?? "",
+    Periodo: formacion.periodo ?? "",
+    Descripcion: formacion.descripcion ?? "",
+    Contacto: formacion.contacto ?? "",
+    Curso: formacion.curso,
+  }));
+}

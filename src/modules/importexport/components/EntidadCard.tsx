@@ -38,7 +38,7 @@ export function EntidadCard({
       <div className="p-5">
         <p className="mb-3.5 text-[0.78rem] text-text-light">{config.descripcion}</p>
 
-        {!config.enabled && (
+        {!config.enabled && config.pendingMessage && (
           <p className="mb-3.5 rounded-[9px] border border-amber-200 bg-amber-50 px-3 py-2 text-[0.74rem] text-amber-700">
             {config.pendingMessage}
           </p>

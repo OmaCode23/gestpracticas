@@ -192,6 +192,28 @@ export function mapEmpresaRows(rows: SheetRow[]) {
   }));
 }
 
+export function mapAlumnoRows(rows: SheetRow[]) {
+  return rows.map((row) => ({
+    nia: row.NIA,
+    nombre: row.Nombre,
+    telefono: normalizePhone(row.Telefono),
+    email: row.Correo,
+    ciclo: row.Ciclo,
+    curso: row.Curso,
+  }));
+}
+
+export function mapFormacionRows(rows: SheetRow[]) {
+  return rows.map((row) => ({
+    empresa: row.Empresa,
+    alumno: row.Alumno,
+    periodo: row.Periodo,
+    descripcion: row.Descripcion,
+    contacto: row.Contacto,
+    curso: row.Curso,
+  }));
+}
+
 /**
  * Valida que los valores ligados a catalogos compartidos existan realmente.
  */

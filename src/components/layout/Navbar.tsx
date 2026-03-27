@@ -3,15 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import graoLogo from "@/app/images/grao-gif.gif";
+import institutoLogo from "@/app/images/logo_instituto.webp";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
   { href: "/formacion", label: "Formacion Empresa" },
-  { href: "/informes", label: "Informes" },
   { href: "/importexport", label: "Importar / Exportar" },
+  { href: "/informes", label: "Informes" },
 ] as const;
 
 export default function Navbar() {
@@ -19,23 +19,25 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 flex flex-wrap items-center gap-3 border-b border-white/10 bg-navy px-4 py-4 shadow-[0_18px_50px_rgba(61,24,34,0.22)] backdrop-blur md:px-6 xl:flex-nowrap xl:px-10">
-      <div className="mr-2 flex min-w-0 items-center gap-3 xl:mr-5">
+      <div className="mr-2 flex min-w-0 items-end gap-3 xl:mr-5">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/95 p-2 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
           <Image
-            src={graoLogo}
+            src={institutoLogo}
             alt="Logo IES El Grao Valencia"
             className="h-full w-full object-contain"
             priority
           />
         </div>
-        <div className="flex min-w-0 flex-col justify-center self-stretch py-0.5">
-          <span className="flex items-center font-display text-[1.05rem] font-bold tracking-[0.01em] text-white md:text-[1.22rem]">
+        <div className="flex min-w-0 flex-col items-stretch justify-end">
+          <span className="flex items-center justify-end font-display text-[1.05rem] font-bold tracking-[0.01em] text-white md:text-[1.22rem]">
             <span className="text-white">Gest</span>
             <span className="ml-1 text-[#f3d7de]">Practicas</span>
           </span>
-          <span className="mt-1 text-[0.62rem] font-semibold uppercase tracking-[0.28em] text-white/58 md:text-[0.68rem] md:tracking-[0.34em]">
-            IES El Grao
-          </span>
+          <div className="mt-1 inline-flex w-full items-center justify-center self-end rounded-full border border-white/18 bg-gradient-to-r from-[#f6e6cb] via-[#fff5e8] to-[#ead2d8] px-3 py-1 shadow-[0_10px_24px_rgba(0,0,0,0.16)]">
+            <span className="text-[0.64rem] font-extrabold uppercase tracking-[0.22em] text-[#6d2335] md:text-[0.7rem] md:tracking-[0.28em]">
+              IES EL GRAO
+            </span>
+          </div>
         </div>
       </div>
 

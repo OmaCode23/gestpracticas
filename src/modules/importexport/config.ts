@@ -13,11 +13,10 @@ export const CARDS: CardConfig[] = [
     headerBg: "bg-blue-light",
     descripcion: "Importa o exporta el listado completo de alumnos.",
     columnas: ["NIA", "Nombre", "Telefono", "Correo", "Ciclo", "Curso"],
-    requiredColumns: ["NIA", "Nombre", "Ciclo", "Curso"],
+    requiredColumns: ["NIA", "Nombre", "Telefono", "Correo", "Ciclo", "Curso"],
     fileName: "alumnos",
     importPath: "/api/alumnos",
-    enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo Alumnos.",
+    enabled: true,
   },
   {
     entidad: "empresas",
@@ -49,11 +48,10 @@ export const CARDS: CardConfig[] = [
     headerBg: "bg-purple-600",
     descripcion: "Importa o exporta las formaciones en empresa por curso.",
     columnas: ["Empresa", "Alumno", "Periodo", "Descripcion", "Contacto", "Curso"],
-    requiredColumns: ["Empresa", "Alumno", "Curso"],
+    requiredColumns: ["Empresa", "Alumno", "Periodo", "Curso"],
     fileName: "formacion_empresa",
     importPath: "/api/formacion",
-    enabled: false,
-    pendingMessage: "Pendiente de integracion con el modulo Formacion.",
+    enabled: true,
   },
 ];
 
