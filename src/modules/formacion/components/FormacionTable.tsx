@@ -79,7 +79,7 @@ export default function FormacionTable({
           <SearchBox
             value={search}
             onChange={onSearchChange}
-            placeholder="Buscar empresa, alumno o NIA..."
+            placeholder="Buscar empresa, alumno, NIA, NIF o NUSS..."
           />
         </TableFilters>
 
@@ -89,6 +89,8 @@ export default function FormacionTable({
               <tr>
                 <th>Alumno</th>
                 <th>NIA</th>
+                <th>NIF</th>
+                <th>NUSS</th>
                 <th>Ciclo</th>
                 <th>Curso</th>
                 <th>Periodo</th>
@@ -101,22 +103,21 @@ export default function FormacionTable({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
+                  <td colSpan={10} className="text-center py-6 text-text-light">
                     Cargando formaciones...
                   </td>
                 </tr>
               ) : formaciones.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
+                  <td colSpan={10} className="text-center py-6 text-text-light">
                     No se encontraron formaciones.
                   </td>
                 </tr>
               ) : (
                 formaciones.map((f) => {
-                  const cicloCode =
-                    f.alumno?.ciclo
-                      ? CICLO_LABEL[f.alumno.ciclo] ?? f.alumno.ciclo
-                      : "—";
+                  const cicloCode = f.alumno?.ciclo
+                    ? CICLO_LABEL[f.alumno.ciclo] ?? f.alumno.ciclo
+                    : "-";
 
                   return (
                     <tr key={f.id}>
@@ -125,11 +126,15 @@ export default function FormacionTable({
                           className="block max-w-[220px] truncate"
                           title={f.alumno?.nombre}
                         >
-                          {f.alumno?.nombre ?? "—"}
+                          {f.alumno?.nombre ?? "-"}
                         </strong>
                       </td>
 
-                      <td className="text-text-mid">{f.alumno?.nia ?? "—"}</td>
+                      <td className="text-text-mid">{f.alumno?.nia ?? "-"}</td>
+
+                      <td className="text-text-mid">{f.alumno?.nif ?? "-"}</td>
+
+                      <td className="text-text-mid">{f.alumno?.nuss ?? "-"}</td>
 
                       <td>
                         <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
@@ -143,11 +148,11 @@ export default function FormacionTable({
 
                       <td>
                         <strong className="block max-w-[220px] truncate" title={f.empresa?.nombre}>
-                          {f.empresa?.nombre ?? "—"}
+                          {f.empresa?.nombre ?? "-"}
                         </strong>
                       </td>
 
-                      <td>{f.contacto ?? "—"}</td>
+                      <td>{f.contacto ?? "-"}</td>
 
                       <td>
                         <TdActions>
@@ -156,7 +161,7 @@ export default function FormacionTable({
                             size="sm"
                             onClick={() => onEdit(f)}
                           >
-                            ✏️
+                            {"\u270F\uFE0F"}
                           </Button>
 
                           <Button
@@ -164,7 +169,7 @@ export default function FormacionTable({
                             size="sm"
                             onClick={() => onDelete(f.id)}
                           >
-                            🗑️
+                            {"\u{1F5D1}\uFE0F"}
                           </Button>
                         </TdActions>
                       </td>

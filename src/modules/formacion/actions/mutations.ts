@@ -6,7 +6,7 @@
  */
 
 import { prisma } from "@/database/prisma";
-import type { FormacionCreateInput, FormacionUpdateInput } from "../types";
+import type { FormacionInput, FormacionUpdateInput } from "../types";
 
 function normalizeOptionalString(value?: string) {
   if (value === undefined) return undefined;
@@ -14,7 +14,7 @@ function normalizeOptionalString(value?: string) {
   return trimmed === "" ? null : trimmed;
 }
 
-export async function createFormacion(data: FormacionCreateInput) {
+export async function createFormacion(data: FormacionInput) {
   return prisma.formacionEmpresa.create({
     data: {
       empresaId: data.empresaId,
@@ -38,6 +38,8 @@ export async function createFormacion(data: FormacionCreateInput) {
           id: true,
           nombre: true,
           nia: true,
+          nif: true,
+          nuss: true,
           ciclo: true,
           curso: true,
         },
@@ -75,6 +77,8 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           id: true,
           nombre: true,
           nia: true,
+          nif: true,
+          nuss: true,
           ciclo: true,
           curso: true,
         },

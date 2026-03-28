@@ -68,8 +68,15 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     if (error?.code === "P2002") {
+      const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
+      const message = target.includes("nif")
+        ? "Ya existe un alumno con ese NIF"
+        : target.includes("nuss")
+          ? "Ya existe un alumno con ese NUSS"
+          : "Ya existe un alumno con ese NIA";
+
       return NextResponse.json<ApiResponse<never>>(
-        { ok: false, error: "Ya existe un alumno con ese NIA" },
+        { ok: false, error: message },
         { status: 409 }
       );
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CICLO_LABEL, CICLOS, CURSOS } from "@/shared/catalogs/academico";
 import SuccessToast from "@/components/ui/SuccessToast";
@@ -26,7 +26,7 @@ export default function FormacionContainer() {
   const [formaciones, setFormaciones] = useState<Formacion[]>([]);
   const [empresas, setEmpresas] = useState<{ id: number; nombre: string }[]>([]);
   const [alumnos, setAlumnos] = useState<
-    { id: number; nombre: string; nia: string }[]
+    { id: number; nombre: string; nia: string; nif: string | null; nuss: string | null }[]
   >([]);
 
   const [curso, setCurso] = useState("");
@@ -39,6 +39,8 @@ export default function FormacionContainer() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
+
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Opciones de ciclo para el filtro (abreviatura visible)
   const cicloOptions = CICLOS;
@@ -63,6 +65,8 @@ export default function FormacionContainer() {
           id: a.id,
           nombre: a.nombre,
           nia: a.nia,
+          nif: a.nif ?? null,
+          nuss: a.nuss ?? null,
         }))
       );
     }
@@ -93,8 +97,12 @@ export default function FormacionContainer() {
         return;
       }
 
-      setFormaciones(json.data.items);
-      setTotal(json.data.total);
+      setFormaciones((prev) => {
+        const prevIds = prev.map((f) => f.id).join(",");
+        const nextIds = json.data.items.map((f: Formacion) => f.id).join(",");
+        return prevIds === nextIds ? prev : json.data.items;
+      });
+      setTotal((prev) => (prev === json.data.total ? prev : json.data.total));
     } catch (error) {
       console.error(error);
       alert("No se pudieron cargar las formaciones.");
@@ -108,9 +116,21 @@ export default function FormacionContainer() {
     cargarAlumnos();
   }, []);
 
+  // Filtros inmediatos (selectores y paginación)
   useEffect(() => {
     load();
-  }, [curso, ciclo, search, page]);
+  }, [curso, ciclo, page]);
+
+  // Search con debounce de 300ms
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      load();
+    }, 300);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [search]);
 
   const reloadToFirstPage = async () => {
     setPage(1);

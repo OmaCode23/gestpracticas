@@ -45,8 +45,10 @@ model Alumno {
   id        Int      @id @default(autoincrement())
   nombre    String
   nia       String   @unique
-  telefono  String?
-  email     String?
+  nif       String?  @unique
+  nuss      String?  @unique
+  telefono  String
+  email     String
   ciclo     String
   curso     String
   createdAt DateTime @default(now())

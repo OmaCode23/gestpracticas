@@ -53,6 +53,22 @@ export async function getFormacionesPaginated(params: {
                   },
                 },
               },
+              {
+                alumno: {
+                  nif: {
+                    contains: params.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+              {
+                alumno: {
+                  nuss: {
+                    contains: params.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
             ],
           }
         : {},
@@ -76,6 +92,8 @@ export async function getFormacionesPaginated(params: {
             id: true,
             nombre: true,
             nia: true,
+            nif: true,
+            nuss: true,
             ciclo: true,
             curso: true,
           },
@@ -115,6 +133,8 @@ export async function getFormacionById(id: number) {
           id: true,
           nombre: true,
           nia: true,
+          nif: true,
+          nuss: true,
           ciclo: true,
           curso: true,
         },

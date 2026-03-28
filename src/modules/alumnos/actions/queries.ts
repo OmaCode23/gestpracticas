@@ -28,6 +28,8 @@ export async function getAlumnosPaginated(params: {
           OR: [
             { nombre: { contains: params.search, mode: "insensitive" } },
             { nia: { contains: params.search, mode: "insensitive" } },
+            { nif: { contains: params.search, mode: "insensitive" } },
+            { nuss: { contains: params.search, mode: "insensitive" } },
           ],
         }
       : {}),

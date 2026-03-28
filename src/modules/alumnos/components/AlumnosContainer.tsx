@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AlumnoForm from "./AlumnoForm";
 import AlumnosTable from "./AlumnosTable";
@@ -10,6 +10,8 @@ import SuccessToast from "@/components/ui/SuccessToast";
 const EMPTY = {
   nombre: "",
   nia: "",
+  nif: "",
+  nuss: "",
   telefono: "",
   email: "",
   ciclo: "",
@@ -20,6 +22,7 @@ const PER_PAGE = 10;
 
 export default function AlumnosContainer() {
   const router = useRouter();
+  const formSectionRef = useRef<HTMLDivElement | null>(null);
 
   const [form, setForm] = useState(EMPTY);
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
@@ -35,6 +38,8 @@ export default function AlumnosContainer() {
   const [saving, setSaving] = useState(false);
 
   const [notification, setNotification] = useState("");
+
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setFormField = (field: keyof typeof EMPTY, value: string) =>
     setForm((f) => ({ ...f, [field]: value }));
@@ -64,8 +69,12 @@ export default function AlumnosContainer() {
         return;
       }
 
-      setAlumnos(json.data.items);
-      setTotal(json.data.total);
+      setAlumnos((prev) => {
+        const prevIds = prev.map((a) => a.id).join(",");
+        const nextIds = json.data.items.map((a: Alumno) => a.id).join(",");
+        return prevIds === nextIds ? prev : json.data.items;
+      });
+      setTotal((prev) => (prev === json.data.total ? prev : json.data.total));
     } catch (error) {
       console.error(error);
       alert("No se pudieron cargar los alumnos.");
@@ -76,7 +85,18 @@ export default function AlumnosContainer() {
 
   useEffect(() => {
     load();
-  }, [ciclo, curso, search, page]);
+  }, [ciclo, curso, page]);
+
+  // Search con debounce de 300ms
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      load();
+    }, 300);
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, [search]);
 
   const reloadToFirstPage = async () => {
     setPage(1);
@@ -85,8 +105,19 @@ export default function AlumnosContainer() {
 
   // Guardar
   const handleGuardar = async () => {
-    if (!form.nombre || !form.nia || !form.telefono || !form.email || !form.ciclo || !form.curso) {
-      return alert("Rellena todos los campos obligatorios: nombre, NIA, teléfono, correo, ciclo y curso.");
+    if (
+      !form.nombre ||
+      !form.nia ||
+      !form.nif ||
+      !form.nuss ||
+      !form.telefono ||
+      !form.email ||
+      !form.ciclo ||
+      !form.curso
+    ) {
+      return alert(
+        "Rellena todos los campos obligatorios: nombre, NIA, NIF, NUSS, telefono, correo, ciclo y curso."
+      );
     }
 
     try {
@@ -154,7 +185,7 @@ export default function AlumnosContainer() {
 
   // Eliminar
   const handleEliminar = async (id: number) => {
-    if (!confirm("¿Eliminar este alumno?")) return;
+    if (!confirm("Eliminar este alumno?")) return;
 
     try {
       const res = await fetch(`/api/alumnos/${id}`, {
@@ -184,13 +215,15 @@ export default function AlumnosContainer() {
     setForm({
       nombre: alumno.nombre,
       nia: alumno.nia,
+      nif: alumno.nif ?? "",
+      nuss: alumno.nuss ?? "",
       telefono: alumno.telefono ?? "",
       email: alumno.email ?? "",
       ciclo: alumno.ciclo,
       curso: alumno.curso,
     });
 
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const handleCancelarEdicion = () => {
@@ -198,7 +231,7 @@ export default function AlumnosContainer() {
     setForm(EMPTY);
   };
 
-  // Notificación temporal
+  // Notificacion temporal
   useEffect(() => {
     if (!notification) return;
 
@@ -209,16 +242,6 @@ export default function AlumnosContainer() {
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
-
-      <AlumnoForm
-        form={form}
-        onChange={setFormField}
-        onGuardar={handleGuardar}
-        onActualizar={handleActualizar}
-        onCancelarEdicion={handleCancelarEdicion}
-        isEditing={editingId !== null}
-        onLimpiar={handleCancelarEdicion}
-      />
 
       <AlumnosTable
         alumnos={alumnos}
@@ -244,6 +267,18 @@ export default function AlumnosContainer() {
         onEditar={handleEditar}
         onEliminar={handleEliminar}
       />
+
+      <div ref={formSectionRef}>
+        <AlumnoForm
+          form={form}
+          onChange={setFormField}
+          onGuardar={handleGuardar}
+          onActualizar={handleActualizar}
+          onCancelarEdicion={handleCancelarEdicion}
+          isEditing={editingId !== null}
+          onLimpiar={() => setForm(EMPTY)}
+        />
+      </div>
     </>
   );
 }

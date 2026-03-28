@@ -77,7 +77,7 @@ export default function AlumnosTable({
           <SearchBox
             value={search}
             onChange={onChangeSearch}
-            placeholder="Buscar alumno o NIA..."
+            placeholder="Buscar alumno, NIA, NIF o NUSS..."
           />
         </TableFilters>
 
@@ -87,9 +87,11 @@ export default function AlumnosTable({
               <tr>
                 <th>Nombre</th>
                 <th>NIA</th>
+                <th>NIF</th>
+                <th>NUSS</th>
                 <th>Ciclo</th>
                 <th>Curso</th>
-                <th>Teléfono</th>
+                <th>Telefono</th>
                 <th>Correo</th>
                 <th>Acciones</th>
               </tr>
@@ -98,7 +100,7 @@ export default function AlumnosTable({
             <tbody>
               {alumnos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-6 text-text-light">
+                  <td colSpan={9} className="text-center py-6 text-text-light">
                     No se encontraron alumnos.
                   </td>
                 </tr>
@@ -114,6 +116,10 @@ export default function AlumnosTable({
 
                       <td className="text-text-mid">{a.nia}</td>
 
+                      <td className="text-text-mid">{a.nif ?? "-"}</td>
+
+                      <td className="text-text-mid">{a.nuss ?? "-"}</td>
+
                       <td>
                         <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
                           {cicloCode}
@@ -122,10 +128,10 @@ export default function AlumnosTable({
 
                       <td>{a.curso}</td>
 
-                      <td>{a.telefono ?? "—"}</td>
+                      <td>{a.telefono ?? "-"}</td>
 
                       <td className="text-blue-600 text-[0.82rem]">
-                        {a.email ?? "—"}
+                        {a.email ?? "-"}
                       </td>
 
                       <td>
@@ -135,7 +141,7 @@ export default function AlumnosTable({
                             size="sm"
                             onClick={() => onEditar(a)}
                           >
-                            ✏️
+                            {"\u270F\uFE0F"}
                           </Button>
 
                           <Button
@@ -143,7 +149,7 @@ export default function AlumnosTable({
                             size="sm"
                             onClick={() => onEliminar(a.id)}
                           >
-                            🗑️
+                            {"\u{1F5D1}\uFE0F"}
                           </Button>
                         </TdActions>
                       </td>

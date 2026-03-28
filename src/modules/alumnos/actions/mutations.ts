@@ -21,6 +21,8 @@ export async function createAlumno(data: AlumnoInput) {
     data: {
       nombre: data.nombre.trim(),
       nia: data.nia.trim(),
+      nif: data.nif.trim().toUpperCase(),
+      nuss: data.nuss.trim(),
       telefono: normalizeOptionalString(data.telefono),
       email: normalizeOptionalEmail(data.email),
       ciclo: data.ciclo.trim(),
@@ -35,6 +37,8 @@ export async function updateAlumno(id: number, data: AlumnoUpdateInput) {
     data: {
       ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
       ...(data.nia !== undefined ? { nia: data.nia.trim() } : {}),
+      ...(data.nif !== undefined ? { nif: data.nif.trim().toUpperCase() } : {}),
+      ...(data.nuss !== undefined ? { nuss: data.nuss.trim() } : {}),
       ...(data.telefono !== undefined
         ? { telefono: normalizeOptionalString(data.telefono) }
         : {}),

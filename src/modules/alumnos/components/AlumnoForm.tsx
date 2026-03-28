@@ -16,6 +16,8 @@ import { CICLOS, CURSOS } from "@/shared/catalogs/academico";
 type FormState = {
   nombre: string;
   nia: string;
+  nif: string;
+  nuss: string;
   telefono: string;
   email: string;
   ciclo: string;
@@ -47,6 +49,12 @@ export default function AlumnoForm({
   const sanitizeNia = (value: string) =>
     value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 20);
 
+  const sanitizeNif = (value: string) =>
+    value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 9);
+
+  const sanitizeNuss = (value: string) =>
+    value.replace(/\D/g, "").slice(0, 12);
+
   const sanitizeTelefono = (value: string) =>
     value.replace(/\D/g, "").slice(0, 9);
 
@@ -64,10 +72,10 @@ export default function AlumnoForm({
 
       <Card className="mb-7">
         <CardHeader>
-          <CardTitle icon="👩‍🎓" iconVariant="green">
+          <CardTitle icon="AL" iconVariant="green">
             {isEditing ? "Editar alumno" : "Nuevo Alumno"}
           </CardTitle>
-          <Tag>{isEditing ? "✏️ Modo edición" : "📝 Formulario de alta"}</Tag>
+          <Tag>{isEditing ? "Modo edicion" : "Formulario de alta"}</Tag>
         </CardHeader>
 
         <div className="p-6">
@@ -87,14 +95,37 @@ export default function AlumnoForm({
                 className={INPUT_CLS}
                 value={form.nia}
                 onChange={(e) => onChange("nia", sanitizeNia(e.target.value))}
-                placeholder="Número de identificación"
+                placeholder="Numero de identificacion"
                 maxLength={20}
               />
             </FormGroup>
           </FormRow>
 
           <FormRow cols={2}>
-            <FormGroup label="Teléfono *">
+            <FormGroup label="NIF *">
+              <input
+                className={INPUT_CLS}
+                value={form.nif}
+                onChange={(e) => onChange("nif", sanitizeNif(e.target.value))}
+                placeholder="12345678Z"
+                maxLength={9}
+              />
+            </FormGroup>
+
+            <FormGroup label="NUSS *">
+              <input
+                className={INPUT_CLS}
+                inputMode="numeric"
+                value={form.nuss}
+                onChange={(e) => onChange("nuss", sanitizeNuss(e.target.value))}
+                placeholder="123456789012"
+                maxLength={12}
+              />
+            </FormGroup>
+          </FormRow>
+
+          <FormRow cols={2}>
+            <FormGroup label="Telefono *">
               <input
                 className={INPUT_CLS}
                 inputMode="numeric"
@@ -105,7 +136,7 @@ export default function AlumnoForm({
               />
             </FormGroup>
 
-            <FormGroup label="Correo electrónico *">
+            <FormGroup label="Correo electronico *">
               <input
                 className={INPUT_CLS}
                 type="email"
@@ -124,20 +155,20 @@ export default function AlumnoForm({
                 value={form.ciclo}
                 onChange={(e) => onChange("ciclo", e.target.value)}
               >
-                <option value="">— Seleccionar ciclo —</option>
+                <option value="">Seleccionar ciclo</option>
                 {CICLOS.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
             </FormGroup>
 
-            <FormGroup label="Curso académico *">
+            <FormGroup label="Curso academico *">
               <select
                 className={INPUT_CLS}
                 value={form.curso}
                 onChange={(e) => onChange("curso", e.target.value)}
               >
-                <option value="">— Seleccionar curso —</option>
+                <option value="">Seleccionar curso</option>
                 {CURSOS.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
@@ -148,11 +179,11 @@ export default function AlumnoForm({
 
         <div className="px-6 pb-6 flex gap-2.5 justify-end">
           <Button variant="secondary" onClick={isEditing ? onCancelarEdicion : onLimpiar}>
-            {isEditing ? "✕ Cancelar" : "✕ Limpiar"}
+            {isEditing ? "Cancelar" : "Limpiar"}
           </Button>
 
           <Button variant="primary" onClick={handleSubmit}>
-            {isEditing ? "✓ Actualizar alumno" : "✓ Guardar alumno"}
+            {isEditing ? "Actualizar alumno" : "Guardar alumno"}
           </Button>
         </div>
       </Card>

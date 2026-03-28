@@ -1,7 +1,7 @@
 /**
  * src/modules/alumnos/types/schema.ts
  *
- * Validación estricta para alumnos.
+ * Validacion estricta para alumnos.
  */
 
 import { z } from "zod";
@@ -9,6 +9,8 @@ import { CICLOS, CURSOS } from "@/shared/catalogs/academico";
 
 const TEXTO_UTIL = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
+const NIF_REGEX = /^([XYZ]\d{7}[A-Z]|\d{8}[A-Z])$/;
+const NUSS_REGEX = /^\d{12}$/;
 
 export const alumnoSchema = z.object({
   nombre: z
@@ -16,39 +18,52 @@ export const alumnoSchema = z.object({
     .trim()
     .min(1, "El nombre es obligatorio.")
     .max(80, "El nombre no puede superar los 80 caracteres.")
-    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto útil.")
-    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene símbolos repetidos."),
+    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto util.")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene simbolos repetidos."),
 
   nia: z
     .string()
     .trim()
     .min(1, "El NIA es obligatorio.")
     .max(20, "El NIA no puede superar los 20 caracteres.")
-    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, números y guiones."),
+    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, numeros y guiones."),
+
+  nif: z
+    .string()
+    .trim()
+    .min(1, "El NIF es obligatorio.")
+    .transform((value) => value.toUpperCase())
+    .refine((value) => NIF_REGEX.test(value), "El NIF debe tener un formato valido."),
+
+  nuss: z
+    .string()
+    .trim()
+    .min(1, "El NUSS es obligatorio.")
+    .regex(NUSS_REGEX, "El NUSS debe tener exactamente 12 digitos."),
 
   telefono: z
     .string()
     .trim()
-    .min(1, "El teléfono es obligatorio.")
-    .regex(/^[6789]\d{8}$/, "El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9."),
+    .min(1, "El telefono es obligatorio.")
+    .regex(/^[6789]\d{8}$/, "El telefono debe tener 9 digitos y empezar por 6, 7, 8 o 9."),
 
   email: z
     .string()
     .trim()
-    .min(1, "El correo electrónico es obligatorio.")
-    .email("El email no es válido."),
+    .min(1, "El correo electronico es obligatorio.")
+    .email("El email no es valido."),
 
   ciclo: z
     .string()
     .trim()
     .min(1, "El ciclo es obligatorio.")
-    .refine((v) => CICLOS.includes(v), "El ciclo no es válido."),
+    .refine((v) => CICLOS.includes(v), "El ciclo no es valido."),
 
   curso: z
     .string()
     .trim()
     .min(1, "El curso es obligatorio.")
-    .refine((v) => CURSOS.includes(v), "El curso no es válido."),
+    .refine((v) => CURSOS.includes(v), "El curso no es valido."),
 });
 
 // PATCH
@@ -62,4 +77,3 @@ export const alumnoFilterSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   perPage: z.coerce.number().int().positive().default(10),
 });
-
