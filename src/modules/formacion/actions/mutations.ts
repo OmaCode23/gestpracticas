@@ -22,7 +22,8 @@ export async function createFormacion(data: FormacionInput) {
       curso: data.curso.trim(),
       periodo: data.periodo.trim(),
       descripcion: normalizeOptionalString(data.descripcion),
-      contacto: normalizeOptionalString(data.contacto),
+      tutorLaboral: normalizeOptionalString(data.tutorLaboral),
+      emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral),
     },
     include: {
       empresa: {
@@ -41,6 +42,7 @@ export async function createFormacion(data: FormacionInput) {
           nif: true,
           nuss: true,
           ciclo: true,
+          cursoCiclo: true,
           curso: true,
         },
       },
@@ -59,8 +61,11 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
       ...(data.descripcion !== undefined
         ? { descripcion: normalizeOptionalString(data.descripcion) }
         : {}),
-      ...(data.contacto !== undefined
-        ? { contacto: normalizeOptionalString(data.contacto) }
+      ...(data.tutorLaboral !== undefined
+        ? { tutorLaboral: normalizeOptionalString(data.tutorLaboral) }
+        : {}),
+      ...(data.emailTutorLaboral !== undefined
+        ? { emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral) }
         : {}),
     },
     include: {
@@ -80,6 +85,7 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           nif: true,
           nuss: true,
           ciclo: true,
+          cursoCiclo: true,
           curso: true,
         },
       },

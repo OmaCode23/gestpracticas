@@ -11,7 +11,7 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
-import { CICLOS, CURSOS } from "@/shared/catalogs/academico";
+import { CICLOS_FORMATIVOS, CURSOS } from "@/shared/catalogs/academico";
 
 type FormState = {
   nombre: string;
@@ -21,6 +21,7 @@ type FormState = {
   telefono: string;
   email: string;
   ciclo: string;
+  cursoCiclo: string;
   curso: string;
 };
 
@@ -30,6 +31,7 @@ interface AlumnoFormProps {
   onGuardar: () => void;
   onActualizar: () => void;
   onCancelarEdicion: () => void;
+  onToggleCollapse: () => void;
   isEditing: boolean;
   onLimpiar: () => void;
 }
@@ -40,9 +42,15 @@ export default function AlumnoForm({
   onGuardar,
   onActualizar,
   onCancelarEdicion,
+  onToggleCollapse,
   isEditing,
   onLimpiar,
 }: AlumnoFormProps) {
+  const CURSO_CICLO_OPTIONS = [
+    { value: "1", label: `1.\u00BA` },
+    { value: "2", label: `2.\u00BA` },
+  ];
+
   const sanitizeNombre = (value: string) =>
     value.replace(/[^\p{L}\s'.-]/gu, "").slice(0, 80);
 
@@ -72,10 +80,25 @@ export default function AlumnoForm({
 
       <Card className="mb-7">
         <CardHeader>
-          <CardTitle icon="AL" iconVariant="green">
-            {isEditing ? "Editar alumno" : "Nuevo Alumno"}
-          </CardTitle>
-          <Tag>{isEditing ? "Modo edicion" : "Formulario de alta"}</Tag>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label="Colapsar formulario"
+              title="Colapsar formulario"
+              className="px-2.5 text-[0.95rem]"
+            >
+              {"\u25BE"}
+            </Button>
+            <CardTitle icon="AL" iconVariant="green">
+              {isEditing ? "Editar alumno" : "Nuevo Alumno"}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag>{isEditing ? "Modo edicion" : "Formulario de alta"}</Tag>
+          </div>
         </CardHeader>
 
         <div className="p-6">
@@ -102,7 +125,7 @@ export default function AlumnoForm({
           </FormRow>
 
           <FormRow cols={2}>
-            <FormGroup label="NIF *">
+            <FormGroup label="NIF">
               <input
                 className={INPUT_CLS}
                 value={form.nif}
@@ -112,7 +135,7 @@ export default function AlumnoForm({
               />
             </FormGroup>
 
-            <FormGroup label="NUSS *">
+            <FormGroup label="NUSS">
               <input
                 className={INPUT_CLS}
                 inputMode="numeric"
@@ -156,12 +179,29 @@ export default function AlumnoForm({
                 onChange={(e) => onChange("ciclo", e.target.value)}
               >
                 <option value="">Seleccionar ciclo</option>
-                {CICLOS.map((c) => (
+                {CICLOS_FORMATIVOS.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
             </FormGroup>
 
+            <FormGroup label="Curso ciclo *">
+              <select
+                className={INPUT_CLS}
+                value={form.cursoCiclo}
+                onChange={(e) => onChange("cursoCiclo", e.target.value)}
+              >
+                <option value="">Seleccionar curso ciclo</option>
+                {CURSO_CICLO_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </FormGroup>
+          </FormRow>
+
+          <FormRow cols={1}>
             <FormGroup label="Curso academico *">
               <select
                 className={INPUT_CLS}

@@ -21,9 +21,10 @@ export interface Alumno {
   nia: string;
   nif: string | null;
   nuss: string | null;
-  telefono: string | null;
-  email: string | null;
+  telefono: string;
+  email: string;
   ciclo: string;
+  cursoCiclo: number;
   curso: string;
   createdAt: string;
   updatedAt: string;

@@ -47,13 +47,20 @@ export const formacionSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  contacto: z
+  tutorLaboral: z
     .string()
     .trim()
     .optional()
     .or(z.literal(""))
-    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no válidos")
-    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener números"),
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El tutor laboral contiene caracteres no válidos")
+    .refine((v) => !v || !/\d/.test(v), "El tutor laboral no puede contener números"),
+
+  emailTutorLaboral: z
+    .string()
+    .trim()
+    .email("El email del tutor laboral no es válido")
+    .optional()
+    .or(z.literal("")),
 });
 
 // PATCH

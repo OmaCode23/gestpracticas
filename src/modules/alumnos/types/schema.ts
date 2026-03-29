@@ -5,12 +5,13 @@
  */
 
 import { z } from "zod";
-import { CICLOS, CURSOS } from "@/shared/catalogs/academico";
+import { CICLOS_FORMATIVOS, CURSOS } from "@/shared/catalogs/academico";
 
 const TEXTO_UTIL = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
 const NIF_REGEX = /^([XYZ]\d{7}[A-Z]|\d{8}[A-Z])$/;
 const NUSS_REGEX = /^\d{12}$/;
+const optionalTrimmedString = () => z.string().trim().optional().or(z.literal(""));
 
 export const alumnoSchema = z.object({
   nombre: z
@@ -28,18 +29,13 @@ export const alumnoSchema = z.object({
     .max(20, "El NIA no puede superar los 20 caracteres.")
     .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, numeros y guiones."),
 
-  nif: z
-    .string()
-    .trim()
-    .min(1, "El NIF es obligatorio.")
-    .transform((value) => value.toUpperCase())
-    .refine((value) => NIF_REGEX.test(value), "El NIF debe tener un formato valido."),
+  nif: optionalTrimmedString()
+    .transform((value) => (value ?? "").trim().toUpperCase())
+    .refine((value) => value === "" || NIF_REGEX.test(value), "El NIF debe tener un formato valido."),
 
-  nuss: z
-    .string()
-    .trim()
-    .min(1, "El NUSS es obligatorio.")
-    .regex(NUSS_REGEX, "El NUSS debe tener exactamente 12 digitos."),
+  nuss: optionalTrimmedString()
+    .transform((value) => (value ?? "").trim())
+    .refine((value) => value === "" || NUSS_REGEX.test(value), "El NUSS debe tener exactamente 12 digitos."),
 
   telefono: z
     .string()
@@ -57,7 +53,16 @@ export const alumnoSchema = z.object({
     .string()
     .trim()
     .min(1, "El ciclo es obligatorio.")
-    .refine((v) => CICLOS.includes(v), "El ciclo no es valido."),
+    .refine((v) => CICLOS_FORMATIVOS.includes(v), "El ciclo no es valido."),
+
+  cursoCiclo: z
+    .coerce
+    .number({
+      required_error: "El curso ciclo es obligatorio.",
+      invalid_type_error: "El curso ciclo debe ser numerico.",
+    })
+    .int()
+    .refine((v) => v === 1 || v === 2, "El curso ciclo debe ser 1 o 2."),
 
   curso: z
     .string()

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import { CICLOS, CURSOS, CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
+import { CICLOS_FORMATIVOS, CURSOS, CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
 import type { Alumno } from "@/modules/alumnos/types";
 
 interface AlumnosTableProps {
@@ -25,6 +25,7 @@ interface AlumnosTableProps {
   onChangeCurso: (v: string) => void;
   onChangeSearch: (v: string) => void;
   onPageChange: (p: number) => void;
+  onVer: (alumno: Alumno) => void;
   onEditar: (alumno: Alumno) => void;
   onEliminar: (id: number) => void;
 }
@@ -41,9 +42,12 @@ export default function AlumnosTable({
   onChangeCurso,
   onChangeSearch,
   onPageChange,
+  onVer,
   onEditar,
   onEliminar,
 }: AlumnosTableProps) {
+  const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
+
   return (
     <>
       <SectionLabel>Listado de alumnos</SectionLabel>
@@ -59,8 +63,10 @@ export default function AlumnosTable({
             onChange={onChangeCiclo}
           >
             <option value="">Todos los ciclos</option>
-            {CICLOS.map((c) => (
-              <option key={c}>{c}</option>
+            {CICLOS_FORMATIVOS.map((c) => (
+              <option key={c} value={c}>
+                {getCicloLabel(c)}
+              </option>
             ))}
           </FilterSelect>
 
@@ -77,7 +83,7 @@ export default function AlumnosTable({
           <SearchBox
             value={search}
             onChange={onChangeSearch}
-            placeholder="Buscar alumno, NIA, NIF o NUSS..."
+            placeholder="Buscar alumno o NIA..."
           />
         </TableFilters>
 
@@ -87,10 +93,17 @@ export default function AlumnosTable({
               <tr>
                 <th>Nombre</th>
                 <th>NIA</th>
-                <th>NIF</th>
-                <th>NUSS</th>
                 <th>Ciclo</th>
-                <th>Curso</th>
+                <th>
+                  Curso
+                  <br />
+                  Ciclo
+                </th>
+                <th>
+                  Curso
+                  <br />
+                  Academico
+                </th>
                 <th>Telefono</th>
                 <th>Correo</th>
                 <th>Acciones</th>
@@ -100,25 +113,23 @@ export default function AlumnosTable({
             <tbody>
               {alumnos.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-6 text-text-light">
+                  <td colSpan={8} className="text-center py-6 text-text-light">
                     No se encontraron alumnos.
                   </td>
                 </tr>
               ) : (
                 alumnos.map((a) => {
-                  const cicloCode = CICLO_LABEL[a.ciclo] ?? a.ciclo;
+                  const cicloCode = getCicloLabel(a.ciclo);
 
                   return (
                     <tr key={a.id}>
                       <td>
-                        <strong>{a.nombre}</strong>
+                        <strong className="block max-w-[220px] truncate" title={a.nombre}>
+                          {a.nombre}
+                        </strong>
                       </td>
 
                       <td className="text-text-mid">{a.nia}</td>
-
-                      <td className="text-text-mid">{a.nif ?? "-"}</td>
-
-                      <td className="text-text-mid">{a.nuss ?? "-"}</td>
 
                       <td>
                         <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
@@ -126,16 +137,30 @@ export default function AlumnosTable({
                         </Badge>
                       </td>
 
-                      <td>{a.curso}</td>
+                      <td>{formatCursoCiclo(a.cursoCiclo)}</td>
 
-                      <td>{a.telefono ?? "-"}</td>
+                      <td className="whitespace-nowrap">{a.curso}</td>
+
+                      <td>{a.telefono}</td>
 
                       <td className="text-blue-600 text-[0.82rem]">
-                        {a.email ?? "-"}
+                        <span className="block max-w-[220px] truncate" title={a.email ?? "-"}>
+                          {a.email}
+                        </span>
                       </td>
 
                       <td>
                         <TdActions>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onVer(a)}
+                            title="Ver detalle"
+                            aria-label="Ver detalle"
+                          >
+                            {"\u{1F441}\uFE0F"}
+                          </Button>
+
                           <Button
                             variant="secondary"
                             size="sm"

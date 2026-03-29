@@ -11,7 +11,7 @@ import {
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
 import type { Formacion } from "../types";
-import { CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
+import { CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
 
 interface FormacionTableProps {
   formaciones: Formacion[];
@@ -28,6 +28,7 @@ interface FormacionTableProps {
   onCicloChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number) => void;
+  onView: (f: Formacion) => void;
   onEdit: (f: Formacion) => void;
   onDelete: (id: number) => void;
 }
@@ -47,9 +48,12 @@ export default function FormacionTable({
   onCicloChange,
   onSearchChange,
   onPageChange,
+  onView,
   onEdit,
   onDelete,
 }: FormacionTableProps) {
+  const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
+
   return (
     <>
       <SectionLabel>Listado de formaciones</SectionLabel>
@@ -71,7 +75,7 @@ export default function FormacionTable({
             <option value="">Todos los ciclos</option>
             {ciclos.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {getCicloLabel(c)}
               </option>
             ))}
           </FilterSelect>
@@ -79,23 +83,31 @@ export default function FormacionTable({
           <SearchBox
             value={search}
             onChange={onSearchChange}
-            placeholder="Buscar empresa, alumno, NIA, NIF o NUSS..."
+            placeholder="Buscar empresa, alumno o NIA..."
+            className="max-w-[280px]"
           />
         </TableFilters>
 
         <div className="overflow-x-auto">
-          <table>
+          <table className="[&_th]:px-3 [&_td]:px-3">
             <thead>
               <tr>
                 <th>Alumno</th>
                 <th>NIA</th>
-                <th>NIF</th>
-                <th>NUSS</th>
                 <th>Ciclo</th>
-                <th>Curso</th>
-                <th>Periodo</th>
+                <th>
+                  Curso
+                  <br />
+                  Ciclo
+                </th>
+                <th>
+                  Curso
+                  <br />
+                  Academico
+                </th>
                 <th>Empresa</th>
-                <th>Contacto</th>
+                <th>Tutor laboral</th>
+                <th>Periodo</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -103,21 +115,19 @@ export default function FormacionTable({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-6 text-text-light">
+                  <td colSpan={9} className="text-center py-6 text-text-light">
                     Cargando formaciones...
                   </td>
                 </tr>
               ) : formaciones.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-6 text-text-light">
+                  <td colSpan={9} className="text-center py-6 text-text-light">
                     No se encontraron formaciones.
                   </td>
                 </tr>
               ) : (
                 formaciones.map((f) => {
-                  const cicloCode = f.alumno?.ciclo
-                    ? CICLO_LABEL[f.alumno.ciclo] ?? f.alumno.ciclo
-                    : "-";
+                  const cicloCode = getCicloLabel(f.alumno?.ciclo);
 
                   return (
                     <tr key={f.id}>
@@ -132,19 +142,15 @@ export default function FormacionTable({
 
                       <td className="text-text-mid">{f.alumno?.nia ?? "-"}</td>
 
-                      <td className="text-text-mid">{f.alumno?.nif ?? "-"}</td>
-
-                      <td className="text-text-mid">{f.alumno?.nuss ?? "-"}</td>
-
                       <td>
                         <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
                           {cicloCode}
                         </Badge>
                       </td>
 
-                      <td>{f.curso}</td>
+                      <td>{f.alumno?.cursoCiclo ? formatCursoCiclo(f.alumno.cursoCiclo) : "-"}</td>
 
-                      <td>{f.periodo}</td>
+                      <td className="whitespace-nowrap">{f.curso}</td>
 
                       <td>
                         <strong className="block max-w-[220px] truncate" title={f.empresa?.nombre}>
@@ -152,10 +158,29 @@ export default function FormacionTable({
                         </strong>
                       </td>
 
-                      <td>{f.contacto ?? "-"}</td>
+                      <td>
+                        <span
+                          className="block max-w-[220px] truncate"
+                          title={f.emailTutorLaboral ?? "-"}
+                        >
+                          {f.emailTutorLaboral ?? "-"}
+                        </span>
+                      </td>
+
+                      <td>{f.periodo}</td>
 
                       <td>
                         <TdActions>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => onView(f)}
+                            title="Ver detalle"
+                            aria-label="Ver detalle"
+                          >
+                            {"\u{1F441}\uFE0F"}
+                          </Button>
+
                           <Button
                             variant="secondary"
                             size="sm"

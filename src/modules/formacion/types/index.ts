@@ -22,7 +22,8 @@ export interface Formacion {
   curso: string;
   periodo: string;
   descripcion: string | null;
-  contacto: string | null;
+  tutorLaboral: string | null;
+  emailTutorLaboral: string | null;
   createdAt: string;
   updatedAt: string;
 
@@ -40,6 +41,7 @@ export interface Formacion {
     nif: string | null;
     nuss: string | null;
     ciclo: string;
+    cursoCiclo: number;
     curso: string;
   } | null;
 }

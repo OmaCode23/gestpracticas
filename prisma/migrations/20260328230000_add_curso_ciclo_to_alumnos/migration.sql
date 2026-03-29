@@ -1,0 +1,2 @@
+ALTER TABLE "alumnos"
+ADD COLUMN "cursoCiclo" INTEGER NOT NULL DEFAULT 1;

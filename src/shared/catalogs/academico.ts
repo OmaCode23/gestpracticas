@@ -74,6 +74,11 @@ export const CICLO_LABEL: Record<string, string> = {
   "Comercio Internacional Semi": "CI-SEMI",
 };
 
+export function getCicloLabel(value?: string | null) {
+  if (!value) return "-";
+  return CICLO_LABEL[value] ?? value;
+}
+
 export const CICLO_BADGE: Record<string, BadgeVariant> = {
   GA: "blue",
   AF: "green",

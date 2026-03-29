@@ -32,6 +32,7 @@ interface FormacionFormProps {
   onChange: (key: keyof FormacionInput, value: string | number) => void;
   onClear: () => void;
   onSave: () => void;
+  onToggleCollapse: () => void;
 }
 
 export default function FormacionForm({
@@ -44,6 +45,7 @@ export default function FormacionForm({
   onChange,
   onClear,
   onSave,
+  onToggleCollapse,
 }: FormacionFormProps) {
   const sanitizeContacto = (value: string) =>
     value.replace(/\d/g, "").replace(/[^\p{L}\s'.-]/gu, "");
@@ -54,10 +56,25 @@ export default function FormacionForm({
 
       <Card className="mb-7">
         <CardHeader>
-          <CardTitle icon="FE" iconVariant="purple">
-            {editingId !== null ? "Editar formacion" : "Nueva formacion"}
-          </CardTitle>
-          <Tag>{editingId !== null ? "Modo edicion" : "Formulario de alta"}</Tag>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={onToggleCollapse}
+              aria-label="Colapsar formulario"
+              title="Colapsar formulario"
+              className="px-2.5 text-[0.95rem]"
+            >
+              {"\u25BE"}
+            </Button>
+            <CardTitle icon="FE" iconVariant="purple">
+              {editingId !== null ? "Editar formacion" : "Nueva formacion"}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Tag>{editingId !== null ? "Modo edicion" : "Formulario de alta"}</Tag>
+          </div>
         </CardHeader>
 
         <div className="p-6">
@@ -131,14 +148,26 @@ export default function FormacionForm({
           </FormRow>
 
           <FormRow cols={1}>
-            <FormGroup label="Persona de contacto">
+            <FormGroup label="Tutor laboral">
               <input
                 className={INPUT_CLS}
-                value={form.contacto ?? ""}
+                value={form.tutorLaboral ?? ""}
                 onChange={(e) =>
-                  onChange("contacto", sanitizeContacto(e.target.value))
+                  onChange("tutorLaboral", sanitizeContacto(e.target.value))
                 }
                 placeholder="Nombre y apellidos"
+              />
+            </FormGroup>
+          </FormRow>
+
+          <FormRow cols={1}>
+            <FormGroup label="Email tutor laboral">
+              <input
+                className={INPUT_CLS}
+                type="email"
+                value={form.emailTutorLaboral ?? ""}
+                onChange={(e) => onChange("emailTutorLaboral", e.target.value)}
+                placeholder="tutor@empresa.com"
               />
             </FormGroup>
           </FormRow>

@@ -50,6 +50,7 @@ model Alumno {
   telefono  String
   email     String
   ciclo     String
+  cursoCiclo Int     @default(1)
   curso     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,7 +66,8 @@ model FormacionEmpresa {
   alumno        Alumno?  @relation(fields: [alumnoId], references: [id])
   periodo       String?
   descripcion   String?
-  contacto      String?
+  tutorLaboral  String?
+  emailTutorLaboral String?
   curso         String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

@@ -16,16 +16,25 @@ function normalizeOptionalEmail(value?: string) {
   return typeof normalized === "string" ? normalized.toLowerCase() : normalized;
 }
 
+function normalizeRequiredString(value: string) {
+  return value.trim();
+}
+
+function normalizeRequiredEmail(value: string) {
+  return normalizeRequiredString(value).toLowerCase();
+}
+
 export async function createAlumno(data: AlumnoInput) {
   return prisma.alumno.create({
     data: {
       nombre: data.nombre.trim(),
       nia: data.nia.trim(),
-      nif: data.nif.trim().toUpperCase(),
-      nuss: data.nuss.trim(),
-      telefono: normalizeOptionalString(data.telefono),
-      email: normalizeOptionalEmail(data.email),
+      nif: normalizeOptionalString(data.nif?.toUpperCase()),
+      nuss: normalizeOptionalString(data.nuss),
+      telefono: normalizeRequiredString(data.telefono),
+      email: normalizeRequiredEmail(data.email),
       ciclo: data.ciclo.trim(),
+      cursoCiclo: data.cursoCiclo,
       curso: data.curso.trim(),
     },
   });
@@ -37,13 +46,14 @@ export async function updateAlumno(id: number, data: AlumnoUpdateInput) {
     data: {
       ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
       ...(data.nia !== undefined ? { nia: data.nia.trim() } : {}),
-      ...(data.nif !== undefined ? { nif: data.nif.trim().toUpperCase() } : {}),
-      ...(data.nuss !== undefined ? { nuss: data.nuss.trim() } : {}),
+      ...(data.nif !== undefined ? { nif: normalizeOptionalString(data.nif?.toUpperCase()) } : {}),
+      ...(data.nuss !== undefined ? { nuss: normalizeOptionalString(data.nuss) } : {}),
       ...(data.telefono !== undefined
-        ? { telefono: normalizeOptionalString(data.telefono) }
+        ? { telefono: normalizeRequiredString(data.telefono) }
         : {}),
-      ...(data.email !== undefined ? { email: normalizeOptionalEmail(data.email) } : {}),
+      ...(data.email !== undefined ? { email: normalizeRequiredEmail(data.email) } : {}),
       ...(data.ciclo !== undefined ? { ciclo: data.ciclo.trim() } : {}),
+      ...(data.cursoCiclo !== undefined ? { cursoCiclo: data.cursoCiclo } : {}),
       ...(data.curso !== undefined ? { curso: data.curso.trim() } : {}),
     },
   });
