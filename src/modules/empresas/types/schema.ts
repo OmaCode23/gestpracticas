@@ -17,6 +17,8 @@ const NOMBRE_EMPRESA_REGEX = /^[\p{L}\p{N}\s&'().,/-]+$/u;
 const CONTACTO_REGEX = /^[\p{L}\s'.-]+$/u;
 const TIENE_TEXTO_UTIL_REGEX = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO_REGEX = /([^\p{L}\p{N}\s])\1{2,}/u;
+const EMAIL_REGEX =
+  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
 
 export const empresaSchema = z.object({
   nombre: z
@@ -82,7 +84,7 @@ export const empresaSchema = z.object({
   email: z
     .string()
     .trim()
-    .email("El email de empresa no es valido.")
+    .regex(EMAIL_REGEX, "El email de empresa no es valido.")
     .optional()
     .or(z.literal("")),
   contacto: z
@@ -101,7 +103,7 @@ export const empresaSchema = z.object({
   emailContacto: z
     .string()
     .trim()
-    .email("El email del contacto no es valido.")
+    .regex(EMAIL_REGEX, "El email del contacto no es valido.")
     .optional()
     .or(z.literal("")),
 });

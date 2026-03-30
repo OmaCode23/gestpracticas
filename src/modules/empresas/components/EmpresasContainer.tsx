@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { type BadgeVariant } from "@/components/ui";
-import { CICLO_BADGE, CICLO_LABEL, CICLOS_FORMATIVOS } from "@/shared/catalogs/academico";
-import { SECTORES } from "@/shared/catalogs/empresa";
-import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
+import { Button, type BadgeVariant } from "@/components/ui";
+import { CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
 import type { Empresa, PaginatedEmpresas, EmpresaInput } from "../types";
 import EmpresaForm from "./EmpresaForm";
@@ -37,6 +35,12 @@ const EMPTY_FORM: EmpresaInput = {
 
 const PER_PAGE = 5;
 
+type EmpresaCatalogos = {
+  sectores: string[];
+  localidades: string[];
+  ciclosFormativos: string[];
+};
+
 export default function EmpresasContainer() {
   const router = useRouter();
   const [form, setForm] = useState<EmpresaInput>(EMPTY_FORM);
@@ -50,6 +54,12 @@ export default function EmpresasContainer() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [catalogos, setCatalogos] = useState<EmpresaCatalogos>({
+    sectores: [],
+    localidades: [],
+    ciclosFormativos: [],
+  });
 
   const handleFormChange = (key: keyof EmpresaInput, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -86,9 +96,31 @@ export default function EmpresasContainer() {
     }
   }
 
+  async function cargarCatalogos() {
+    try {
+      const res = await fetch("/api/catalogos/empresas", {
+        cache: "no-store",
+      });
+      const json: ApiResponse<EmpresaCatalogos> = await res.json();
+
+      if (!json.ok) {
+        throw new Error(json.error);
+      }
+
+      setCatalogos(json.data);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron cargar los catalogos de empresas.");
+    }
+  }
+
   useEffect(() => {
     cargarEmpresas();
   }, [sector, localidad, search, page]);
+
+  useEffect(() => {
+    void cargarCatalogos();
+  }, []);
 
   useEffect(() => {
     if (!notification) return;
@@ -134,6 +166,7 @@ export default function EmpresasContainer() {
 
       setForm(EMPTY_FORM);
       setEditingId(null);
+      setIsFormOpen(false);
       setPage(1);
       await cargarEmpresas();
       router.refresh();
@@ -165,6 +198,7 @@ export default function EmpresasContainer() {
     });
 
     setEditingId(empresa.id);
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -230,17 +264,44 @@ export default function EmpresasContainer() {
         </div>
       )}
 
-      <EmpresaForm
-        form={form}
-        saving={saving}
-        editingId={editingId}
-        ciclosFormativos={CICLOS_FORMATIVOS}
-        localidades={LOCALIDADES}
-        sectores={SECTORES}
-        onChange={handleFormChange}
-        onClear={handleLimpiar}
-        onSave={handleGuardar}
-      />
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant={isFormOpen ? "secondary" : "primary"}
+          onClick={() => {
+            if (isFormOpen) {
+              handleLimpiar();
+              setIsFormOpen(false);
+              return;
+            }
+
+            setIsFormOpen(true);
+          }}
+        >
+          {isFormOpen ? "Ocultar formulario" : "+ Agregar nueva empresa"}
+        </Button>
+      </div>
+
+      <div
+        className={[
+          "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
+          isFormOpen
+            ? "mb-7 max-h-[1200px] translate-y-0 opacity-100"
+            : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
+        ].join(" ")}
+        aria-hidden={!isFormOpen}
+      >
+        <EmpresaForm
+          form={form}
+          saving={saving}
+          editingId={editingId}
+          ciclosFormativos={catalogos.ciclosFormativos}
+          localidades={catalogos.localidades}
+          sectores={catalogos.sectores}
+          onChange={handleFormChange}
+          onClear={handleLimpiar}
+          onSave={handleGuardar}
+        />
+      </div>
 
       <EmpresasTable
         empresas={empresas}
@@ -251,8 +312,8 @@ export default function EmpresasContainer() {
         sector={sector}
         localidad={localidad}
         search={search}
-        sectores={SECTORES}
-        localidades={LOCALIDADES}
+        sectores={catalogos.sectores}
+        localidades={catalogos.localidades}
         cicloBadge={CICLO_BADGE}
         cicloLabel={CICLO_LABEL}
         sectorBadge={SECTOR_BADGE}

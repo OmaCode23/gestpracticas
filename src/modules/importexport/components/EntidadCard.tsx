@@ -38,7 +38,7 @@ export function EntidadCard({
       <div className="p-5">
         <p className="mb-3.5 text-[0.78rem] text-text-light">{config.descripcion}</p>
 
-        {!config.enabled && (
+        {!config.enabled && config.pendingMessage && (
           <p className="mb-3.5 rounded-[9px] border border-amber-200 bg-amber-50 px-3 py-2 text-[0.74rem] text-amber-700">
             {config.pendingMessage}
           </p>
@@ -49,7 +49,10 @@ export function EntidadCard({
           iconoBg="bg-blue-100"
           iconoColor="text-blue-600"
           titulo="Descargar plantilla"
-          desc={`Columnas: ${config.columnas.slice(0, 3).join(", ")}...`}
+          desc={
+            config.plantillaDescripcion ??
+            `Columnas: ${config.columnas.slice(0, 3).join(", ")}...`
+          }
           onClick={onPlantilla}
           disabled={!config.enabled || isBusy}
         />
@@ -59,7 +62,7 @@ export function EntidadCard({
           iconoBg="bg-green-100"
           iconoColor="text-green-600"
           titulo={`Importar ${config.titulo.toLowerCase()} desde Excel`}
-          desc="Sube tu archivo .xlsx o .xls"
+          desc={config.importDescripcion ?? "Sube tu archivo .xlsx o .xls"}
           onClick={() => fileRef.current?.click()}
           disabled={!config.enabled || isBusy}
         />
@@ -81,7 +84,7 @@ export function EntidadCard({
           iconoBg="bg-amber-100"
           iconoColor="text-amber-600"
           titulo={`Exportar ${config.titulo.toLowerCase()} actuales`}
-          desc="Descarga en formato Excel"
+          desc={config.exportDescripcion ?? "Descarga en formato Excel"}
           onClick={onExport}
           disabled={!config.enabled || isBusy}
         />

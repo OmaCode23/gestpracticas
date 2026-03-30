@@ -2,7 +2,7 @@
  * src/modules/formacion/actions/mutations.ts
  *
  * Mutaciones estrictas para crear, actualizar y eliminar formaciones en empresa.
- * Incluye normalización de campos opcionales y sanitización básica.
+ * Incluye normalizacion de campos opcionales y sanitizacion basica.
  */
 
 import { prisma } from "@/database/prisma";
@@ -22,6 +22,7 @@ export async function createFormacion(data: FormacionInput) {
       curso: data.curso.trim(),
       periodo: data.periodo.trim(),
       descripcion: normalizeOptionalString(data.descripcion),
+      contacto: normalizeOptionalString(data.contacto),
       tutorLaboral: normalizeOptionalString(data.tutorLaboral),
       emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral),
     },
@@ -61,6 +62,9 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
       ...(data.descripcion !== undefined
         ? { descripcion: normalizeOptionalString(data.descripcion) }
         : {}),
+      ...(data.contacto !== undefined
+        ? { contacto: normalizeOptionalString(data.contacto) }
+        : {}),
       ...(data.tutorLaboral !== undefined
         ? { tutorLaboral: normalizeOptionalString(data.tutorLaboral) }
         : {}),
@@ -98,5 +102,3 @@ export async function deleteFormacion(id: number) {
     where: { id },
   });
 }
-
-

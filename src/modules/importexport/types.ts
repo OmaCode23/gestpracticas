@@ -64,6 +64,18 @@ export type ImportResponse = {
 export type ImportErrorResponse = ApiResponse<never, string[]>;
 
 /**
+ * Definicion reutilizable de campos para mantener alineados formulario,
+ * plantilla Excel e importacion/exportacion.
+ */
+export type ImportFieldDef = {
+  key: string;
+  label: string;
+  required?: boolean;
+  formLabel?: string;
+  placeholder?: string;
+};
+
+/**
  * Contrato de configuracion de cada tarjeta del modulo.
  */
 export interface CardConfig {
@@ -72,6 +84,9 @@ export interface CardConfig {
   icono: string;
   headerBg: string;
   descripcion: string;
+  plantillaDescripcion?: string;
+  importDescripcion?: string;
+  exportDescripcion?: string;
   columnas: string[];
   requiredColumns: string[];
   fileName: string;

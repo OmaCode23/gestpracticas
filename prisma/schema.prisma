@@ -24,67 +24,114 @@ model Usuario {
 }
 
 model Empresa {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  cif           String   @unique
-  direccion     String?
-  localidad     String
-  sector        String
-  cicloFormativo String?
-  telefono      String?
-  email         String?
-  contacto      String?
-  emailContacto String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  formaciones   FormacionEmpresa[]
+  id                Int              @id @default(autoincrement())
+  nombre            String
+  cif               String           @unique
+  direccion         String?
+  localidad         String
+  localidadId       Int?
+  localidadRef      Localidad?       @relation(fields: [localidadId], references: [id], onDelete: SetNull)
+  sector            String
+  sectorId          Int?
+  sectorRef         Sector?          @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  cicloFormativo    String?
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  telefono          String?
+  email             String?
+  contacto          String?
+  emailContacto     String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  formaciones       FormacionEmpresa[]
+
   @@map("empresas")
 }
 
 model Alumno {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  nia       String   @unique
-  nif       String?  @unique
-  nuss      String?  @unique
-  telefono  String
-  email     String
-  ciclo     String
-  cursoCiclo Int     @default(1)
-  curso     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  formaciones FormacionEmpresa[]
+  id                Int              @id @default(autoincrement())
+  nombre            String
+  nia               String           @unique
+  nif               String?          @unique
+  nuss              String?          @unique
+  telefono          String
+  email             String
+  ciclo             String
+  cursoCiclo        Int              @default(1)
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  curso             String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  formaciones       FormacionEmpresa[]
+
   @@map("alumnos")
 }
 
 model FormacionEmpresa {
-  id            Int      @id @default(autoincrement())
-  empresaId     Int
-  empresa       Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  alumnoId      Int?
-  alumno        Alumno?  @relation(fields: [alumnoId], references: [id])
-  periodo       String?
-  descripcion   String?
-  tutorLaboral  String?
-  emailTutorLaboral String?
-  curso         String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 Int      @id @default(autoincrement())
+  empresaId          Int
+  empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  alumnoId           Int?
+  alumno             Alumno?  @relation(fields: [alumnoId], references: [id])
+  periodo            String?
+  descripcion        String?
+  contacto           String?
+  tutorLaboral       String?
+  emailTutorLaboral  String?
+  curso              String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
   @@map("formaciones_empresa")
 }
 
 model ImportExportLog {
-  id        Int      @id @default(autoincrement())
-  entidad   String
-  accion    String
-  registros Int
-  estado    String
-  usuarioId Int?
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  usuarioNombre String @map("usuario")
-  detalle   String?
-  createdAt DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  entidad       String
+  accion        String
+  registros     Int
+  estado        String
+  usuarioId     Int?
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioNombre String   @map("usuario")
+  detalle       String?
+  createdAt     DateTime @default(now())
 
   @@map("import_export_logs")
+}
+
+model Sector {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+
+  @@map("sectores")
+}
+
+model Localidad {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+
+  @@map("localidades")
+}
+
+model CicloFormativo {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  codigo    String?   @unique
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  empresas  Empresa[]
+  alumnos   Alumno[]
+
+  @@map("ciclos_formativos")
 }

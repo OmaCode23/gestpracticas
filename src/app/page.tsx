@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
-import graoLogo from "@/app/images/grao-gif.gif";
+import institutoLogoCompleto from "@/app/images/logo_instituto_completo.webp";
 import StatCard from "@/components/ui/StatCard";
 import { SectionLabel } from "@/components/ui";
 import { prisma } from "@/database/prisma";
@@ -86,7 +86,7 @@ export default async function HomePage() {
               Instituto <span className="text-blue">/ Inicio</span>
             </p>
             <h1 className="font-display text-[1.7rem] font-bold leading-tight text-navy md:text-[2rem]">
-              Panel de Gestion de Practicas
+              Panel de Gestión de Prácticas
             </h1>
             <p className="mt-2 max-w-2xl text-[0.95rem] leading-relaxed text-text-mid">
               Centraliza la gestion de empresas colaboradoras, alumnado en practicas y
@@ -97,7 +97,7 @@ export default async function HomePage() {
 
           <div className="justify-self-start rounded-[28px] border border-[#ead7d7] bg-[#fffdfb] p-5 shadow-[0_18px_40px_rgba(83,42,53,0.12)] md:justify-self-end">
             <Image
-              src={graoLogo}
+              src={institutoLogoCompleto}
               alt="Logo IES El Grao Valencia"
               className="h-auto w-[220px]"
               priority

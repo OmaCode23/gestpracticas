@@ -10,6 +10,10 @@ import { revalidatePath } from "next/cache";
 import { getFormacionesPaginated } from "@/modules/formacion/actions/queries";
 import { createFormacion } from "@/modules/formacion/actions/mutations";
 import { formacionSchema, formacionFilterSchema } from "@/modules/formacion/types/schema";
+import {
+  importFormaciones,
+  type FormacionImportRow,
+} from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
@@ -49,6 +53,27 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    if (Array.isArray(body.rows)) {
+      const result = await importFormaciones(body.rows as FormacionImportRow[]);
+
+      if (!result.ok) {
+        return NextResponse.json<ApiResponse<never, string[]>>(
+          { ok: false, error: result.message, details: result.errors },
+          { status: 400 }
+        );
+      }
+
+      revalidatePath("/");
+      revalidatePath("/formacion");
+      revalidatePath("/importexport");
+
+      return NextResponse.json<ApiResponse<typeof result>>({
+        ok: true,
+        data: result,
+      });
+    }
+
     const parsed = formacionSchema.safeParse(body);
 
     if (!parsed.success) {

@@ -1,4 +1,7 @@
 import { prisma } from "@/database/prisma";
+import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
+import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
+import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 
 /**
  * Obtiene las empresas de la base de datos y las transforma al formato de columnas
@@ -10,15 +13,53 @@ export async function getEmpresasExport() {
   });
 
   return empresas.map((empresa) => ({
-    CIF: empresa.cif,
-    Nombre: empresa.nombre,
-    Direccion: empresa.direccion ?? "",
-    Localidad: empresa.localidad,
-    Sector: empresa.sector,
-    "Ciclo Formativo": empresa.cicloFormativo ?? "",
-    Telefono: empresa.telefono ?? "",
-    "Correo Empresa": empresa.email ?? "",
-    Contacto: empresa.contacto ?? "",
-    "Correo Contacto": empresa.emailContacto ?? "",
+    [EMPRESA_FIELDS[0].label]: empresa.cif,
+    [EMPRESA_FIELDS[1].label]: empresa.nombre,
+    [EMPRESA_FIELDS[2].label]: empresa.direccion ?? "",
+    [EMPRESA_FIELDS[3].label]: empresa.localidad,
+    [EMPRESA_FIELDS[4].label]: empresa.sector,
+    [EMPRESA_FIELDS[5].label]: empresa.cicloFormativo ?? "",
+    [EMPRESA_FIELDS[6].label]: empresa.telefono ?? "",
+    [EMPRESA_FIELDS[7].label]: empresa.email ?? "",
+    [EMPRESA_FIELDS[8].label]: empresa.contacto ?? "",
+    [EMPRESA_FIELDS[9].label]: empresa.emailContacto ?? "",
+  }));
+}
+
+export async function getAlumnosExport() {
+  const alumnos = await prisma.alumno.findMany({
+    orderBy: { nombre: "asc" },
+  });
+
+  return alumnos.map((alumno) => ({
+    [ALUMNO_FIELDS[0].label]: alumno.nia,
+    [ALUMNO_FIELDS[1].label]: alumno.nombre,
+    [ALUMNO_FIELDS[2].label]: alumno.telefono ?? "",
+    [ALUMNO_FIELDS[3].label]: alumno.email ?? "",
+    [ALUMNO_FIELDS[4].label]: alumno.ciclo,
+    [ALUMNO_FIELDS[5].label]: alumno.curso,
+  }));
+}
+
+export async function getFormacionExport() {
+  const formaciones = await prisma.formacionEmpresa.findMany({
+    include: {
+      empresa: {
+        select: { nombre: true },
+      },
+      alumno: {
+        select: { nombre: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return formaciones.map((formacion) => ({
+    [FORMACION_FIELDS[0].label]: formacion.empresa.nombre,
+    [FORMACION_FIELDS[1].label]: formacion.alumno?.nombre ?? "",
+    [FORMACION_FIELDS[2].label]: formacion.periodo ?? "",
+    [FORMACION_FIELDS[3].label]: formacion.descripcion ?? "",
+    [FORMACION_FIELDS[4].label]: formacion.contacto ?? "",
+    [FORMACION_FIELDS[5].label]: formacion.curso,
   }));
 }

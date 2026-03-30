@@ -1,8 +1,24 @@
+import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
+import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
+import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
+import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 import type { CardConfig, ImportErrorResponse, SheetRow } from "./types";
 import { CICLOS_FORMATIVOS } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
+
+function mapRowsByFieldConfig(
+  rows: SheetRow[],
+  fields: Array<{ key: string; label: string }>
+) {
+  return rows.map((row) =>
+    fields.reduce<Record<string, string>>((acc, field) => {
+      acc[field.key] = row[field.label] ?? "";
+      return acc;
+    }, {})
+  );
+}
 
 /**
  * Elimina espacios intermedios para guardar telefonos con un formato consistente.
@@ -34,6 +50,13 @@ export function createEmptyRow(columns: string[]) {
     return acc;
   }, {});
 }
+
+type WorkbookOptions = {
+  title?: string;
+  subtitle?: string;
+  sheetName?: string;
+  template?: boolean;
+};
 
 /**
  * Devuelve la fecha en formato YYYY-MM-DD para nombres de fichero.
@@ -178,18 +201,21 @@ export function collectExcelValidationErrors(input: {
  * Adapta las filas tipadas del Excel al payload esperado por la importacion de empresas.
  */
 export function mapEmpresaRows(rows: SheetRow[]) {
-  return rows.map((row) => ({
-    cif: row.CIF,
-    nombre: row.Nombre,
-    direccion: row.Direccion,
-    localidad: row.Localidad,
-    sector: row.Sector,
-    cicloFormativo: row["Ciclo Formativo"],
-    telefono: normalizePhone(row.Telefono),
-    email: row["Correo Empresa"],
-    contacto: row.Contacto,
-    emailContacto: row["Correo Contacto"],
+  return mapRowsByFieldConfig(rows, EMPRESA_FIELDS).map((row) => ({
+    ...row,
+    telefono: normalizePhone(row.telefono),
   }));
+}
+
+export function mapAlumnoRows(rows: SheetRow[]) {
+  return mapRowsByFieldConfig(rows, ALUMNO_FIELDS).map((row) => ({
+    ...row,
+    telefono: normalizePhone(row.telefono),
+  }));
+}
+
+export function mapFormacionRows(rows: SheetRow[]) {
+  return mapRowsByFieldConfig(rows, FORMACION_FIELDS);
 }
 
 /**
@@ -253,26 +279,255 @@ function buildCatalogRows() {
   }));
 }
 
+function computeColumnWidths(columns: string[], rows: SheetRow[]) {
+  return columns.map((column) => {
+    const maxContentLength = rows.reduce((max, row) => {
+      return Math.max(max, String(row[column] ?? "").length);
+    }, column.length);
+
+    return {
+      wch: Math.min(Math.max(maxContentLength + 3, 14), 36),
+    };
+  });
+}
+
+function triggerWorkbookDownload(buffer: ArrayBuffer, fileName: string) {
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function styleWorkbookHeaderRow(row: ExcelJS.Row) {
+  row.eachCell((cell) => {
+    cell.font = {
+      bold: true,
+      color: { argb: "FFFFFFFF" },
+    };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF9F1D3E" },
+    };
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFE5E7EB" } },
+      left: { style: "thin", color: { argb: "FFE5E7EB" } },
+      bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+      right: { style: "thin", color: { argb: "FFE5E7EB" } },
+    };
+  });
+}
+
+function styleWorkbookBodyRows(worksheet: ExcelJS.Worksheet, fromRow: number, toRow: number) {
+  for (let rowIndex = fromRow; rowIndex <= toRow; rowIndex += 1) {
+    const row = worksheet.getRow(rowIndex);
+    row.eachCell((cell) => {
+      cell.alignment = {
+        vertical: "top",
+        wrapText: true,
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFF1F5F9" } },
+        left: { style: "thin", color: { argb: "FFF1F5F9" } },
+        bottom: { style: "thin", color: { argb: "FFF1F5F9" } },
+        right: { style: "thin", color: { argb: "FFF1F5F9" } },
+      };
+    });
+  }
+}
+
+function prepareTemplateEntryArea(
+  worksheet: ExcelJS.Worksheet,
+  columns: string[],
+  fromRow: number,
+  toRow: number
+) {
+  for (let columnIndex = 1; columnIndex <= columns.length; columnIndex += 1) {
+    const column = worksheet.getColumn(columnIndex);
+    column.alignment = {
+      vertical: "top",
+      wrapText: true,
+    };
+  }
+
+  for (let rowIndex = fromRow; rowIndex <= toRow; rowIndex += 1) {
+    const row = worksheet.getRow(rowIndex);
+    row.height = 22;
+
+    for (let columnIndex = 1; columnIndex <= columns.length; columnIndex += 1) {
+      const cell = row.getCell(columnIndex);
+      cell.alignment = {
+        vertical: "top",
+        wrapText: true,
+      };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFF1F5F9" } },
+        left: { style: "thin", color: { argb: "FFF1F5F9" } },
+        bottom: { style: "thin", color: { argb: "FFF1F5F9" } },
+        right: { style: "thin", color: { argb: "FFF1F5F9" } },
+      };
+    }
+  }
+}
+
+function applyEmpresaTemplateValidations(
+  worksheet: ExcelJS.Worksheet,
+  columns: string[],
+  dataStartRow: number,
+  dataEndRow: number
+) {
+  const localidadIndex = columns.indexOf("Localidad");
+  const sectorIndex = columns.indexOf("Sector");
+  const cicloIndex = columns.indexOf("Ciclo Formativo");
+
+  const applyValidation = (
+    columnIndex: number,
+    formula: string,
+    errorTitle: string,
+    error: string
+  ) => {
+    for (let rowIndex = dataStartRow; rowIndex <= dataEndRow; rowIndex += 1) {
+      worksheet.getCell(rowIndex, columnIndex + 1).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [formula],
+        showErrorMessage: true,
+        errorStyle: "error",
+        errorTitle,
+        error,
+      };
+    }
+  };
+
+  if (localidadIndex >= 0) {
+    applyValidation(
+      localidadIndex,
+      `Catalogos!$C$2:$C$${LOCALIDADES.length + 1}`,
+      "Localidad no valida",
+      "Selecciona una localidad de la lista desplegable."
+    );
+  }
+
+  if (sectorIndex >= 0) {
+    applyValidation(
+      sectorIndex,
+      `Catalogos!$B$2:$B$${SECTORES.length + 1}`,
+      "Sector no valido",
+      "Selecciona un sector de la lista desplegable."
+    );
+  }
+
+  if (cicloIndex >= 0) {
+    applyValidation(
+      cicloIndex,
+      `Catalogos!$A$2:$A$${CICLOS_FORMATIVOS.length + 1}`,
+      "Ciclo formativo no valido",
+      "Selecciona un ciclo formativo de la lista desplegable."
+    );
+  }
+}
+
 /**
  * Genera y descarga un libro Excel con la hoja principal de datos y, cuando procede,
  * una segunda hoja con catalogos de referencia.
  */
-export function downloadWorkbook(rows: SheetRow[], columns: string[], fileName: string) {
+export async function downloadWorkbook(
+  rows: SheetRow[],
+  columns: string[],
+  fileName: string,
+  options: WorkbookOptions = {}
+) {
   const exportRows = rows.length > 0 ? rows : [createEmptyRow(columns)];
-  const workbook = XLSX.utils.book_new();
-  const worksheet = XLSX.utils.json_to_sheet(exportRows, { header: columns });
+  const workbook = new ExcelJS.Workbook();
+  const title = options.title ?? "Exportacion";
+  const subtitle =
+    options.subtitle ?? `Generado el ${new Intl.DateTimeFormat("es-ES", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(new Date())}`;
+  const worksheet = workbook.addWorksheet(options.sheetName ?? "Datos", {
+    views: [{ state: "frozen", xSplit: 0, ySplit: 4 }],
+  });
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
+  worksheet.mergeCells(1, 1, 1, columns.length);
+  worksheet.mergeCells(2, 1, 2, columns.length);
+  worksheet.getCell(1, 1).value = title;
+  worksheet.getCell(2, 1).value = subtitle;
+  worksheet.getCell(1, 1).font = { bold: true, size: 15, color: { argb: "FF1A1F36" } };
+  worksheet.getCell(2, 1).font = { italic: true, size: 10, color: { argb: "FF6D5A59" } };
+  worksheet.getCell(1, 1).alignment = { horizontal: "left", vertical: "middle" };
+  worksheet.getCell(2, 1).alignment = { horizontal: "left", vertical: "middle" };
+
+  const headerRowIndex = 4;
+  const headerRow = worksheet.getRow(headerRowIndex);
+  headerRow.values = columns;
+  styleWorkbookHeaderRow(headerRow);
+
+  exportRows.forEach((row, index) => {
+    const excelRow = worksheet.getRow(headerRowIndex + 1 + index);
+    excelRow.values = columns.map((column) => row[column] ?? "");
+  });
+
+  styleWorkbookBodyRows(
+    worksheet,
+    headerRowIndex + 1,
+    headerRowIndex + exportRows.length
+  );
+
+  computeColumnWidths(columns, exportRows).forEach((width, index) => {
+    worksheet.getColumn(index + 1).width = width.wch;
+  });
+
+  worksheet.autoFilter = {
+    from: { row: headerRowIndex, column: 1 },
+    to: { row: headerRowIndex, column: columns.length },
+  };
 
   if (hasEmpresaCatalogColumns(columns)) {
-    const catalogWorksheet = XLSX.utils.json_to_sheet(buildCatalogRows(), {
-      header: ["Ciclos Formativos", "Sectores", "Localidades o Municipios"],
+    const catalogWorksheet = workbook.addWorksheet("Catalogos");
+    const catalogHeaders = [
+      "Ciclos Formativos",
+      "Sectores",
+      "Localidades o Municipios",
+    ];
+    catalogWorksheet.addRow(catalogHeaders);
+    styleWorkbookHeaderRow(catalogWorksheet.getRow(1));
+    buildCatalogRows().forEach((row) => {
+      catalogWorksheet.addRow([
+        row["Ciclos Formativos"],
+        row.Sectores,
+        row["Localidades o Municipios"],
+      ]);
     });
+    catalogWorksheet.getColumn(1).width = 34;
+    catalogWorksheet.getColumn(2).width = 24;
+    catalogWorksheet.getColumn(3).width = 34;
 
-    XLSX.utils.book_append_sheet(workbook, catalogWorksheet, "Catalogos");
+    if (options.template) {
+      prepareTemplateEntryArea(worksheet, columns, headerRowIndex + 1, 300);
+      applyEmpresaTemplateValidations(
+        worksheet,
+        columns,
+        headerRowIndex + 1,
+        300
+      );
+    }
+  } else if (options.template) {
+    prepareTemplateEntryArea(worksheet, columns, headerRowIndex + 1, 300);
   }
 
-  XLSX.writeFile(workbook, fileName);
+  const buffer = await workbook.xlsx.writeBuffer();
+  triggerWorkbookDownload(buffer as ArrayBuffer, fileName);
 }
 
 /**
