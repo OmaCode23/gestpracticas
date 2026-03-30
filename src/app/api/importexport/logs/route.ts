@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getImportExportLogs } from "@/modules/importexport/actions/logs";
+import {
+  createImportExportLog,
+  getImportExportLogs,
+} from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
 
 /**
@@ -42,6 +45,46 @@ export async function GET(req: NextRequest) {
     console.error("[GET /api/importexport/logs]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al obtener el historial de importacion y exportacion" },
+      { status: 500 }
+    );
+  }
+}
+
+type CreateLogBody = {
+  entidad?: string;
+  accion?: "Importacion" | "Exportacion";
+  registros?: number;
+  estado?: "Completado" | "Fallido";
+  detalle?: string;
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = (await req.json()) as CreateLogBody;
+
+    if (!body.entidad || !body.accion || body.registros === undefined || !body.estado) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "Faltan datos obligatorios para registrar el log" },
+        { status: 400 }
+      );
+    }
+
+    const log = await createImportExportLog({
+      entidad: body.entidad,
+      accion: body.accion,
+      registros: body.registros,
+      estado: body.estado,
+      detalle: body.detalle,
+    });
+
+    return NextResponse.json<ApiResponse<typeof log>>({
+      ok: true,
+      data: log,
+    });
+  } catch (error) {
+    console.error("[POST /api/importexport/logs]", error);
+    return NextResponse.json<ApiResponse<never>>(
+      { ok: false, error: "Error al registrar la actividad de importacion y exportacion" },
       { status: 500 }
     );
   }

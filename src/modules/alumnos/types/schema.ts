@@ -9,6 +9,8 @@ import { CICLOS, CURSOS } from "@/shared/catalogs/academico";
 
 const TEXTO_UTIL = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
+const EMAIL_REGEX =
+  /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
 
 export const alumnoSchema = z.object({
   nombre: z
@@ -36,7 +38,7 @@ export const alumnoSchema = z.object({
     .string()
     .trim()
     .min(1, "El correo electrónico es obligatorio.")
-    .email("El email no es válido."),
+    .regex(EMAIL_REGEX, "El email no es válido."),
 
   ciclo: z
     .string()

@@ -6,6 +6,7 @@ import type { EmpresaInput } from "@/modules/empresas/types";
 import { empresaSchema } from "@/modules/empresas/types/schema";
 import { formacionSchema } from "@/modules/formacion/types/schema";
 import { createImportExportLog } from "./logs";
+import type { ZodError } from "zod";
 
 export type EmpresaImportRow = {
   cif: string;
@@ -41,6 +42,10 @@ export type FormacionImportRow = {
 export type ImportResult =
   | { ok: true; message: string; importedCount: number }
   | { ok: false; message: string; importedCount: number; errors: string[] };
+
+function buildRowValidationErrors(excelRow: number, error: ZodError) {
+  return error.errors.map((issue) => `Fila ${excelRow}: ${issue.message}`);
+}
 
 function normalizeEmpresaImportRow(row: EmpresaImportRow): EmpresaInput {
   return {
@@ -119,7 +124,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
     const parsed = empresaSchema.safeParse(row);
 
     if (!parsed.success) {
-      errors.push(`Fila ${index + 2}: ${parsed.error.errors[0].message}`);
+      errors.push(...buildRowValidationErrors(index + 2, parsed.error));
     }
   });
 
@@ -198,7 +203,7 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
 
     const parsed = alumnoSchema.safeParse(row);
     if (!parsed.success) {
-      errors.push(`Fila ${excelRow}: ${parsed.error.errors[0].message}`);
+      errors.push(...buildRowValidationErrors(excelRow, parsed.error));
     }
   });
 
@@ -327,7 +332,7 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
     });
 
     if (!parsed.success) {
-      errors.push(`Fila ${excelRow}: ${parsed.error.errors[0].message}`);
+      errors.push(...buildRowValidationErrors(excelRow, parsed.error));
       return [];
     }
 

@@ -65,6 +65,7 @@ export async function getFormacionesPaginated(params: {
             nombre: true,
             sector: true,
             localidad: true,
+            cicloFormativo: true,
           },
         },
         alumno: {
@@ -104,6 +105,7 @@ export async function getFormacionById(id: number) {
           nombre: true,
           sector: true,
           localidad: true,
+          cicloFormativo: true,
         },
       },
       alumno: {

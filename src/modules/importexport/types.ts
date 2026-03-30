@@ -84,6 +84,9 @@ export interface CardConfig {
   icono: string;
   headerBg: string;
   descripcion: string;
+  plantillaDescripcion?: string;
+  importDescripcion?: string;
+  exportDescripcion?: string;
   columnas: string[];
   requiredColumns: string[];
   fileName: string;

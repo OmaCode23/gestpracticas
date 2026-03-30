@@ -28,6 +28,12 @@ import {
 } from "@/modules/importexport/utils";
 import type { ApiResponse } from "@/shared/types/api";
 
+const ENTITY_LOG_LABEL: Record<Entidad, string> = {
+  alumnos: "Alumnos",
+  empresas: "Empresas",
+  formacion: "Form. Empresa",
+};
+
 /**
  * Componente orquestador del modulo:
  * maneja el estado de cada entidad, ejecuta importaciones/exportaciones
@@ -122,6 +128,26 @@ export default function ImportExportPanel() {
     setEntityErrors(entidad, []);
   };
 
+  const registerImportFailureLog = async (entidad: Entidad, details: string[]) => {
+    try {
+      await fetch("/api/importexport/logs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          entidad: ENTITY_LOG_LABEL[entidad],
+          accion: "Importacion",
+          registros: 0,
+          estado: "Fallido",
+          detalle: details.join("\n"),
+        }),
+      });
+    } catch (error) {
+      console.error("[ImportExportPanel] No se pudo registrar el log local", error);
+    }
+  };
+
   /**
    * Descarga los datos actuales de una entidad como Excel.
    */
@@ -167,10 +193,15 @@ export default function ImportExportPanel() {
         return normalizedRow;
       });
 
-      downloadWorkbook(
+      await downloadWorkbook(
         rows,
         config.columnas,
-        `${config.fileName}_${formatDateStamp()}.xlsx`
+        `${config.fileName}_${formatDateStamp()}.xlsx`,
+        {
+          title: `Exportacion de ${config.titulo}`,
+          subtitle: `${json.data.length} registro(s) exportado(s)`,
+          sheetName: "Exportacion",
+        }
       );
 
       setEntityStatus(
@@ -188,7 +219,7 @@ export default function ImportExportPanel() {
   /**
    * Descarga una plantilla vacia para que el usuario rellene datos con el formato correcto.
    */
-  const handlePlantilla = (config: CardConfig) => {
+  const handlePlantilla = async (config: CardConfig) => {
     if (!config.enabled) {
       setEntityStatus(
         config.entidad,
@@ -199,9 +230,19 @@ export default function ImportExportPanel() {
 
     clearEntityFeedback(config.entidad);
     setEntityBusy(config.entidad, "plantilla");
-    downloadWorkbook([], config.columnas, `plantilla_${config.fileName}.xlsx`);
-    setEntityStatus(config.entidad, "Plantilla descargada correctamente.");
-    setEntityBusy(config.entidad, null);
+    try {
+      await downloadWorkbook([], config.columnas, `plantilla_${config.fileName}.xlsx`, {
+        title: `Plantilla de ${config.titulo}`,
+        subtitle: "Rellena las columnas y conserva la cabecera para importar",
+        sheetName: "Plantilla",
+        template: true,
+      });
+      setEntityStatus(config.entidad, "Plantilla descargada correctamente.");
+    } catch (error) {
+      setEntityStatus(config.entidad, `Error: ${getErrorMessage(error)}`);
+    } finally {
+      setEntityBusy(config.entidad, null);
+    }
   };
 
   /**
@@ -251,6 +292,8 @@ export default function ImportExportPanel() {
 
       if (excelErrors.length > 0) {
         setEntityErrors(config.entidad, excelErrors);
+        await registerImportFailureLog(config.entidad, excelErrors);
+        await loadLogs();
         throw new Error(
           `Se han detectado ${excelErrors.length} incidencia(s) en el Excel.`
         );
