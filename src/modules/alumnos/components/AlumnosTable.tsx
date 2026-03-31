@@ -10,11 +10,13 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import { CICLOS, CURSOS, CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
+import { CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
 import type { Alumno } from "@/modules/alumnos/types";
 
 interface AlumnosTableProps {
   alumnos: Alumno[];
+  ciclos: string[];
+  cursos: string[];
   total: number;
   perPage: number;
   ciclo: string;
@@ -25,12 +27,15 @@ interface AlumnosTableProps {
   onChangeCurso: (v: string) => void;
   onChangeSearch: (v: string) => void;
   onPageChange: (p: number) => void;
+  onVer: (alumno: Alumno) => void;
   onEditar: (alumno: Alumno) => void;
   onEliminar: (id: number) => void;
 }
 
 export default function AlumnosTable({
   alumnos,
+  ciclos,
+  cursos,
   total,
   perPage,
   ciclo,
@@ -41,9 +46,12 @@ export default function AlumnosTable({
   onChangeCurso,
   onChangeSearch,
   onPageChange,
+  onVer,
   onEditar,
   onEliminar,
 }: AlumnosTableProps) {
+  const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
+
   return (
     <>
       <SectionLabel>Listado de alumnos</SectionLabel>
@@ -59,8 +67,10 @@ export default function AlumnosTable({
             onChange={onChangeCiclo}
           >
             <option value="">Todos los ciclos</option>
-            {CICLOS.map((c) => (
-              <option key={c}>{c}</option>
+            {ciclos.map((c) => (
+              <option key={c} value={c}>
+                {getCicloLabel(c)}
+              </option>
             ))}
           </FilterSelect>
 
@@ -69,7 +79,7 @@ export default function AlumnosTable({
             onChange={onChangeCurso}
           >
             <option value="">Todos los cursos</option>
-            {CURSOS.map((c) => (
+            {cursos.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </FilterSelect>
@@ -88,8 +98,17 @@ export default function AlumnosTable({
                 <th>Nombre</th>
                 <th>NIA</th>
                 <th>Ciclo</th>
-                <th>Curso</th>
-                <th>Teléfono</th>
+                <th>
+                  Curso
+                  <br />
+                  Ciclo
+                </th>
+                <th>
+                  Curso
+                  <br />
+                  Academico
+                </th>
+                <th>Telefono</th>
                 <th>Correo</th>
                 <th>Acciones</th>
               </tr>
@@ -98,18 +117,20 @@ export default function AlumnosTable({
             <tbody>
               {alumnos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-6 text-text-light">
+                  <td colSpan={8} className="text-center py-6 text-text-light">
                     No se encontraron alumnos.
                   </td>
                 </tr>
               ) : (
                 alumnos.map((a) => {
-                  const cicloCode = CICLO_LABEL[a.ciclo] ?? a.ciclo;
+                  const cicloCode = getCicloLabel(a.ciclo);
 
                   return (
                     <tr key={a.id}>
                       <td>
-                        <strong>{a.nombre}</strong>
+                        <strong className="block max-w-[220px] truncate" title={a.nombre}>
+                          {a.nombre}
+                        </strong>
                       </td>
 
                       <td className="text-text-mid">{a.nia}</td>
@@ -120,12 +141,16 @@ export default function AlumnosTable({
                         </Badge>
                       </td>
 
-                      <td>{a.curso}</td>
+                      <td>{formatCursoCiclo(a.cursoCiclo)}</td>
 
-                      <td>{a.telefono ?? "—"}</td>
+                      <td className="whitespace-nowrap">{a.curso}</td>
+
+                      <td>{a.telefono}</td>
 
                       <td className="text-blue-600 text-[0.82rem]">
-                        {a.email ?? "—"}
+                        <span className="block max-w-[220px] truncate" title={a.email ?? "-"}>
+                          {a.email}
+                        </span>
                       </td>
 
                       <td>
@@ -133,9 +158,19 @@ export default function AlumnosTable({
                           <Button
                             variant="secondary"
                             size="sm"
+                            onClick={() => onVer(a)}
+                            title="Ver detalle"
+                            aria-label="Ver detalle"
+                          >
+                            {"\u{1F441}\uFE0F"}
+                          </Button>
+
+                          <Button
+                            variant="secondary"
+                            size="sm"
                             onClick={() => onEditar(a)}
                           >
-                            ✏️
+                            {"\u270F\uFE0F"}
                           </Button>
 
                           <Button
@@ -143,7 +178,7 @@ export default function AlumnosTable({
                             size="sm"
                             onClick={() => onEliminar(a.id)}
                           >
-                            🗑️
+                            {"\u{1F5D1}\uFE0F"}
                           </Button>
                         </TdActions>
                       </td>

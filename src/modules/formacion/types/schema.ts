@@ -13,7 +13,7 @@ export const formacionSchema = z.object({
   empresaId: z
     .number({
       required_error: "La empresa es obligatoria",
-      invalid_type_error: "El ID de empresa debe ser numérico",
+      invalid_type_error: "El ID de empresa debe ser numerico",
     })
     .int()
     .positive(),
@@ -21,7 +21,7 @@ export const formacionSchema = z.object({
   alumnoId: z
     .number({
       required_error: "El alumno es obligatorio",
-      invalid_type_error: "El ID de alumno debe ser numérico",
+      invalid_type_error: "El ID de alumno debe ser numerico",
     })
     .int()
     .positive(),
@@ -30,20 +30,20 @@ export const formacionSchema = z.object({
     .string()
     .trim()
     .min(1, "El curso es obligatorio")
-    .refine((value) => CURSOS.includes(value), "El curso no es válido"),
+    .refine((value) => CURSOS.includes(value), "El curso no es valido"),
 
   periodo: z
     .string()
     .trim()
     .min(1, "El periodo es obligatorio")
     .max(120, "El periodo no puede superar los 120 caracteres")
-    .refine((v) => TEXTO_UTIL.test(v), "El periodo debe contener texto útil")
-    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El periodo contiene símbolos repetidos"),
+    .refine((v) => TEXTO_UTIL.test(v), "El periodo debe contener texto util")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El periodo contiene simbolos repetidos"),
 
   descripcion: z
     .string()
     .trim()
-    .max(500, "La descripción no puede superar los 500 caracteres")
+    .max(500, "La descripcion no puede superar los 500 caracteres")
     .optional()
     .or(z.literal("")),
 
@@ -52,16 +52,91 @@ export const formacionSchema = z.object({
     .trim()
     .optional()
     .or(z.literal(""))
-    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no válidos")
-    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener números"),
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no validos")
+    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener numeros"),
+
+  tutorLaboral: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El tutor laboral contiene caracteres no validos")
+    .refine((v) => !v || !/\d/.test(v), "El tutor laboral no puede contener numeros"),
+
+  emailTutorLaboral: z
+    .string()
+    .trim()
+    .email("El email del tutor laboral no es valido")
+    .optional()
+    .or(z.literal("")),
+});
+
+export const formacionCrudSchema = z.object({
+  empresaId: z
+    .number({
+      required_error: "La empresa es obligatoria",
+      invalid_type_error: "El ID de empresa debe ser numerico",
+    })
+    .int()
+    .positive(),
+
+  alumnoId: z
+    .number({
+      required_error: "El alumno es obligatorio",
+      invalid_type_error: "El ID de alumno debe ser numerico",
+    })
+    .int()
+    .positive(),
+
+  curso: z.string().trim().min(1, "El curso es obligatorio"),
+
+  periodo: z
+    .string()
+    .trim()
+    .min(1, "El periodo es obligatorio")
+    .max(120, "El periodo no puede superar los 120 caracteres")
+    .refine((v) => TEXTO_UTIL.test(v), "El periodo debe contener texto util")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El periodo contiene simbolos repetidos"),
+
+  descripcion: z
+    .string()
+    .trim()
+    .max(500, "La descripcion no puede superar los 500 caracteres")
+    .optional()
+    .or(z.literal("")),
+
+  contacto: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no validos")
+    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener numeros"),
+
+  tutorLaboral: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || CONTACTO_REGEX.test(v), "El tutor laboral contiene caracteres no validos")
+    .refine((v) => !v || !/\d/.test(v), "El tutor laboral no puede contener numeros"),
+
+  emailTutorLaboral: z
+    .string()
+    .trim()
+    .email("El email del tutor laboral no es valido")
+    .optional()
+    .or(z.literal("")),
 });
 
 // PATCH
 export const formacionUpdateSchema = formacionSchema.partial();
+export const formacionCrudUpdateSchema = formacionCrudSchema.partial();
 
 // Filtros para GET /api/formacion
 export const formacionFilterSchema = z.object({
   curso: z.string().trim().optional(),
+  ciclo: z.string().trim().optional(),
   search: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
   perPage: z.coerce.number().int().positive().default(10),

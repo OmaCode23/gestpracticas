@@ -1,12 +1,7 @@
 import { prisma } from "@/database/prisma";
-import { CICLOS_FORMATIVOS, CICLO_LABEL } from "@/shared/catalogs/academico";
+import { CICLOS_FORMATIVOS_BASE } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
-
-function getCodigoCiclo(nombre: string) {
-  const code = CICLO_LABEL[nombre];
-  return code && code !== nombre ? code : null;
-}
 
 export async function syncCatalogosBase() {
   await prisma.sector.createMany({
@@ -20,10 +15,7 @@ export async function syncCatalogosBase() {
   });
 
   await prisma.cicloFormativo.createMany({
-    data: CICLOS_FORMATIVOS.map((nombre) => ({
-      nombre,
-      codigo: getCodigoCiclo(nombre),
-    })),
+    data: CICLOS_FORMATIVOS_BASE,
     skipDuplicates: true,
   });
 }
@@ -54,4 +46,46 @@ export async function getEmpresaCatalogos() {
     localidades: localidades.map((item) => item.nombre),
     ciclosFormativos: ciclosFormativos.map((item) => item.nombre),
   };
+}
+
+export async function getCiclosFormativos() {
+  return prisma.cicloFormativo.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      codigo: true,
+      activo: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          alumnos: true,
+          empresas: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getCiclosFormativosActivos() {
+  const ciclos = await prisma.cicloFormativo.findMany({
+    where: { activo: true },
+    orderBy: { nombre: "asc" },
+    select: { nombre: true },
+  });
+
+  return ciclos.map((item) => item.nombre);
+}
+
+export async function getCiclosFormativosActivosOptions() {
+  return prisma.cicloFormativo.findMany({
+    where: { activo: true },
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      codigo: true,
+    },
+  });
 }

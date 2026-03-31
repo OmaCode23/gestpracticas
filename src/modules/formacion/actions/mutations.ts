@@ -2,7 +2,7 @@
  * src/modules/formacion/actions/mutations.ts
  *
  * Mutaciones estrictas para crear, actualizar y eliminar formaciones en empresa.
- * Incluye normalización de campos opcionales y sanitización básica.
+ * Incluye normalizacion de campos opcionales y sanitizacion basica.
  */
 
 import { prisma } from "@/database/prisma";
@@ -23,6 +23,8 @@ export async function createFormacion(data: FormacionInput) {
       periodo: data.periodo.trim(),
       descripcion: normalizeOptionalString(data.descripcion),
       contacto: normalizeOptionalString(data.contacto),
+      tutorLaboral: normalizeOptionalString(data.tutorLaboral),
+      emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral),
     },
     include: {
       empresa: {
@@ -38,8 +40,17 @@ export async function createFormacion(data: FormacionInput) {
           id: true,
           nombre: true,
           nia: true,
+          nif: true,
+          nuss: true,
           ciclo: true,
+          cicloFormativoId: true,
+          cursoCiclo: true,
           curso: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
     },
@@ -60,6 +71,12 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
       ...(data.contacto !== undefined
         ? { contacto: normalizeOptionalString(data.contacto) }
         : {}),
+      ...(data.tutorLaboral !== undefined
+        ? { tutorLaboral: normalizeOptionalString(data.tutorLaboral) }
+        : {}),
+      ...(data.emailTutorLaboral !== undefined
+        ? { emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral) }
+        : {}),
     },
     include: {
       empresa: {
@@ -75,8 +92,17 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           id: true,
           nombre: true,
           nia: true,
+          nif: true,
+          nuss: true,
           ciclo: true,
+          cicloFormativoId: true,
+          cursoCiclo: true,
           curso: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
     },
@@ -88,5 +114,3 @@ export async function deleteFormacion(id: number) {
     where: { id },
   });
 }
-
-

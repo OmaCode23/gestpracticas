@@ -64,7 +64,7 @@ export default async function HomePage() {
       count: null,
     },
     {
-      href: "#",
+      href: "/configuracion",
       color: "#7d4f57",
       bg: "bg-[#f1e4e6]",
       icon: "⚙️",

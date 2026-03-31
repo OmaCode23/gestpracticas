@@ -21,7 +21,13 @@ export async function getAlumnosPaginated(params: {
   const perPage = params.perPage ?? PER_PAGE;
 
   const where: Prisma.AlumnoWhereInput = {
-    ...(params.ciclo ? { ciclo: params.ciclo } : {}),
+    ...(params.ciclo
+      ? {
+          cicloFormativoRef: {
+            is: { nombre: params.ciclo },
+          },
+        }
+      : {}),
     ...(params.curso ? { curso: params.curso } : {}),
     ...(params.search
       ? {
@@ -36,6 +42,14 @@ export async function getAlumnosPaginated(params: {
   const [items, total] = await Promise.all([
     prisma.alumno.findMany({
       where,
+      include: {
+        cicloFormativoRef: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
       orderBy: { nombre: "asc" },
       skip: (page - 1) * perPage,
       take: perPage,
@@ -44,7 +58,11 @@ export async function getAlumnosPaginated(params: {
   ]);
 
   return {
-    items,
+    items: items.map((item) => ({
+      ...item,
+      ciclo: item.cicloFormativoRef?.nombre ?? item.ciclo,
+      cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
+    })),
     total,
     page,
     perPage,
@@ -53,7 +71,23 @@ export async function getAlumnosPaginated(params: {
 }
 
 export async function getAlumnoById(id: number) {
-  return prisma.alumno.findUnique({
+  const alumno = await prisma.alumno.findUnique({
     where: { id },
+    include: {
+      cicloFormativoRef: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
+    },
   });
+
+  if (!alumno) return null;
+
+  return {
+    ...alumno,
+    ciclo: alumno.cicloFormativoRef?.nombre ?? alumno.ciclo,
+    cicloFormativoId: alumno.cicloFormativoRef?.id ?? alumno.cicloFormativoId ?? null,
+  };
 }

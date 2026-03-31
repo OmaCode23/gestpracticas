@@ -23,10 +23,13 @@ export type EmpresaImportRow = {
 
 export type AlumnoImportRow = {
   nia: string;
+  nif?: string;
+  nuss?: string;
   nombre: string;
   telefono: string;
   email: string;
   ciclo: string;
+  cursoCiclo: string | number;
   curso: string;
 };
 
@@ -35,7 +38,8 @@ export type FormacionImportRow = {
   alumno: string;
   periodo: string;
   descripcion?: string;
-  contacto?: string;
+  tutorLaboral?: string;
+  emailTutorLaboral?: string;
   curso: string;
 };
 
@@ -62,13 +66,16 @@ function normalizeEmpresaImportRow(row: EmpresaImportRow): EmpresaInput {
   };
 }
 
-function normalizeAlumnoImportRow(row: AlumnoImportRow): AlumnoInput {
+function normalizeAlumnoImportRow(row: AlumnoImportRow) {
   return {
     nia: row.nia ?? "",
+    nif: row.nif ?? "",
+    nuss: row.nuss ?? "",
     nombre: row.nombre ?? "",
     telefono: row.telefono ?? "",
     email: row.email ?? "",
     ciclo: row.ciclo ?? "",
+    cursoCiclo: row.cursoCiclo ?? "",
     curso: row.curso ?? "",
   };
 }
@@ -174,6 +181,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
 
 export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResult> {
   const normalizedRows = rows.map(normalizeAlumnoImportRow);
+  const parsedRows: AlumnoInput[] = [];
   const errors: string[] = [];
 
   if (normalizedRows.length === 0) {
@@ -204,6 +212,8 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
     const parsed = alumnoSchema.safeParse(row);
     if (!parsed.success) {
       errors.push(...buildRowValidationErrors(excelRow, parsed.error));
+    } else {
+      parsedRows.push(parsed.data);
     }
   });
 
@@ -238,12 +248,15 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
   }
 
   const result = await prisma.alumno.createMany({
-    data: normalizedRows.map((row) => ({
+    data: parsedRows.map((row) => ({
       nombre: row.nombre.trim(),
       nia: row.nia.trim(),
+      nif: row.nif.trim() || null,
+      nuss: row.nuss.trim() || null,
       telefono: row.telefono.trim(),
       email: row.email.trim().toLowerCase(),
       ciclo: row.ciclo.trim(),
+      cursoCiclo: row.cursoCiclo,
       curso: row.curso.trim(),
     })),
   });
@@ -328,7 +341,8 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
       curso: row.curso ?? "",
       periodo: row.periodo ?? "",
       descripcion: row.descripcion ?? "",
-      contacto: row.contacto ?? "",
+      tutorLaboral: row.tutorLaboral ?? "",
+      emailTutorLaboral: row.emailTutorLaboral ?? "",
     });
 
     if (!parsed.success) {
@@ -358,7 +372,8 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
       curso: row.curso.trim(),
       periodo: row.periodo.trim(),
       descripcion: row.descripcion?.trim() || null,
-      contacto: row.contacto?.trim() || null,
+      tutorLaboral: row.tutorLaboral?.trim() || null,
+      emailTutorLaboral: row.emailTutorLaboral?.trim().toLowerCase() || null,
     })),
   });
 

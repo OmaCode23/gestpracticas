@@ -17,10 +17,16 @@ export const FORMACION_FIELDS: ImportFieldDef[] = [
     placeholder: "Descripcion de la formacion...",
   },
   {
-    key: "contacto",
-    label: "Contacto",
-    formLabel: "Persona de contacto",
+    key: "tutorLaboral",
+    label: "Tutor Laboral",
+    formLabel: "Tutor laboral",
     placeholder: "Nombre y apellidos",
+  },
+  {
+    key: "emailTutorLaboral",
+    label: "Correo Tutor Laboral",
+    formLabel: "Correo tutor laboral",
+    placeholder: "tutor@empresa.com",
   },
   { key: "curso", label: "Curso", required: true, formLabel: "Curso academico" },
 ];

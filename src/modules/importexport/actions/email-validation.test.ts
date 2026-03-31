@@ -7,9 +7,12 @@ describe("email validation", () => {
     const result = alumnoSchema.safeParse({
       nombre: "Lucia Perez",
       nia: "NIA-01",
+      nif: "",
+      nuss: "",
       telefono: "600000000",
       email: "lucia.perez@educa.gva.es",
       ciclo: "DAM",
+      cursoCiclo: 1,
       curso: "2025-2026",
     });
 

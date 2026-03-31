@@ -9,6 +9,18 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
     placeholder: "Numero de identificacion",
   },
   {
+    key: "nif",
+    label: "NIF",
+    formLabel: "NIF",
+    placeholder: "12345678Z",
+  },
+  {
+    key: "nuss",
+    label: "NUSS",
+    formLabel: "NUSS",
+    placeholder: "12 digitos",
+  },
+  {
     key: "nombre",
     label: "Nombre",
     required: true,
@@ -34,6 +46,13 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
     label: "Ciclo",
     required: true,
     formLabel: "Ciclo formativo",
+  },
+  {
+    key: "cursoCiclo",
+    label: "Curso Ciclo",
+    required: true,
+    formLabel: "Curso del ciclo",
+    placeholder: "1 o 2",
   },
   {
     key: "curso",

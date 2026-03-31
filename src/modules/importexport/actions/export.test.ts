@@ -60,10 +60,13 @@ describe("export actions", () => {
     prismaMock.alumno.findMany.mockResolvedValue([
       {
         nia: "NIA-01",
-        nombre: "Lucía Pérez",
+        nif: "12345678Z",
+        nuss: "123456789012",
+        nombre: "Lucia Perez",
         telefono: "600000000",
         email: "lucia@mail.com",
         ciclo: "DAM",
+        cursoCiclo: 1,
         curso: "2025-2026",
       },
     ]);
@@ -71,23 +74,27 @@ describe("export actions", () => {
     await expect(getAlumnosExport()).resolves.toEqual([
       {
         NIA: "NIA-01",
-        Nombre: "Lucía Pérez",
+        NIF: "12345678Z",
+        NUSS: "123456789012",
+        Nombre: "Lucia Perez",
         Telefono: "600000000",
         Correo: "lucia@mail.com",
         Ciclo: "DAM",
+        "Curso Ciclo": 1,
         Curso: "2025-2026",
       },
     ]);
   });
 
-  it("mapea formaciones incluyendo nombres relacionados y opcionales vacíos", async () => {
+  it("mapea formaciones incluyendo nombres relacionados y opcionales vacios", async () => {
     prismaMock.formacionEmpresa.findMany.mockResolvedValue([
       {
         empresa: { nombre: "Empresa Demo" },
         alumno: null,
         periodo: "Marzo - Junio",
         descripcion: null,
-        contacto: null,
+        tutorLaboral: null,
+        emailTutorLaboral: null,
         curso: "2025-2026",
       },
     ]);
@@ -98,7 +105,8 @@ describe("export actions", () => {
         Alumno: "",
         Periodo: "Marzo - Junio",
         Descripcion: "",
-        Contacto: "",
+        "Tutor Laboral": "",
+        "Correo Tutor Laboral": "",
         Curso: "2025-2026",
       },
     ]);

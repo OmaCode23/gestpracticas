@@ -10,7 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAlumnoById } from "@/modules/alumnos/actions/queries";
 import { updateAlumno, deleteAlumno } from "@/modules/alumnos/actions/mutations";
-import { alumnoUpdateSchema } from "@/modules/alumnos/types/schema";
+import { alumnoCrudUpdateSchema } from "@/modules/alumnos/types/schema";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 
 function parseId(idParam: string) {
@@ -52,13 +53,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json();
-    const parsed = alumnoUpdateSchema.safeParse(body);
+    const parsed = alumnoCrudUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
         { status: 400 }
       );
+    }
+
+    if (parsed.data.curso !== undefined) {
+      const cursosValidos = await getCursosAcademicosConfigurados();
+
+      if (!cursosValidos.includes(parsed.data.curso)) {
+        return NextResponse.json<ApiResponse<never>>(
+          { ok: false, error: "El curso no es valido." },
+          { status: 400 }
+        );
+      }
     }
 
     const existente = await getAlumnoById(id);
@@ -77,7 +89,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       ok: true,
       data: alumno,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error instanceof Error && error.message === "CICLO_FORMATIVO_INVALIDO") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El ciclo formativo no es valido." },
+        { status: 400 }
+      );
+    }
+
+    if (error?.code === "P2002") {
+      const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
+      const message = target.includes("nif")
+        ? "Ya existe un alumno con ese NIF"
+        : target.includes("nuss")
+          ? "Ya existe un alumno con ese NUSS"
+          : "Ya existe un alumno con ese NIA";
+
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: message },
+        { status: 409 }
+      );
+    }
+
     console.error("[PATCH /api/alumnos/:id]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al actualizar" },

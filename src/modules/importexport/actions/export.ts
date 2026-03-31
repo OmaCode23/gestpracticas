@@ -33,11 +33,14 @@ export async function getAlumnosExport() {
 
   return alumnos.map((alumno) => ({
     [ALUMNO_FIELDS[0].label]: alumno.nia,
-    [ALUMNO_FIELDS[1].label]: alumno.nombre,
-    [ALUMNO_FIELDS[2].label]: alumno.telefono ?? "",
-    [ALUMNO_FIELDS[3].label]: alumno.email ?? "",
-    [ALUMNO_FIELDS[4].label]: alumno.ciclo,
-    [ALUMNO_FIELDS[5].label]: alumno.curso,
+    [ALUMNO_FIELDS[1].label]: alumno.nif ?? "",
+    [ALUMNO_FIELDS[2].label]: alumno.nuss ?? "",
+    [ALUMNO_FIELDS[3].label]: alumno.nombre,
+    [ALUMNO_FIELDS[4].label]: alumno.telefono,
+    [ALUMNO_FIELDS[5].label]: alumno.email,
+    [ALUMNO_FIELDS[6].label]: alumno.ciclo,
+    [ALUMNO_FIELDS[7].label]: alumno.cursoCiclo,
+    [ALUMNO_FIELDS[8].label]: alumno.curso,
   }));
 }
 
@@ -59,7 +62,8 @@ export async function getFormacionExport() {
     [FORMACION_FIELDS[1].label]: formacion.alumno?.nombre ?? "",
     [FORMACION_FIELDS[2].label]: formacion.periodo ?? "",
     [FORMACION_FIELDS[3].label]: formacion.descripcion ?? "",
-    [FORMACION_FIELDS[4].label]: formacion.contacto ?? "",
-    [FORMACION_FIELDS[5].label]: formacion.curso,
+    [FORMACION_FIELDS[4].label]: formacion.tutorLaboral ?? "",
+    [FORMACION_FIELDS[5].label]: formacion.emailTutorLaboral ?? "",
+    [FORMACION_FIELDS[6].label]: formacion.curso,
   }));
 }
