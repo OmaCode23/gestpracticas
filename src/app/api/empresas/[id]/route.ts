@@ -151,7 +151,17 @@ export async function DELETE(
       ok: true,
       data: null,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2003") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No se puede eliminar la empresa porque esta incluida en una formacion.",
+        },
+        { status: 409 }
+      );
+    }
+
     console.error("[DELETE /api/empresas/:id]", error);
 
     return NextResponse.json<ApiResponse<never>>(

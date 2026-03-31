@@ -1,15 +1,15 @@
-import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-export default defineConfig({
+export default {
   test: {
     environment: "node",
     clearMocks: true,
     restoreMocks: true,
+    pool: "threads",
   },
   resolve: {
     alias: {
       "@": path.resolve("src"),
     },
   },
-});
+};

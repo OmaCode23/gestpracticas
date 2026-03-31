@@ -24,7 +24,7 @@ export default function FormacionContainer({
   ciclosFormativos,
   cursos,
 }: {
-  ciclosFormativos: string[];
+  ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
 }) {
   const router = useRouter();
@@ -75,7 +75,6 @@ export default function FormacionContainer({
     setIsFormExpanded(false);
   };
 
-  // Opciones de ciclo para el filtro (abreviatura visible)
   const cicloOptions = ciclosFormativos;
 
   // Cargar empresas y alumnos (para selects)
@@ -383,7 +382,9 @@ export default function FormacionContainer({
                   </div>
                   <div className="rounded-xl border border-border bg-surface px-4 py-3">
                     <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Ciclo</p>
-                    <p className="mt-1 font-medium text-navy">{selectedFormacion.alumno?.ciclo ?? "-"}</p>
+                    <p className="mt-1 font-medium text-navy">
+                      {selectedFormacion.alumno?.cicloFormativoNombre ?? "-"}
+                    </p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface px-4 py-3">
                     <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Curso ciclo</p>

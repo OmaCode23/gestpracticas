@@ -2,7 +2,7 @@
 
 import { unstable_noStore as noStore } from "next/cache";
 import { PageHeader } from "@/components/ui";
-import { getCiclosFormativosActivos } from "@/modules/catalogos/actions/queries";
+import { getCiclosFormativosActivosOptions } from "@/modules/catalogos/actions/queries";
 import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import FormacionContainer from "@/modules/formacion/components/FormacionContainer";
 
@@ -12,7 +12,7 @@ export default async function Page() {
   noStore();
 
   const [ciclosFormativos, cursos] = await Promise.all([
-    getCiclosFormativosActivos(),
+    getCiclosFormativosActivosOptions(),
     getCursosAcademicosConfigurados(),
   ]);
 

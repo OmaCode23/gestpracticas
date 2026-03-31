@@ -89,13 +89,14 @@ export async function getFormacionesPaginated(params: {
             nia: true,
             nif: true,
             nuss: true,
-            ciclo: true,
             cicloFormativoId: true,
             cursoCiclo: true,
             curso: true,
             cicloFormativoRef: {
               select: {
+                id: true,
                 nombre: true,
+                codigo: true,
               },
             },
           },
@@ -115,7 +116,10 @@ export async function getFormacionesPaginated(params: {
       alumno: item.alumno
         ? {
             ...item.alumno,
-            ciclo: item.alumno.cicloFormativoRef?.nombre ?? item.alumno.ciclo,
+            cicloFormativoId:
+              item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
+            cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
+            cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
           }
         : null,
     })),
@@ -146,13 +150,14 @@ export async function getFormacionById(id: number) {
           nia: true,
           nif: true,
           nuss: true,
-          ciclo: true,
           cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
           cicloFormativoRef: {
             select: {
+              id: true,
               nombre: true,
+              codigo: true,
             },
           },
         },
@@ -167,7 +172,10 @@ export async function getFormacionById(id: number) {
     alumno: item.alumno
       ? {
           ...item.alumno,
-          ciclo: item.alumno.cicloFormativoRef?.nombre ?? item.alumno.ciclo,
+          cicloFormativoId:
+            item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
+          cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
+          cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
         }
       : null,
   };

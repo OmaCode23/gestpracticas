@@ -1,6 +1,48 @@
 # Cambios en archivos comunes
 
-## 31-3-26
+## 31-3-26 Sbs
+
+- Archivo: `src/shared/catalogs/academico.ts`
+  Motivo: eliminar la constante `CICLOS` al comprobar que ya no quedaban consumos activos en el proyecto.
+  Impacto: se limpia compatibilidad estatica ya obsoleta y se reduce el riesgo de que vuelva a usarse como si fuera un catalogo vigente.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: separar la lectura de catalogos de la siembra automatica, eliminando la llamada a `syncCatalogosBase()` desde `getEmpresaCatalogos()`.
+  Impacto: las lecturas de catalogos dejan de escribir silenciosamente en BD; la semilla base queda reservada para inicializacion o restauracion explicita.
+
+- Archivo: `prisma/seed.ts`
+  Motivo: anadir un seed explicito para poblar sectores, localidades y ciclos formativos base desde las semillas canonicas del proyecto.
+  Impacto: el despliegue o la preparacion de un entorno nuevo puede cargar datos iniciales sin depender de lecturas con efectos secundarios dentro de la aplicacion.
+
+- Archivo: `package.json`
+  Motivo: anadir el script `db:seed` y registrar el seed de Prisma para ejecutar la carga inicial de catalogos base de forma explicita.
+  Impacto: queda disponible un flujo claro de migracion + seed tanto para desarrollo como para despliegue.
+
+- Archivo: `README.md`
+  Motivo: documentar que, tras aplicar migraciones, hay que ejecutar el seed inicial de catalogos base.
+  Impacto: la puesta en marcha del proyecto deja de depender de comportamiento implicito dentro de la aplicacion y queda mejor alineada con un despliegue profesional.
+
+- Archivo: `README.md`
+  Motivo: rehacer la documentacion general del proyecto para reflejar el estado actual de modulos, scripts, tests y el procedimiento correcto de migracion, seed y restauracion de catalogos.
+  Impacto: el equipo dispone de una guia unica y coherente para preparar entornos nuevos y para mantener clara la separacion entre esquema, seed inicial y restauracion funcional desde la app.
+
+  - Archivo: `prisma/schema.prisma`
+  Motivo: hacer obligatorio `FormacionEmpresa.alumnoId` para que el esquema comun refleje que una formacion siempre vincula una empresa con un alumno.
+  Impacto: Prisma deja de permitir formaciones sin alumno y el contrato del modelo queda alineado con la validacion y los formularios actuales del modulo de formacion.
+
+- Archivo: `prisma/migrations/20260401123000_make_alumno_required_in_formacion/migration.sql`
+  Motivo: anadir la migracion comun que convierte `formaciones_empresa.alumnoId` en `NOT NULL` y recompone la clave ajena sin `SET NULL`.
+  Impacto: la base de datos impide ya formaciones sin alumno; si existieran filas legacy con `alumnoId` a `NULL`, la migracion falla con un mensaje explicito para obligar a limpiarlas antes.
+
+- Archivo: `prisma/migrations/20260401130000_restrict_delete_formacion_relations/migration.sql`
+  Motivo: anadir la migracion comun que protege las relaciones de `formaciones_empresa` frente al borrado de alumnos y empresas referenciados.
+  Impacto: ya no se puede borrar un alumno ni una empresa si participan en una formacion, mientras que eliminar una formacion no afecta ni al alumno ni a la empresa asociados.
+
+- Archivo: `src/app/api/empresas/[id]/route.ts`
+  Motivo: ajustar la respuesta de borrado en el modulo de empresas para detectar la restriccion de clave ajena cuando la empresa participa en una formacion.
+  Impacto: al intentar eliminar una empresa incluida en una formacion, la API devuelve un `409` con un mensaje funcional claro en lugar de un error generico; cambio realizado de forma excepcional sobre un modulo de Oma por afectar a una regla comun de integridad.
+
+## 31-3-26 Oma
 
 - Archivo: `cambios-comunes.md`
   Motivo: dejar trazabilidad de una prueba controlada de rendimiento con 5000 alumnos sinteticos ejecutada sobre la base actual dentro de una transaccion con rollback, para medir insercion, paginacion, busquedas y conteo sin ensuciar datos reales.
@@ -118,7 +160,7 @@
   Motivo: alinear el modulo comun de informes con el modelo actual de alumnos, formacion y catalogos, sustituyendo `contacto` por `tutorLaboral` y anadiendo los nuevos campos academicos.
   Impacto: los informes dejan de depender de nombres antiguos y de listas estaticas desfasadas, y pasan a usar opciones y columnas coherentes con la configuracion y la BD actuales.
 
-## 30-3-26
+## 30-3-26 Sbs
 
 - Archivo: `src/shared/catalogs/academico.ts`
   Motivo: separar el catalogo canonico de ciclos formativos (`nombre` + `codigo`) de las reglas de compatibilidad usadas para etiquetas y normalizacion.

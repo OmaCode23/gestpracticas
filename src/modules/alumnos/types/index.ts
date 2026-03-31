@@ -31,8 +31,9 @@ export interface Alumno {
   nuss: string | null;
   telefono: string;
   email: string;
-  ciclo: string;
   cicloFormativoId: number | null;
+  cicloFormativoNombre: string | null;
+  cicloFormativoCodigo: string | null;
   cursoCiclo: number;
   curso: string;
   cvNombre: string | null;

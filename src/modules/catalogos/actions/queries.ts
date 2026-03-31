@@ -1,28 +1,6 @@
 import { prisma } from "@/database/prisma";
-import { CICLOS_FORMATIVOS_BASE } from "@/shared/catalogs/academico";
-import { SECTORES } from "@/shared/catalogs/empresa";
-import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
-
-export async function syncCatalogosBase() {
-  await prisma.sector.createMany({
-    data: SECTORES.map((nombre) => ({ nombre })),
-    skipDuplicates: true,
-  });
-
-  await prisma.localidad.createMany({
-    data: LOCALIDADES.map((nombre) => ({ nombre })),
-    skipDuplicates: true,
-  });
-
-  await prisma.cicloFormativo.createMany({
-    data: CICLOS_FORMATIVOS_BASE,
-    skipDuplicates: true,
-  });
-}
 
 export async function getEmpresaCatalogos() {
-  await syncCatalogosBase();
-
   const [sectores, localidades, ciclosFormativos] = await Promise.all([
     prisma.sector.findMany({
       where: { activo: true },

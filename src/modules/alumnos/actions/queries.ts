@@ -47,6 +47,7 @@ export async function getAlumnosPaginated(params: {
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -60,8 +61,9 @@ export async function getAlumnosPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
-      ciclo: item.cicloFormativoRef?.nombre ?? item.ciclo,
       cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
+      cicloFormativoNombre: item.cicloFormativoRef?.nombre ?? null,
+      cicloFormativoCodigo: item.cicloFormativoRef?.codigo ?? null,
       cvUpdatedAt: item.cvUpdatedAt?.toISOString() ?? null,
     })),
     total,
@@ -79,6 +81,7 @@ export async function getAlumnoById(id: number) {
         select: {
           id: true,
           nombre: true,
+          codigo: true,
         },
       },
     },
@@ -88,8 +91,9 @@ export async function getAlumnoById(id: number) {
 
   return {
     ...alumno,
-    ciclo: alumno.cicloFormativoRef?.nombre ?? alumno.ciclo,
     cicloFormativoId: alumno.cicloFormativoRef?.id ?? alumno.cicloFormativoId ?? null,
+    cicloFormativoNombre: alumno.cicloFormativoRef?.nombre ?? null,
+    cicloFormativoCodigo: alumno.cicloFormativoRef?.codigo ?? null,
     cvUpdatedAt: alumno.cvUpdatedAt?.toISOString() ?? null,
   };
 }

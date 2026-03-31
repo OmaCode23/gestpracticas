@@ -396,7 +396,7 @@ export default function AlumnosContainer({
       <div ref={tableSectionRef}>
         <AlumnosTable
           alumnos={alumnos}
-          ciclos={ciclosFormativos.map((item) => item.nombre)}
+          ciclos={ciclosFormativos}
           cursos={cursos}
           total={total}
           perPage={PER_PAGE}
@@ -503,7 +503,9 @@ export default function AlumnosContainer({
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Ciclo</p>
-                <p className="mt-1 font-medium text-navy">{selectedAlumno.ciclo}</p>
+                <p className="mt-1 font-medium text-navy">
+                  {selectedAlumno.cicloFormativoNombre ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Curso ciclo</p>
