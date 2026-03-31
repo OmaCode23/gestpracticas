@@ -135,3 +135,13 @@ model CicloFormativo {
 
   @@map("ciclos_formativos")
 }
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  clave     String   @unique
+  valor     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

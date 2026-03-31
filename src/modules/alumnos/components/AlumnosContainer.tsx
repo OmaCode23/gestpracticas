@@ -15,14 +15,20 @@ const EMPTY = {
   nuss: "",
   telefono: "",
   email: "",
-  ciclo: "",
+  cicloFormativoId: "",
   cursoCiclo: "",
   curso: "",
 };
 
 const PER_PAGE = 10;
 
-export default function AlumnosContainer() {
+export default function AlumnosContainer({
+  ciclosFormativos,
+  cursos,
+}: {
+  ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
+  cursos: string[];
+}) {
   const router = useRouter();
   const tableSectionRef = useRef<HTMLDivElement | null>(null);
   const formSectionRef = useRef<HTMLDivElement | null>(null);
@@ -133,7 +139,7 @@ export default function AlumnosContainer() {
       !form.nia ||
       !form.telefono ||
       !form.email ||
-      !form.ciclo ||
+      !form.cicloFormativoId ||
       !form.cursoCiclo ||
       !form.curso
     ) {
@@ -246,7 +252,7 @@ export default function AlumnosContainer() {
       nuss: alumno.nuss ?? "",
       telefono: alumno.telefono ?? "",
       email: alumno.email ?? "",
-      ciclo: alumno.ciclo,
+      cicloFormativoId: alumno.cicloFormativoId ? String(alumno.cicloFormativoId) : "",
       cursoCiclo: String(alumno.cursoCiclo),
       curso: alumno.curso,
     });
@@ -274,6 +280,8 @@ export default function AlumnosContainer() {
       <div ref={tableSectionRef}>
         <AlumnosTable
           alumnos={alumnos}
+          ciclos={ciclosFormativos.map((item) => item.nombre)}
+          cursos={cursos}
           total={total}
           perPage={PER_PAGE}
           ciclo={ciclo}
@@ -303,6 +311,8 @@ export default function AlumnosContainer() {
         {isFormExpanded ? (
           <AlumnoForm
             form={form}
+            ciclos={ciclosFormativos}
+            cursos={cursos}
             onChange={setFormField}
             onGuardar={handleGuardar}
             onActualizar={handleActualizar}
@@ -326,7 +336,7 @@ export default function AlumnosContainer() {
                 >
                   {"\u25B8"}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={openNewForm}>
+                <Button variant="primary" onClick={openNewForm}>
                   Nueva alta
                 </Button>
               </div>

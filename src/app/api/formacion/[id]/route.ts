@@ -10,7 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getFormacionById } from "@/modules/formacion/actions/queries";
 import { updateFormacion, deleteFormacion } from "@/modules/formacion/actions/mutations";
-import { formacionUpdateSchema } from "@/modules/formacion/types/schema";
+import { formacionCrudUpdateSchema } from "@/modules/formacion/types/schema";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 
 function parseId(idParam: string) {
@@ -52,13 +53,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   try {
     const body = await req.json();
-    const parsed = formacionUpdateSchema.safeParse(body);
+    const parsed = formacionCrudUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
         { status: 400 }
       );
+    }
+
+    if (parsed.data.curso !== undefined) {
+      const cursosValidos = await getCursosAcademicosConfigurados();
+
+      if (!cursosValidos.includes(parsed.data.curso)) {
+        return NextResponse.json<ApiResponse<never>>(
+          { ok: false, error: "El curso no es valido" },
+          { status: 400 }
+        );
+      }
     }
 
     const existente = await getFormacionById(id);

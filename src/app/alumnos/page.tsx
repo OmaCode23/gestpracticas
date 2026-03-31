@@ -1,19 +1,31 @@
 //src/app/alumnos/page.tsx
 
+import { unstable_noStore as noStore } from "next/cache";
 import { PageHeader } from "@/components/ui";
+import { getCiclosFormativosActivosOptions } from "@/modules/catalogos/actions/queries";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import AlumnosContainer from "@/modules/alumnos/components/AlumnosContainer";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  noStore();
+
+  const [ciclosFormativos, cursos] = await Promise.all([
+    getCiclosFormativosActivosOptions(),
+    getCursosAcademicosConfigurados(),
+  ]);
+
   return (
     <div>
       <PageHeader
         breadcrumb="Inicio"
         breadcrumbHighlight="/ Alumnos"
-        title="Gestión de Alumnos"
-        subtitle="Alta de alumnos en prácticas y consulta del censo por ciclo y curso."
+        title="GestiÃ³n de Alumnos"
+        subtitle="Alta de alumnos en prÃ¡cticas y consulta del censo por ciclo y curso."
       />
 
-      <AlumnosContainer />
+      <AlumnosContainer ciclosFormativos={ciclosFormativos} cursos={cursos} />
     </div>
   );
 }

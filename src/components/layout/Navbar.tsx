@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/formacion", label: "Formacion Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },
+  { href: "/configuracion", label: "Configuracion" },
 ] as const;
 
 export default function Navbar() {

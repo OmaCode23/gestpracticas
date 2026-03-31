@@ -8,3 +8,4 @@ prisma/dev.db
 .DS_Store
 *.log
 scripts/
+TODO.md

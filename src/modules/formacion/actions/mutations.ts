@@ -43,8 +43,14 @@ export async function createFormacion(data: FormacionInput) {
           nif: true,
           nuss: true,
           ciclo: true,
+          cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
     },
@@ -89,8 +95,14 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           nif: true,
           nuss: true,
           ciclo: true,
+          cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
     },

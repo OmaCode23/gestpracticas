@@ -24,7 +24,17 @@ export async function getFormacionesPaginated(params: {
     AND: [
       params.curso ? { curso: params.curso } : {},
       params.ciclo
-        ? { alumno: { ciclo: { contains: params.ciclo, mode: "insensitive" } } }
+        ? {
+            alumno: {
+              is: {
+                cicloFormativoRef: {
+                  is: {
+                    nombre: params.ciclo,
+                  },
+                },
+              },
+            },
+          }
         : {},
       params.search
         ? {
@@ -80,8 +90,14 @@ export async function getFormacionesPaginated(params: {
             nif: true,
             nuss: true,
             ciclo: true,
+            cicloFormativoId: true,
             cursoCiclo: true,
             curso: true,
+            cicloFormativoRef: {
+              select: {
+                nombre: true,
+              },
+            },
           },
         },
       },
@@ -94,7 +110,15 @@ export async function getFormacionesPaginated(params: {
   ]);
 
   return {
-    items,
+    items: items.map((item) => ({
+      ...item,
+      alumno: item.alumno
+        ? {
+            ...item.alumno,
+            ciclo: item.alumno.cicloFormativoRef?.nombre ?? item.alumno.ciclo,
+          }
+        : null,
+    })),
     total,
     page,
     perPage,
@@ -103,7 +127,7 @@ export async function getFormacionesPaginated(params: {
 }
 
 export async function getFormacionById(id: number) {
-  return prisma.formacionEmpresa.findUnique({
+  const item = await prisma.formacionEmpresa.findUnique({
     where: { id },
     include: {
       empresa: {
@@ -123,10 +147,28 @@ export async function getFormacionById(id: number) {
           nif: true,
           nuss: true,
           ciclo: true,
+          cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
     },
   });
+
+  if (!item) return null;
+
+  return {
+    ...item,
+    alumno: item.alumno
+      ? {
+          ...item.alumno,
+          ciclo: item.alumno.cicloFormativoRef?.nombre ?? item.alumno.ciclo,
+        }
+      : null,
+  };
 }

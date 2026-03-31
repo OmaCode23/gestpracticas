@@ -10,11 +10,13 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import { CICLOS_FORMATIVOS, CURSOS, CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
+import { CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
 import type { Alumno } from "@/modules/alumnos/types";
 
 interface AlumnosTableProps {
   alumnos: Alumno[];
+  ciclos: string[];
+  cursos: string[];
   total: number;
   perPage: number;
   ciclo: string;
@@ -32,6 +34,8 @@ interface AlumnosTableProps {
 
 export default function AlumnosTable({
   alumnos,
+  ciclos,
+  cursos,
   total,
   perPage,
   ciclo,
@@ -63,7 +67,7 @@ export default function AlumnosTable({
             onChange={onChangeCiclo}
           >
             <option value="">Todos los ciclos</option>
-            {CICLOS_FORMATIVOS.map((c) => (
+            {ciclos.map((c) => (
               <option key={c} value={c}>
                 {getCicloLabel(c)}
               </option>
@@ -75,7 +79,7 @@ export default function AlumnosTable({
             onChange={onChangeCurso}
           >
             <option value="">Todos los cursos</option>
-            {CURSOS.map((c) => (
+            {cursos.map((c) => (
               <option key={c}>{c}</option>
             ))}
           </FilterSelect>

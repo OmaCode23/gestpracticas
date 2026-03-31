@@ -11,7 +11,6 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
-import { CICLOS_FORMATIVOS, CURSOS } from "@/shared/catalogs/academico";
 
 type FormState = {
   nombre: string;
@@ -20,13 +19,15 @@ type FormState = {
   nuss: string;
   telefono: string;
   email: string;
-  ciclo: string;
+  cicloFormativoId: string;
   cursoCiclo: string;
   curso: string;
 };
 
 interface AlumnoFormProps {
   form: FormState;
+  ciclos: { id: number; nombre: string; codigo: string | null }[];
+  cursos: string[];
   onChange: (field: keyof FormState, value: string) => void;
   onGuardar: () => void;
   onActualizar: () => void;
@@ -38,6 +39,8 @@ interface AlumnoFormProps {
 
 export default function AlumnoForm({
   form,
+  ciclos,
+  cursos,
   onChange,
   onGuardar,
   onActualizar,
@@ -175,12 +178,14 @@ export default function AlumnoForm({
             <FormGroup label="Ciclo formativo *">
               <select
                 className={INPUT_CLS}
-                value={form.ciclo}
-                onChange={(e) => onChange("ciclo", e.target.value)}
+                value={form.cicloFormativoId}
+                onChange={(e) => onChange("cicloFormativoId", e.target.value)}
               >
                 <option value="">Seleccionar ciclo</option>
-                {CICLOS_FORMATIVOS.map((c) => (
-                  <option key={c}>{c}</option>
+                {ciclos.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
                 ))}
               </select>
             </FormGroup>
@@ -209,7 +214,7 @@ export default function AlumnoForm({
                 onChange={(e) => onChange("curso", e.target.value)}
               >
                 <option value="">Seleccionar curso</option>
-                {CURSOS.map((c) => (
+                {cursos.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>

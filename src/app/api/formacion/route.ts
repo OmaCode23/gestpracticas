@@ -9,7 +9,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getFormacionesPaginated } from "@/modules/formacion/actions/queries";
 import { createFormacion } from "@/modules/formacion/actions/mutations";
-import { formacionSchema, formacionFilterSchema } from "@/modules/formacion/types/schema";
+import {
+  formacionCrudSchema,
+  formacionFilterSchema,
+} from "@/modules/formacion/types/schema";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import {
   importFormaciones,
   type FormacionImportRow,
@@ -74,11 +78,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const parsed = formacionSchema.safeParse(body);
+    const parsed = formacionCrudSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const cursosValidos = await getCursosAcademicosConfigurados();
+
+    if (!cursosValidos.includes(parsed.data.curso)) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El curso no es valido" },
         { status: 400 }
       );
     }

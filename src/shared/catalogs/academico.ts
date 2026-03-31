@@ -1,70 +1,90 @@
 import type { BadgeVariant } from "@/components/ui";
 
-function getCursoBaseFromDate(date = new Date()) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
+export const DEFAULT_MES_CAMBIO_CURSO = 9;
+export const DEFAULT_NUMERO_CURSOS_VISIBLES = 3;
 
-  // Si queréis anticipar el curso nuevo en agosto, el corte va en month >= 7.
-  return month >= 8 ? year : year - 1;
+function normalizeMesCambioCurso(mesCambioCurso = DEFAULT_MES_CAMBIO_CURSO) {
+  return Math.min(Math.max(Math.trunc(mesCambioCurso), 1), 12);
+}
+
+function normalizeNumeroCursosVisibles(
+  total = DEFAULT_NUMERO_CURSOS_VISIBLES
+) {
+  return Math.min(Math.max(Math.trunc(total), 1), 10);
+}
+
+function getCursoBaseFromDate(
+  date = new Date(),
+  mesCambioCurso = DEFAULT_MES_CAMBIO_CURSO
+) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const mesNormalizado = normalizeMesCambioCurso(mesCambioCurso);
+
+  return month >= mesNormalizado ? year : year - 1;
 }
 
 function formatCursoAcademico(startYear: number) {
   return `${startYear}-${startYear + 1}`;
 }
 
-export function getCursoActual(date = new Date()) {
-  return formatCursoAcademico(getCursoBaseFromDate(date));
+export function getCursoActual(
+  date = new Date(),
+  mesCambioCurso = DEFAULT_MES_CAMBIO_CURSO
+) {
+  return formatCursoAcademico(getCursoBaseFromDate(date, mesCambioCurso));
 }
 
-export function getCursosAcademicos(total = 3, date = new Date()) {
-  const cursoBase = getCursoBaseFromDate(date);
+export function getCursosAcademicos(
+  total = DEFAULT_NUMERO_CURSOS_VISIBLES,
+  date = new Date(),
+  mesCambioCurso = DEFAULT_MES_CAMBIO_CURSO
+) {
+  const cursoBase = getCursoBaseFromDate(date, mesCambioCurso);
+  const totalNormalizado = normalizeNumeroCursosVisibles(total);
 
-  return Array.from({ length: total }, (_, index) =>
+  return Array.from({ length: totalNormalizado }, (_, index) =>
     formatCursoAcademico(cursoBase - index)
   );
 }
 
 export const CICLOS = ["DAM", "DAW", "ASIR", "SMR", "ADG", "CAE", "IEA", "TH"];
 
-export const CURSOS = getCursosAcademicos(3);
+export const CURSOS = getCursosAcademicos();
 
-export const CICLOS_FORMATIVOS = [
-  "Gestión Administrativa",
-  "Administración y Finanzas",
-  "Sistemas Microinformáticos y Redes",
-  "Desarrollo de Aplicaciones Multiplataforma",
-  "Desarrollo de Aplicaciones Multiplataforma (Semipresencial)",
-  "Administración de Sistemas Informáticos en Red",
-  "Desarrollo de Aplicaciones Web",
-  "Actividades Comerciales",
-  "Comercio Internacional",
-  "Comercio Internacional (Semipresencial)",
-  "Logística y Transporte",
+export type CicloFormativoBase = {
+  nombre: string;
+  codigo: string;
+};
+
+export const CICLOS_FORMATIVOS_BASE: CicloFormativoBase[] = [
+  { nombre: "Gestión Administrativa", codigo: "GA" },
+  { nombre: "Administración y Finanzas", codigo: "AF" },
+  { nombre: "Sistemas Microinformáticos y Redes", codigo: "SMR" },
+  { nombre: "Desarrollo de Aplicaciones Multiplataforma", codigo: "DAM" },
+  {
+    nombre: "Desarrollo de Aplicaciones Multiplataforma (Semipresencial)",
+    codigo: "DAM-SEMI",
+  },
+  { nombre: "Administración de Sistemas Informáticos en Red", codigo: "ASIR" },
+  { nombre: "Desarrollo de Aplicaciones Web", codigo: "DAW" },
+  { nombre: "Actividades Comerciales", codigo: "AC" },
+  { nombre: "Comercio Internacional", codigo: "CI" },
+  { nombre: "Comercio Internacional (Semipresencial)", codigo: "CI-SEMI" },
+  { nombre: "Logística y Transporte", codigo: "LT" },
 ];
 
+export const CICLOS_FORMATIVOS = CICLOS_FORMATIVOS_BASE.map(
+  (ciclo) => ciclo.nombre
+);
+
 export const CICLO_LABEL: Record<string, string> = {
-  GA: "GA",
-  AF: "AF",
-  SMR: "SMR",
-  DAM: "DAM",
-  "DAM-SEMI": "DAM-SEMI",
-  ASIR: "ASIR",
-  DAW: "DAW",
-  AC: "AC",
-  CI: "CI",
-  "CI-SEMI": "CI-SEMI",
-  LT: "LT",
-  "Gestión Administrativa": "GA",
-  "Administración y Finanzas": "AF",
-  "Sistemas Microinformáticos y Redes": "SMR",
-  "Desarrollo de Aplicaciones Multiplataforma": "DAM",
-  "Desarrollo de Aplicaciones Multiplataforma (Semipresencial)": "DAM-SEMI",
-  "Administración de Sistemas Informáticos en Red": "ASIR",
-  "Desarrollo de Aplicaciones Web": "DAW",
-  "Actividades Comerciales": "AC",
-  "Comercio Internacional": "CI",
-  "Comercio Internacional (Semipresencial)": "CI-SEMI",
-  "Logística y Transporte": "LT",
+  ...Object.fromEntries(
+    CICLOS_FORMATIVOS_BASE.flatMap(({ nombre, codigo }) => [
+      [codigo, codigo],
+      [nombre, codigo],
+    ])
+  ),
   "Gestion Administrativa": "GA",
   "Administracion y Finanzas": "AF",
   "Sistemas Microinformaticos y Redes": "SMR",

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CICLOS_FORMATIVOS, CURSOS } from "@/shared/catalogs/academico";
 import { Button } from "@/components/ui";
 import SuccessToast from "@/components/ui/SuccessToast";
 import type { Formacion, FormacionInput } from "../types";
@@ -21,7 +20,13 @@ const EMPTY_FORM: FormacionInput = {
 
 const PER_PAGE = 10;
 
-export default function FormacionContainer() {
+export default function FormacionContainer({
+  ciclosFormativos,
+  cursos,
+}: {
+  ciclosFormativos: string[];
+  cursos: string[];
+}) {
   const router = useRouter();
   const tableSectionRef = useRef<HTMLDivElement | null>(null);
   const formSectionRef = useRef<HTMLDivElement | null>(null);
@@ -71,7 +76,7 @@ export default function FormacionContainer() {
   };
 
   // Opciones de ciclo para el filtro (abreviatura visible)
-  const cicloOptions = CICLOS_FORMATIVOS;
+  const cicloOptions = ciclosFormativos;
 
   // Cargar empresas y alumnos (para selects)
   async function cargarEmpresas() {
@@ -276,7 +281,7 @@ export default function FormacionContainer() {
           curso={curso}
           ciclo={ciclo}
           search={search}
-          cursos={CURSOS}
+          cursos={cursos}
           ciclos={cicloOptions}
           onCursoChange={(v) => {
             setCurso(v);
@@ -305,7 +310,7 @@ export default function FormacionContainer() {
             editingId={editingId}
             empresas={empresas}
             alumnos={alumnos}
-            cursos={CURSOS}
+            cursos={cursos}
             onChange={(key, value) => setForm((prev) => ({ ...prev, [key]: value }))}
             onClear={handleLimpiar}
             onSave={handleGuardar}
@@ -326,7 +331,7 @@ export default function FormacionContainer() {
                 >
                   {"\u25B8"}
                 </Button>
-                <Button variant="secondary" size="sm" onClick={openNewForm}>
+                <Button variant="primary" onClick={openNewForm}>
                   Nueva alta
                 </Button>
               </div>

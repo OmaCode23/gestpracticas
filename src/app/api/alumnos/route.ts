@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAlumnosPaginated } from "@/modules/alumnos/actions/queries";
 import { createAlumno } from "@/modules/alumnos/actions/mutations";
-import { alumnoSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
+import { alumnoCrudSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import { importAlumnos, type AlumnoImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -71,11 +72,20 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const parsed = alumnoSchema.safeParse(body);
+    const parsed = alumnoCrudSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: parsed.error.errors[0].message },
+        { status: 400 }
+      );
+    }
+
+    const cursosValidos = await getCursosAcademicosConfigurados();
+
+    if (!cursosValidos.includes(parsed.data.curso)) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El curso no es valido." },
         { status: 400 }
       );
     }
@@ -89,6 +99,13 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (error instanceof Error && error.message === "CICLO_FORMATIVO_INVALIDO") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El ciclo formativo no es valido." },
+        { status: 400 }
+      );
+    }
+
     if (error?.code === "P2002") {
       const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
       const message = target.includes("nif")
