@@ -1,0 +1,4 @@
+-- Legacy placeholder migration.
+-- Older local databases already track this migration name in _prisma_migrations,
+-- but the current repository history starts effectively at 20260316232255_init.
+-- Keeping this migration as a no-op lets both histories converge safely.

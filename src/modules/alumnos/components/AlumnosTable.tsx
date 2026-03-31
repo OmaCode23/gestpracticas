@@ -110,6 +110,7 @@ export default function AlumnosTable({
                 </th>
                 <th>Telefono</th>
                 <th>Correo</th>
+                <th>CV</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -117,7 +118,7 @@ export default function AlumnosTable({
             <tbody>
               {alumnos.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
+                  <td colSpan={9} className="text-center py-6 text-text-light">
                     No se encontraron alumnos.
                   </td>
                 </tr>
@@ -151,6 +152,10 @@ export default function AlumnosTable({
                         <span className="block max-w-[220px] truncate" title={a.email ?? "-"}>
                           {a.email}
                         </span>
+                      </td>
+
+                      <td className="text-[0.8rem] text-text-mid">
+                        {a.cvNombre ? "Adjunto" : "-"}
                       </td>
 
                       <td>

@@ -21,8 +21,8 @@ export default async function Page() {
       <PageHeader
         breadcrumb="Inicio"
         breadcrumbHighlight="/ Alumnos"
-        title="GestiÃ³n de Alumnos"
-        subtitle="Alta de alumnos en prÃ¡cticas y consulta del censo por ciclo y curso."
+        title="Gestión de Alumnos"
+        subtitle="Alta de alumnos en prácticas y consulta del censo por ciclo y curso."
       />
 
       <AlumnosContainer ciclosFormativos={ciclosFormativos} cursos={cursos} />

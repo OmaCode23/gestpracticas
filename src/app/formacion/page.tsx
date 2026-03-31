@@ -20,9 +20,9 @@ export default async function Page() {
     <div>
       <PageHeader
         breadcrumb="Inicio"
-        breadcrumbHighlight="/ FormaciÃ³n en Empresa"
-        title="GestiÃ³n de FormaciÃ³n en Empresa"
-        subtitle="AsignaciÃ³n de alumnos a empresas y seguimiento de la formaciÃ³n."
+        breadcrumbHighlight="/ Formación en Empresa"
+        title="Gestión de Formación en Empresa"
+        subtitle="Asignación de alumnos a empresas y seguimiento de la formación."
       />
 
       <FormacionContainer ciclosFormativos={ciclosFormativos} cursos={cursos} />

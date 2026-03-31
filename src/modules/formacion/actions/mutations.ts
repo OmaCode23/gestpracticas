@@ -22,7 +22,6 @@ export async function createFormacion(data: FormacionInput) {
       curso: data.curso.trim(),
       periodo: data.periodo.trim(),
       descripcion: normalizeOptionalString(data.descripcion),
-      contacto: normalizeOptionalString(data.contacto),
       tutorLaboral: normalizeOptionalString(data.tutorLaboral),
       emailTutorLaboral: normalizeOptionalString(data.emailTutorLaboral),
     },
@@ -67,9 +66,6 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
       ...(data.periodo !== undefined ? { periodo: data.periodo.trim() } : {}),
       ...(data.descripcion !== undefined
         ? { descripcion: normalizeOptionalString(data.descripcion) }
-        : {}),
-      ...(data.contacto !== undefined
-        ? { contacto: normalizeOptionalString(data.contacto) }
         : {}),
       ...(data.tutorLaboral !== undefined
         ? { tutorLaboral: normalizeOptionalString(data.tutorLaboral) }

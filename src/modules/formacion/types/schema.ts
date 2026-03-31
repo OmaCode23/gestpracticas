@@ -47,14 +47,6 @@ export const formacionSchema = z.object({
     .optional()
     .or(z.literal("")),
 
-  contacto: z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no validos")
-    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener numeros"),
-
   tutorLaboral: z
     .string()
     .trim()
@@ -104,14 +96,6 @@ export const formacionCrudSchema = z.object({
     .max(500, "La descripcion no puede superar los 500 caracteres")
     .optional()
     .or(z.literal("")),
-
-  contacto: z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(""))
-    .refine((v) => !v || CONTACTO_REGEX.test(v), "El contacto contiene caracteres no validos")
-    .refine((v) => !v || !/\d/.test(v), "El contacto no puede contener numeros"),
 
   tutorLaboral: z
     .string()

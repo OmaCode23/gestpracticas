@@ -30,7 +30,6 @@ export interface Formacion {
   curso: string;
   periodo: string;
   descripcion: string | null;
-  contacto: string | null;
   tutorLaboral: string | null;
   emailTutorLaboral: string | null;
   createdAt: string;

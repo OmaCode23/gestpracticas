@@ -61,6 +61,11 @@ model Alumno {
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
   curso             String
+  cvOid             Int?             @map("cv_oid")
+  cvNombre          String?          @map("cv_nombre")
+  cvMimeType        String?          @map("cv_mime_type")
+  cvTamano          Int?             @map("cv_tamano")
+  cvUpdatedAt       DateTime?        @map("cv_updated_at")
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   formaciones       FormacionEmpresa[]
@@ -76,7 +81,6 @@ model FormacionEmpresa {
   alumno             Alumno?  @relation(fields: [alumnoId], references: [id])
   periodo            String?
   descripcion        String?
-  contacto           String?
   tutorLaboral       String?
   emailTutorLaboral  String?
   curso              String

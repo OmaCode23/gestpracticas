@@ -4,6 +4,7 @@
 
 import { prisma } from "@/database/prisma";
 import type { AlumnoCrudInput, AlumnoCrudUpdateInput } from "../types";
+import { deleteAlumnoCvLo } from "./cv";
 
 function normalizeOptionalString(value?: string) {
   if (value === undefined) return undefined;
@@ -92,5 +93,16 @@ export async function updateAlumno(id: number, data: AlumnoCrudUpdateInput) {
 }
 
 export async function deleteAlumno(id: number) {
-  return prisma.alumno.delete({ where: { id } });
+  return prisma.$transaction(async (tx) => {
+    const alumno = await tx.alumno.findUnique({
+      where: { id },
+      select: { cvOid: true },
+    });
+
+    if (alumno?.cvOid) {
+      await deleteAlumnoCvLo(tx, alumno.cvOid);
+    }
+
+    return tx.alumno.delete({ where: { id } });
+  });
 }

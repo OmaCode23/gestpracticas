@@ -35,6 +35,10 @@ export interface Alumno {
   cicloFormativoId: number | null;
   cursoCiclo: number;
   curso: string;
+  cvNombre: string | null;
+  cvMimeType: string | null;
+  cvTamano: number | null;
+  cvUpdatedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -48,7 +48,7 @@ export function getCursosAcademicos(
   );
 }
 
-export const CICLOS = ["DAM", "DAW", "ASIR", "SMR", "ADG", "CAE", "IEA", "TH"];
+export const CICLOS = ["DAM", "DAW", "ASIR", "SMR", "ADG", "IEA", "TH"];
 
 export const CURSOS = getCursosAcademicos();
 

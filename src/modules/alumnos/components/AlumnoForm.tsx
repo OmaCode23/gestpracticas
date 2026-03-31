@@ -11,6 +11,7 @@ import {
   Button,
   INPUT_CLS,
 } from "@/components/ui";
+import { ALUMNO_CV_MAX_BYTES, formatFileSize } from "@/modules/alumnos/utils/cv";
 
 type FormState = {
   nombre: string;
@@ -24,6 +25,15 @@ type FormState = {
   curso: string;
 };
 
+type CvState = {
+  existingName: string | null;
+  existingSize: number | null;
+  selectedFile: File | null;
+  isMarkedForRemoval: boolean;
+  error: string;
+  isProcessing: boolean;
+};
+
 interface AlumnoFormProps {
   form: FormState;
   ciclos: { id: number; nombre: string; codigo: string | null }[];
@@ -35,6 +45,9 @@ interface AlumnoFormProps {
   onToggleCollapse: () => void;
   isEditing: boolean;
   onLimpiar: () => void;
+  cv: CvState;
+  onCvSelect: (file: File | null) => void;
+  onCvRemove: () => void;
 }
 
 export default function AlumnoForm({
@@ -48,6 +61,9 @@ export default function AlumnoForm({
   onToggleCollapse,
   isEditing,
   onLimpiar,
+  cv,
+  onCvSelect,
+  onCvRemove,
 }: AlumnoFormProps) {
   const CURSO_CICLO_OPTIONS = [
     { value: "1", label: `1.\u00BA` },
@@ -76,6 +92,14 @@ export default function AlumnoForm({
     if (isEditing) onActualizar();
     else onGuardar();
   };
+
+  const cvDisplayName =
+    cv.selectedFile?.name ??
+    (!cv.isMarkedForRemoval ? cv.existingName : null);
+
+  const cvDisplaySize =
+    cv.selectedFile?.size ??
+    (!cv.isMarkedForRemoval ? cv.existingSize : null);
 
   return (
     <>
@@ -218,6 +242,64 @@ export default function AlumnoForm({
                   <option key={c}>{c}</option>
                 ))}
               </select>
+            </FormGroup>
+          </FormRow>
+
+          <FormRow cols={1}>
+            <FormGroup label="CV del alumno">
+              <label
+                htmlFor="alumno-cv-input"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const file = event.dataTransfer.files?.[0] ?? null;
+                  onCvSelect(file);
+                }}
+                className="flex min-h-[148px] cursor-pointer flex-col items-center justify-center rounded-[16px] border border-dashed border-border bg-surface px-5 py-6 text-center transition-colors hover:border-blue-light hover:bg-surface2"
+              >
+                <input
+                  id="alumno-cv-input"
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="hidden"
+                  onChange={(event) => onCvSelect(event.target.files?.[0] ?? null)}
+                />
+                <p className="text-[0.92rem] font-semibold text-navy">
+                  Arrastra aqui el CV o pulsa para seleccionarlo
+                </p>
+                <p className="mt-2 text-[0.8rem] leading-relaxed text-text-mid">
+                  Formato admitido: PDF. Limite final: {formatFileSize(ALUMNO_CV_MAX_BYTES)}.
+                </p>
+                <p className="mt-1 text-[0.76rem] text-text-light">
+                  Si el fichero supera el limite, prepara una version optimizada antes de subirla.
+                </p>
+              </label>
+
+              <div className="mt-3 rounded-[14px] border border-border bg-white px-4 py-3">
+                <p className="text-[0.76rem] font-semibold uppercase tracking-[0.06em] text-text-light">
+                  Estado del CV
+                </p>
+                <p className="mt-2 text-[0.84rem] text-navy">
+                  {cv.isProcessing
+                    ? "Preparando archivo..."
+                    : cvDisplayName
+                      ? `${cvDisplayName} (${formatFileSize(cvDisplaySize)})`
+                      : "Sin archivo seleccionado"}
+                </p>
+                {cv.isMarkedForRemoval && cv.existingName && !cv.selectedFile ? (
+                  <p className="mt-1 text-[0.78rem] text-amber-700">
+                    El CV actual se eliminara al guardar.
+                  </p>
+                ) : null}
+                {cv.error ? <p className="mt-1 text-[0.78rem] text-red-700">{cv.error}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {cvDisplayName || (cv.isMarkedForRemoval && cv.existingName) ? (
+                    <Button variant="secondary" type="button" onClick={onCvRemove}>
+                      {cv.isMarkedForRemoval && cv.existingName ? "Restaurar CV actual" : "Quitar CV"}
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
             </FormGroup>
           </FormRow>
         </div>

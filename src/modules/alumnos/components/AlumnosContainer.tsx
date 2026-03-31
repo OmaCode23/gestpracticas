@@ -7,6 +7,7 @@ import AlumnoForm from "./AlumnoForm";
 import AlumnosTable from "./AlumnosTable";
 import type { Alumno } from "@/modules/alumnos/types";
 import SuccessToast from "@/components/ui/SuccessToast";
+import { prepareAlumnoCvFile } from "@/modules/alumnos/utils/cv";
 
 const EMPTY = {
   nombre: "",
@@ -18,6 +19,15 @@ const EMPTY = {
   cicloFormativoId: "",
   cursoCiclo: "",
   curso: "",
+};
+
+const EMPTY_CV = {
+  existingName: null as string | null,
+  existingSize: null as number | null,
+  selectedFile: null as File | null,
+  isMarkedForRemoval: false,
+  error: "",
+  isProcessing: false,
 };
 
 const PER_PAGE = 10;
@@ -50,6 +60,7 @@ export default function AlumnosContainer({
   const [saving, setSaving] = useState(false);
 
   const [notification, setNotification] = useState("");
+  const [cvState, setCvState] = useState(EMPTY_CV);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,6 +78,7 @@ export default function AlumnosContainer({
   const openNewForm = () => {
     setEditingId(null);
     setForm(EMPTY);
+    setCvState(EMPTY_CV);
     setIsFormExpanded(true);
     requestAnimationFrame(scrollToForm);
   };
@@ -74,8 +86,76 @@ export default function AlumnosContainer({
   const collapseForm = () => {
     setEditingId(null);
     setForm(EMPTY);
+    setCvState(EMPTY_CV);
     setIsFormExpanded(false);
   };
+
+  const handleCvSelect = async (file: File | null) => {
+    if (!file) return;
+
+    setCvState((current) => ({
+      ...current,
+      error: "",
+      isProcessing: true,
+    }));
+
+    try {
+      const preparedFile = await prepareAlumnoCvFile(file);
+      setCvState((current) => ({
+        ...current,
+        selectedFile: preparedFile,
+        isMarkedForRemoval: false,
+        error: "",
+        isProcessing: false,
+      }));
+    } catch (error) {
+      setCvState((current) => ({
+        ...current,
+        selectedFile: null,
+        error: error instanceof Error ? error.message : "No se pudo preparar el CV.",
+        isProcessing: false,
+      }));
+    }
+  };
+
+  const handleCvRemove = () => {
+    setCvState((current) => ({
+      ...current,
+      selectedFile: current.isMarkedForRemoval ? null : null,
+      isMarkedForRemoval: current.existingName ? !current.isMarkedForRemoval : false,
+      error: "",
+      isProcessing: false,
+    }));
+  };
+
+  async function syncAlumnoCv(alumnoId: number) {
+    if (cvState.selectedFile) {
+      const formData = new FormData();
+      formData.append("file", cvState.selectedFile);
+
+      const response = await fetch(`/api/alumnos/${alumnoId}/cv`, {
+        method: "POST",
+        body: formData,
+      });
+      const json = await response.json();
+
+      if (!json.ok) {
+        throw new Error(json.error);
+      }
+      return;
+    }
+
+    if (cvState.isMarkedForRemoval && cvState.existingName) {
+      const response = await fetch(`/api/alumnos/${alumnoId}/cv`, {
+        method: "DELETE",
+      });
+      const json = await response.json();
+
+      if (!json.ok) {
+        throw new Error(json.error);
+      }
+    }
+  }
 
   // Cargar alumnos
   async function load(opts?: { pageOverride?: number }) {
@@ -164,16 +244,29 @@ export default function AlumnosContainer({
         return;
       }
 
+      let uploadMessage = "Alumno creado correctamente.";
+      try {
+        await syncAlumnoCv(json.data.id);
+        if (cvState.selectedFile) {
+          uploadMessage = "Alumno y CV guardados correctamente.";
+        }
+      } catch (syncError) {
+        uploadMessage =
+          syncError instanceof Error
+            ? `Alumno creado, pero el CV no se pudo guardar: ${syncError.message}`
+            : "Alumno creado, pero el CV no se pudo guardar.";
+      }
       setForm(EMPTY);
+      setCvState(EMPTY_CV);
       setIsFormExpanded(false);
       await reloadToFirstPage();
       scrollToTable();
       router.refresh();
 
-      setNotification("Alumno creado correctamente.");
+      setNotification(uploadMessage);
     } catch (error) {
       console.error(error);
-      alert("No se pudo crear el alumno.");
+      alert(error instanceof Error ? error.message : "No se pudo crear el alumno.");
     } finally {
       setSaving(false);
     }
@@ -199,17 +292,32 @@ export default function AlumnosContainer({
         return;
       }
 
+      let uploadMessage = "Alumno actualizado correctamente.";
+      try {
+        await syncAlumnoCv(editingId);
+        if (cvState.selectedFile) {
+          uploadMessage = "Alumno y CV actualizados correctamente.";
+        } else if (cvState.isMarkedForRemoval && cvState.existingName) {
+          uploadMessage = "Alumno actualizado y CV eliminado correctamente.";
+        }
+      } catch (syncError) {
+        uploadMessage =
+          syncError instanceof Error
+            ? `Alumno actualizado, pero el CV no se pudo sincronizar: ${syncError.message}`
+            : "Alumno actualizado, pero el CV no se pudo sincronizar.";
+      }
       setEditingId(null);
       setForm(EMPTY);
+      setCvState(EMPTY_CV);
       setIsFormExpanded(false);
       await load();
       scrollToTable();
       router.refresh();
 
-      setNotification("Alumno actualizado correctamente.");
+      setNotification(uploadMessage);
     } catch (error) {
       console.error(error);
-      alert("No se pudo actualizar el alumno.");
+      alert(error instanceof Error ? error.message : "No se pudo actualizar el alumno.");
     } finally {
       setSaving(false);
     }
@@ -255,6 +363,14 @@ export default function AlumnosContainer({
       cicloFormativoId: alumno.cicloFormativoId ? String(alumno.cicloFormativoId) : "",
       cursoCiclo: String(alumno.cursoCiclo),
       curso: alumno.curso,
+    });
+    setCvState({
+      existingName: alumno.cvNombre,
+      existingSize: alumno.cvTamano,
+      selectedFile: null,
+      isMarkedForRemoval: false,
+      error: "",
+      isProcessing: false,
     });
 
     requestAnimationFrame(scrollToForm);
@@ -319,7 +435,13 @@ export default function AlumnosContainer({
             onCancelarEdicion={handleCancelarEdicion}
             onToggleCollapse={handleCancelarEdicion}
             isEditing={editingId !== null}
-            onLimpiar={() => setForm(EMPTY)}
+            onLimpiar={() => {
+              setForm(EMPTY);
+              setCvState(EMPTY_CV);
+            }}
+            cv={cvState}
+            onCvSelect={handleCvSelect}
+            onCvRemove={handleCvRemove}
           />
         ) : (
           <div className="mb-7">
@@ -398,6 +520,27 @@ export default function AlumnosContainer({
               <div className="rounded-xl border border-border bg-surface px-4 py-3 sm:col-span-2">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Correo</p>
                 <p className="mt-1 font-medium text-navy">{selectedAlumno.email ?? "-"}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-surface px-4 py-3 sm:col-span-2">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">CV</p>
+                {selectedAlumno.cvNombre ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <p className="font-medium text-navy">
+                      {selectedAlumno.cvNombre}
+                      {selectedAlumno.cvTamano ? ` (${Math.round(selectedAlumno.cvTamano / 1024)} KB)` : ""}
+                    </p>
+                    <a
+                      href={`/api/alumnos/${selectedAlumno.id}/cv`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[0.78rem] font-semibold text-navy transition-colors hover:bg-surface2"
+                    >
+                      Ver o descargar CV
+                    </a>
+                  </div>
+                ) : (
+                  <p className="mt-1 font-medium text-navy">Sin CV adjunto</p>
+                )}
               </div>
             </div>
           </div>
