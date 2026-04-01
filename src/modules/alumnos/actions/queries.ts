@@ -61,6 +61,7 @@ export async function getAlumnosPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
+      ciclo: item.cicloFormativoRef?.nombre ?? "",
       cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
       cicloFormativoNombre: item.cicloFormativoRef?.nombre ?? null,
       cicloFormativoCodigo: item.cicloFormativoRef?.codigo ?? null,
@@ -91,6 +92,7 @@ export async function getAlumnoById(id: number) {
 
   return {
     ...alumno,
+    ciclo: alumno.cicloFormativoRef?.nombre ?? "",
     cicloFormativoId: alumno.cicloFormativoRef?.id ?? alumno.cicloFormativoId ?? null,
     cicloFormativoNombre: alumno.cicloFormativoRef?.nombre ?? null,
     cicloFormativoCodigo: alumno.cicloFormativoRef?.codigo ?? null,

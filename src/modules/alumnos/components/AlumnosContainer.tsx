@@ -61,6 +61,7 @@ export default function AlumnosContainer({
 
   const [notification, setNotification] = useState("");
   const [cvState, setCvState] = useState(EMPTY_CV);
+  const [bulkCvBusy, setBulkCvBusy] = useState<"download" | "delete" | null>(null);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -381,6 +382,71 @@ export default function AlumnosContainer({
     scrollToTable();
   };
 
+  const handleDownloadAllCv = async () => {
+    try {
+      setBulkCvBusy("download");
+
+      const response = await fetch("/api/alumnos/cv", {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const json = await response.json();
+        throw new Error(json.error ?? "No se pudieron descargar los CVs.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const disposition = response.headers.get("Content-Disposition");
+      const fileNameMatch = disposition?.match(/filename="([^"]+)"/);
+      link.href = url;
+      link.download = fileNameMatch?.[1] ?? "cvs_alumnos.zip";
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      setNotification("Descarga de CVs iniciada correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "No se pudieron descargar los CVs.");
+    } finally {
+      setBulkCvBusy(null);
+    }
+  };
+
+  const handleDeleteAllCv = async () => {
+    if (!confirm("Se eliminaran todos los CVs adjuntos de los alumnos. Quieres continuar?")) {
+      return;
+    }
+
+    try {
+      setBulkCvBusy("delete");
+
+      const response = await fetch("/api/alumnos/cv", {
+        method: "DELETE",
+      });
+      const json = await response.json();
+
+      if (!json.ok) {
+        throw new Error(json.error ?? "No se pudieron eliminar los CVs.");
+      }
+
+      await load();
+      router.refresh();
+
+      setNotification(
+        json.data.deletedCount > 0
+          ? `Se eliminaron ${json.data.deletedCount} CV(s) correctamente.`
+          : "No habia CVs adjuntos para eliminar."
+      );
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "No se pudieron eliminar los CVs.");
+    } finally {
+      setBulkCvBusy(null);
+    }
+  };
+
   // Notificacion temporal
   useEffect(() => {
     if (!notification) return;
@@ -420,6 +486,9 @@ export default function AlumnosContainer({
           onVer={setSelectedAlumno}
           onEditar={handleEditar}
           onEliminar={handleEliminar}
+          onDownloadAllCv={handleDownloadAllCv}
+          onDeleteAllCv={handleDeleteAllCv}
+          bulkCvBusy={bulkCvBusy}
         />
       </div>
 

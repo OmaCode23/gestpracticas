@@ -14,19 +14,20 @@ export type EmpresaUpdateInput = Partial<EmpresaInput>;
 export type EmpresaFilters = z.infer<typeof empresaFilterSchema>;
 
 export type Empresa = {
-    id: number;
-    nombre: string;
-    cif: string;
-    direccion: string | null;
-    localidad: string;
-    sector: string;
-    cicloFormativo: string | null;
-    telefono: string | null;
-    email: string | null;
-    contacto: string | null;
-    emailContacto: string | null;
-    createdAt: Date;
-    updatedAt: Date;
+  id: number;
+  nombre: string;
+  cif: string;
+  direccion: string | null;
+  localidad: string;
+  sector: string;
+  cicloFormativo: string | null;
+  cicloFormativoId: number | null;
+  telefono: string | null;
+  email: string | null;
+  contacto: string | null;
+  emailContacto: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type PaginatedEmpresas = {

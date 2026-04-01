@@ -75,7 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (error instanceof Error && error.message === "CV_SIZE_EXCEEDED") {
       return NextResponse.json<ApiResponse<never>>(
-        { ok: false, error: "El archivo final supera 100 KB." },
+        { ok: false, error: "El archivo final supera 500 KB." },
         { status: 400 }
       );
     }

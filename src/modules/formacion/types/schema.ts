@@ -3,8 +3,6 @@
  */
 
 import { z } from "zod";
-import { CURSOS } from "@/shared/catalogs/academico";
-
 const TEXTO_UTIL = /[\p{L}\p{N}]/u;
 const CONTACTO_REGEX = /^[\p{L}\s'.-]+$/u;
 const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
@@ -29,8 +27,7 @@ export const formacionSchema = z.object({
   curso: z
     .string()
     .trim()
-    .min(1, "El curso es obligatorio")
-    .refine((value) => CURSOS.includes(value), "El curso no es valido"),
+    .min(1, "El curso es obligatorio"),
 
   periodo: z
     .string()

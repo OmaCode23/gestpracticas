@@ -44,6 +44,62 @@
 
 ## 31-3-26 Oma
 
+## 1-4-26 Oma
+
+- Archivo: `prisma/schema.prisma`
+  Motivo: retirar del modelo comun los campos de texto heredados `Alumno.ciclo` y `Empresa.cicloFormativo`, dejando `cicloFormativoId` y `cicloFormativoRef` como unica fuente de verdad para los ciclos.
+  Impacto: el esquema tipado deja de promover compatibilidades antiguas y fuerza al resto de modulos a trabajar ya con la relacion real contra `ciclos_formativos`.
+
+- Archivo: `prisma/migrations/20260401100000_drop_legacy_cycle_text_fields/migration.sql`
+  Motivo: anadir la migracion comun que elimina fisicamente las columnas legacy de texto usadas para ciclos en `alumnos` y `empresas`.
+  Impacto: la BD queda preparada para cerrar la transicion sin mantener duplicidad entre texto e id.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: ampliar la lectura comun de catalogos de empresas para devolver tambien `id` y `nombre` de los ciclos activos.
+  Impacto: `empresas` e `importexport` pueden poblar selects y resolver importaciones directamente contra ids reales en vez de depender de listados estaticos.
+
+- Archivo: `src/modules/empresas/types/schema.ts`
+  Motivo: sustituir en la validacion compartida de empresas el antiguo `cicloFormativo` textual por `cicloFormativoId` opcional coercionado.
+  Impacto: la API de empresas pasa a recibir y validar el identificador del ciclo activo, alineandose con el modelo final de BD.
+
+- Archivo: `src/modules/empresas/actions/queries.ts`
+  Motivo: incluir la relacion `cicloFormativoRef` en las lecturas de empresas y normalizar la salida para exponer nombre e id derivados de la relacion.
+  Impacto: listados, formularios e informes dejan de leer la columna legacy y consumen ya el ciclo resuelto desde BD.
+
+- Archivo: `src/modules/empresas/actions/mutations.ts`
+  Motivo: hacer que las altas, ediciones e importaciones masivas de empresas persistan `cicloFormativoId` y validen que el ciclo exista y siga activo.
+  Impacto: la escritura de empresas queda protegida frente a ciclos invalidos y deja de guardar texto duplicado.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: adaptar el estado del formulario y la edicion de empresas al uso de `cicloFormativoId` con opciones provenientes del catalogo maestro.
+  Impacto: la UI sigue mostrando nombres de ciclo, pero guarda y recupera la relacion real por id.
+
+- Archivo: `src/modules/empresas/components/EmpresaForm.tsx`
+  Motivo: convertir el selector de ciclo del formulario de empresas para trabajar con opciones `{ id, nombre }` desde BD.
+  Impacto: el formulario deja de enviar texto libre o heredado y queda sincronizado con los ciclos activos del sistema.
+
+- Archivo: `src/modules/importexport/actions/import.ts`
+  Motivo: completar la transicion comun de importacion para resolver ciclos activos desde BD en alumnos y empresas, y validar `curso` con `getCursosAcademicosConfigurados()` en alumnos y formacion.
+  Impacto: la importacion masiva deja de depender de `CURSOS`, `alumno.ciclo` y `empresa.cicloFormativo`, pero mantiene en Excel nombres legibles que se traducen internamente a ids.
+
+- Archivo: `src/modules/importexport/actions/export.ts`
+  Motivo: rehacer la exportacion comun de alumnos y empresas para sacar el nombre del ciclo desde `cicloFormativoRef`.
+  Impacto: los excels siguen siendo legibles para el usuario, pero ya no se alimentan de columnas legacy de texto.
+
+- Archivo: `src/modules/importexport/utils.ts`
+  Motivo: hacer dinamicas las validaciones previas y las plantillas Excel, cargando ciclos activos desde catalogos y cursos desde `settings` para listas desplegables y comprobaciones cliente.
+  Impacto: las plantillas y la validacion local se ajustan al estado real de la aplicacion sin arrastrar catalogos estaticos desfasados.
+
+- Archivo: `src/modules/importexport/components/ImportExportPanel.tsx`
+  Motivo: adaptar el flujo comun de importacion a la nueva validacion asíncrona de Excel.
+  Impacto: el panel puede seguir bloqueando errores antes de llamar a la API, pero ahora con catalogos y cursos obtenidos en tiempo real.
+
+- Archivo: `src/modules/informes/components/InformesPanel.tsx`
+  Motivo: simplificar las opciones de filtro de ciclos para que tomen como base el catalogo maestro de ciclos activos en lugar de reconstruirse desde textos heredados de empresas.
+  Impacto: informes queda mejor alineado con la fuente de verdad final y evita reforzar ciclos residuales o desactivados.
+
+## 31-3-26 Oma
+
 - Archivo: `cambios-comunes.md`
   Motivo: dejar trazabilidad de una prueba controlada de rendimiento con 5000 alumnos sinteticos ejecutada sobre la base actual dentro de una transaccion con rollback, para medir insercion, paginacion, busquedas y conteo sin ensuciar datos reales.
   Impacto: se confirma que el modulo de alumnos sigue respondiendo con soltura en este volumen inicial de referencia, con insercion de 5000 filas en ~514 ms, pagina inicial de 10 registros en ~9 ms, pagina profunda en ~38 ms, busqueda por nombre en ~8 ms, busqueda por NIA en ~5 ms y count total en ~3 ms.
@@ -65,7 +121,7 @@
   Impacto: la subida de archivos queda desacoplada del CRUD general del alumno y permite trabajar con `multipart/form-data` y descargas directas sin romper el contrato JSON existente.
 
 - Archivo: `src/modules/alumnos/utils/cv.ts`
-  Motivo: anadir utilidades cliente para validar que el CV sea exclusivamente un PDF y que respete el limite objetivo de 100 KB.
+  Motivo: anadir utilidades cliente para validar que el CV sea exclusivamente un PDF y que respete el limite objetivo vigente de 500 KB.
   Impacto: la subida del CV queda alineada con la restriccion funcional real y evita aceptar formatos que ya no deben entrar en el sistema.
 
 - Archivo: `src/modules/alumnos/components/AlumnoForm.tsx`

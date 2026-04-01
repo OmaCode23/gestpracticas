@@ -30,6 +30,9 @@ interface AlumnosTableProps {
   onVer: (alumno: Alumno) => void;
   onEditar: (alumno: Alumno) => void;
   onEliminar: (id: number) => void;
+  onDownloadAllCv: () => void;
+  onDeleteAllCv: () => void;
+  bulkCvBusy: "download" | "delete" | null;
 }
 
 export default function AlumnosTable({
@@ -49,6 +52,9 @@ export default function AlumnosTable({
   onVer,
   onEditar,
   onEliminar,
+  onDownloadAllCv,
+  onDeleteAllCv,
+  bulkCvBusy,
 }: AlumnosTableProps) {
   const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
 
@@ -89,6 +95,25 @@ export default function AlumnosTable({
             onChange={onChangeSearch}
             placeholder="Buscar alumno o NIA..."
           />
+
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onDownloadAllCv}
+              disabled={bulkCvBusy !== null}
+            >
+              {bulkCvBusy === "download" ? "Descargando CVs..." : "Descargar todos los CVs"}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={onDeleteAllCv}
+              disabled={bulkCvBusy !== null}
+            >
+              {bulkCvBusy === "delete" ? "Eliminando CVs..." : "Eliminar todos los CVs"}
+            </Button>
+          </div>
         </TableFilters>
 
         <div className="overflow-x-auto">

@@ -284,7 +284,7 @@ export default function ImportExportPanel() {
         defval: "",
       });
       const rows = buildSheetRows(rawRows, config);
-      const excelErrors = collectExcelValidationErrors({
+      const excelErrors = await collectExcelValidationErrors({
         config,
         headerRow,
         rows,

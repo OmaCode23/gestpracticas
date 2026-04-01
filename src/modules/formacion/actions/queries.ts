@@ -79,7 +79,12 @@ export async function getFormacionesPaginated(params: {
             nombre: true,
             sector: true,
             localidad: true,
-            cicloFormativo: true,
+            cicloFormativoId: true,
+            cicloFormativoRef: {
+              select: {
+                nombre: true,
+              },
+            },
           },
         },
         alumno: {
@@ -113,6 +118,10 @@ export async function getFormacionesPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
+      empresa: {
+        ...item.empresa,
+        cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
+      },
       alumno: item.alumno
         ? {
             ...item.alumno,
@@ -120,6 +129,7 @@ export async function getFormacionesPaginated(params: {
               item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
             cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
             cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
+            ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
           }
         : null,
     })),
@@ -140,7 +150,12 @@ export async function getFormacionById(id: number) {
           nombre: true,
           sector: true,
           localidad: true,
-          cicloFormativo: true,
+          cicloFormativoId: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
       alumno: {
@@ -169,6 +184,10 @@ export async function getFormacionById(id: number) {
 
   return {
     ...item,
+    empresa: {
+      ...item.empresa,
+      cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
+    },
     alumno: item.alumno
       ? {
           ...item.alumno,
@@ -176,6 +195,7 @@ export async function getFormacionById(id: number) {
             item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
           cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
           cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
+          ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };

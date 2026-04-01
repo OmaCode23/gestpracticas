@@ -34,7 +34,6 @@ model Empresa {
   sector            String
   sectorId          Int?
   sectorRef         Sector?          @relation(fields: [sectorId], references: [id], onDelete: SetNull)
-  cicloFormativo    String?
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
   telefono          String?
@@ -56,7 +55,6 @@ model Alumno {
   nuss              String?          @unique
   telefono          String
   email             String
-  ciclo             String
   cursoCiclo        Int              @default(1)
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)

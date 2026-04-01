@@ -28,7 +28,6 @@ export function normalizeEmpresaData(data: EmpresaInput) {
     direccion: normalizeOptionalString(data.direccion),
     localidad: data.localidad.trim(),
     sector: data.sector.trim(),
-    cicloFormativo: normalizeOptionalString(data.cicloFormativo),
     telefono: normalizeOptionalString(data.telefono),
     email: normalizeOptionalEmail(data.email),
     contacto: normalizeOptionalString(data.contacto),
@@ -36,19 +35,83 @@ export function normalizeEmpresaData(data: EmpresaInput) {
   };
 }
 
+async function getCicloFormativoOrThrow(cicloFormativoId: number) {
+  const cicloFormativo = await prisma.cicloFormativo.findFirst({
+    where: {
+      id: cicloFormativoId,
+      activo: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!cicloFormativo) {
+    throw new Error("CICLO_FORMATIVO_INVALIDO");
+  }
+
+  return cicloFormativo;
+}
+
 export async function createEmpresa(data: EmpresaInput) {
+  const cicloFormativo =
+    typeof data.cicloFormativoId === "number"
+      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
+      : null;
+
   return prisma.empresa.create({
-    data: normalizeEmpresaData(data),
+    data: {
+      ...normalizeEmpresaData(data),
+      cicloFormativoId: cicloFormativo?.id ?? null,
+    },
   });
 }
 
 export async function createEmpresasBatch(data: EmpresaInput[]) {
+  const requestedIds = Array.from(
+    new Set(
+      data
+        .map((item) =>
+          typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null
+        )
+        .filter((value): value is number => value !== null)
+    )
+  );
+
+  const ciclosFormativos =
+    requestedIds.length > 0
+      ? await prisma.cicloFormativo.findMany({
+          where: {
+            id: { in: requestedIds },
+            activo: true,
+          },
+          select: { id: true },
+        })
+      : [];
+
+  const ciclosActivos = new Set(ciclosFormativos.map((item) => item.id));
+
+  if (requestedIds.some((id) => !ciclosActivos.has(id))) {
+    throw new Error("CICLO_FORMATIVO_INVALIDO");
+  }
+
   return prisma.empresa.createMany({
-    data: data.map(normalizeEmpresaData),
+    data: data.map((item) => ({
+      ...normalizeEmpresaData(item),
+      cicloFormativoId:
+        typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null,
+    })),
   });
 }
 
 export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
+  const cicloFormativo =
+    typeof data.cicloFormativoId === "number"
+      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
+      : data.cicloFormativoId === null
+        ? null
+        : undefined;
+
   return prisma.empresa.update({
     where: { id },
     data: {
@@ -59,8 +122,8 @@ export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
         : {}),
       ...(data.localidad !== undefined ? { localidad: data.localidad.trim() } : {}),
       ...(data.sector !== undefined ? { sector: data.sector.trim() } : {}),
-      ...(data.cicloFormativo !== undefined
-        ? { cicloFormativo: normalizeOptionalString(data.cicloFormativo) }
+      ...(cicloFormativo !== undefined
+        ? { cicloFormativoId: cicloFormativo?.id ?? null }
         : {}),
       ...(data.telefono !== undefined
         ? { telefono: normalizeOptionalString(data.telefono) }
@@ -77,6 +140,14 @@ export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
 }
 
 export async function deleteEmpresa(id: number) {
+  const formacionesAsociadas = await prisma.formacionEmpresa.count({
+    where: { empresaId: id },
+  });
+
+  if (formacionesAsociadas > 0) {
+    throw new Error("EMPRESA_CON_FORMACIONES");
+  }
+
   return prisma.empresa.delete({
     where: { id },
   });

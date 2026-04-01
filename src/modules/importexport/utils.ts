@@ -3,10 +3,21 @@ import * as XLSX from "xlsx";
 import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import { FORMACION_FIELDS } from "@/modules/formacion/fields";
+import {
+  DEFAULT_MES_CAMBIO_CURSO,
+  DEFAULT_NUMERO_CURSOS_VISIBLES,
+  getCursosAcademicos,
+} from "@/shared/catalogs/academico";
 import type { CardConfig, ImportErrorResponse, SheetRow } from "./types";
-import { CICLOS_FORMATIVOS } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
+
+type WorkbookCatalogs = {
+  ciclosFormativos: string[];
+  cursos: string[];
+  sectores: string[];
+  localidades: string[];
+};
 
 function mapRowsByFieldConfig(
   rows: SheetRow[],
@@ -35,6 +46,7 @@ export function normalizeHeader(value: string) {
   return value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
@@ -145,17 +157,52 @@ export function getMissingHeaders(headers: string[], config: CardConfig) {
   );
 }
 
+async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
+  const [catalogosResponse, settingsResponse] = await Promise.all([
+    fetch("/api/catalogos/empresas", { cache: "no-store" }),
+    fetch("/api/settings/academico", { cache: "no-store" }),
+  ]);
+
+  const catalogosJson = await catalogosResponse.json();
+  const settingsJson = await settingsResponse.json();
+
+  const ciclosFormativos = catalogosJson?.ok
+    ? (catalogosJson.data.ciclosFormativos as Array<{ nombre: string }>).map(
+        (item) => item.nombre
+      )
+    : [];
+  const cursos = settingsJson?.ok
+    ? getCursosAcademicos(
+        settingsJson.data.numeroCursosVisibles,
+        new Date(),
+        settingsJson.data.mesCambioCurso
+      )
+    : getCursosAcademicos(
+        DEFAULT_NUMERO_CURSOS_VISIBLES,
+        new Date(),
+        DEFAULT_MES_CAMBIO_CURSO
+      );
+
+  return {
+    ciclosFormativos,
+    cursos,
+    sectores: SECTORES,
+    localidades: LOCALIDADES,
+  };
+}
+
 /**
  * Reune todas las validaciones previas a enviar el Excel al servidor.
  * Asi se detectan errores de estructura y catalogos antes de llamar a la API.
  */
-export function collectExcelValidationErrors(input: {
+export async function collectExcelValidationErrors(input: {
   config: CardConfig;
   headerRow: string[];
   rows: SheetRow[];
 }) {
   const { config, headerRow, rows } = input;
   const errors: string[] = [];
+  const catalogs = await loadWorkbookCatalogs();
 
   const missingHeaders = getMissingHeaders(headerRow, config);
   if (missingHeaders.length > 0) {
@@ -183,7 +230,7 @@ export function collectExcelValidationErrors(input: {
   });
 
   if (config.entidad === "empresas") {
-    errors.push(...collectEmpresaCatalogErrors(rows));
+    errors.push(...collectEmpresaCatalogErrors(rows, catalogs));
 
     const duplicateCifs = findDuplicateValues(rows, "CIF");
 
@@ -192,6 +239,36 @@ export function collectExcelValidationErrors(input: {
         `CIF duplicado en el Excel: "${duplicate.value}" aparece en las filas ${duplicate.firstRow} y ${duplicate.duplicateRow}.`
       );
     });
+  }
+
+  if (config.entidad === "alumnos") {
+    errors.push(...collectAlumnoCatalogErrors(rows, catalogs));
+
+    const duplicateNias = findDuplicateValues(rows, "NIA");
+    const duplicateNifs = findDuplicateValues(rows, "NIF");
+    const duplicateNusses = findDuplicateValues(rows, "NUSS");
+
+    duplicateNias.forEach((duplicate) => {
+      errors.push(
+        `NIA duplicado en el Excel: "${duplicate.value}" aparece en las filas ${duplicate.firstRow} y ${duplicate.duplicateRow}.`
+      );
+    });
+
+    duplicateNifs.forEach((duplicate) => {
+      errors.push(
+        `NIF duplicado en el Excel: "${duplicate.value}" aparece en las filas ${duplicate.firstRow} y ${duplicate.duplicateRow}.`
+      );
+    });
+
+    duplicateNusses.forEach((duplicate) => {
+      errors.push(
+        `NUSS duplicado en el Excel: "${duplicate.value}" aparece en las filas ${duplicate.firstRow} y ${duplicate.duplicateRow}.`
+      );
+    });
+  }
+
+  if (config.entidad === "formacion") {
+    errors.push(...collectFormacionCatalogErrors(rows, catalogs));
   }
 
   return errors;
@@ -221,10 +298,10 @@ export function mapFormacionRows(rows: SheetRow[]) {
 /**
  * Valida que los valores ligados a catalogos compartidos existan realmente.
  */
-function collectEmpresaCatalogErrors(rows: SheetRow[]) {
-  const localidades = new Set(LOCALIDADES);
-  const sectores = new Set(SECTORES);
-  const ciclos = new Set(CICLOS_FORMATIVOS);
+function collectEmpresaCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs) {
+  const localidades = new Set(catalogs.localidades);
+  const sectores = new Set(catalogs.sectores);
+  const ciclos = new Set(catalogs.ciclosFormativos);
   const errors: string[] = [];
 
   rows.forEach((row, index) => {
@@ -253,11 +330,49 @@ function collectEmpresaCatalogErrors(rows: SheetRow[]) {
   return errors;
 }
 
+function collectAlumnoCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs) {
+  const ciclos = new Set(catalogs.ciclosFormativos);
+  const cursos = new Set(catalogs.cursos);
+  const errors: string[] = [];
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const ciclo = row.Ciclo.trim();
+    const curso = row.Curso.trim();
+
+    if (ciclo && !ciclos.has(ciclo)) {
+      errors.push(`Fila ${excelRow}: el ciclo formativo "${ciclo}" no existe en el catalogo.`);
+    }
+
+    if (curso && !cursos.has(curso)) {
+      errors.push(`Fila ${excelRow}: el curso "${curso}" no existe en la configuracion academica.`);
+    }
+  });
+
+  return errors;
+}
+
+function collectFormacionCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs) {
+  const cursos = new Set(catalogs.cursos);
+  const errors: string[] = [];
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const curso = row.Curso.trim();
+
+    if (curso && !cursos.has(curso)) {
+      errors.push(`Fila ${excelRow}: el curso "${curso}" no existe en la configuracion academica.`);
+    }
+  });
+
+  return errors;
+}
+
 /**
  * Indica si la plantilla exportada debe incluir una hoja extra con catalogos de apoyo.
  */
-function hasEmpresaCatalogColumns(columns: string[]) {
-  return ["Localidad", "Sector", "Ciclo Formativo"].every((column) =>
+function hasCatalogColumns(columns: string[]) {
+  return ["Localidad", "Sector", "Ciclo Formativo", "Ciclo", "Curso"].some((column) =>
     columns.includes(column)
   );
 }
@@ -265,17 +380,20 @@ function hasEmpresaCatalogColumns(columns: string[]) {
 /**
  * Construye la hoja auxiliar de catalogos para ayudar al usuario a rellenar plantillas.
  */
-function buildCatalogRows() {
+function buildCatalogRows(catalogs: WorkbookCatalogs) {
   const totalRows = Math.max(
-    CICLOS_FORMATIVOS.length,
-    SECTORES.length,
-    LOCALIDADES.length
+    catalogs.ciclosFormativos.length,
+    catalogs.sectores.length,
+    catalogs.localidades.length,
+    catalogs.cursos.length,
+    1
   );
 
   return Array.from({ length: totalRows }, (_, index) => ({
-    "Ciclos Formativos": CICLOS_FORMATIVOS[index] ?? "",
-    Sectores: SECTORES[index] ?? "",
-    "Localidades o Municipios": LOCALIDADES[index] ?? "",
+    "Ciclos Formativos": catalogs.ciclosFormativos[index] ?? "",
+    Sectores: catalogs.sectores[index] ?? "",
+    "Localidades o Municipios": catalogs.localidades[index] ?? "",
+    "Cursos Academicos": catalogs.cursos[index] ?? "",
   }));
 }
 
@@ -384,11 +502,14 @@ function applyEmpresaTemplateValidations(
   worksheet: ExcelJS.Worksheet,
   columns: string[],
   dataStartRow: number,
-  dataEndRow: number
+  dataEndRow: number,
+  catalogs: WorkbookCatalogs
 ) {
   const localidadIndex = columns.indexOf("Localidad");
   const sectorIndex = columns.indexOf("Sector");
-  const cicloIndex = columns.indexOf("Ciclo Formativo");
+  const cicloEmpresaIndex = columns.indexOf("Ciclo Formativo");
+  const cicloAlumnoIndex = columns.indexOf("Ciclo");
+  const cursoIndex = columns.indexOf("Curso");
 
   const applyValidation = (
     columnIndex: number,
@@ -412,7 +533,7 @@ function applyEmpresaTemplateValidations(
   if (localidadIndex >= 0) {
     applyValidation(
       localidadIndex,
-      `Catalogos!$C$2:$C$${LOCALIDADES.length + 1}`,
+      `Catalogos!$C$2:$C$${Math.max(catalogs.localidades.length, 1) + 1}`,
       "Localidad no valida",
       "Selecciona una localidad de la lista desplegable."
     );
@@ -421,18 +542,36 @@ function applyEmpresaTemplateValidations(
   if (sectorIndex >= 0) {
     applyValidation(
       sectorIndex,
-      `Catalogos!$B$2:$B$${SECTORES.length + 1}`,
+      `Catalogos!$B$2:$B$${Math.max(catalogs.sectores.length, 1) + 1}`,
       "Sector no valido",
       "Selecciona un sector de la lista desplegable."
     );
   }
 
-  if (cicloIndex >= 0) {
+  if (cicloEmpresaIndex >= 0) {
     applyValidation(
-      cicloIndex,
-      `Catalogos!$A$2:$A$${CICLOS_FORMATIVOS.length + 1}`,
+      cicloEmpresaIndex,
+      `Catalogos!$A$2:$A$${Math.max(catalogs.ciclosFormativos.length, 1) + 1}`,
       "Ciclo formativo no valido",
       "Selecciona un ciclo formativo de la lista desplegable."
+    );
+  }
+
+  if (cicloAlumnoIndex >= 0) {
+    applyValidation(
+      cicloAlumnoIndex,
+      `Catalogos!$A$2:$A$${Math.max(catalogs.ciclosFormativos.length, 1) + 1}`,
+      "Ciclo formativo no valido",
+      "Selecciona un ciclo formativo de la lista desplegable."
+    );
+  }
+
+  if (cursoIndex >= 0) {
+    applyValidation(
+      cursoIndex,
+      `Catalogos!$D$2:$D$${Math.max(catalogs.cursos.length, 1) + 1}`,
+      "Curso no valido",
+      "Selecciona un curso academico de la lista desplegable."
     );
   }
 }
@@ -448,6 +587,7 @@ export async function downloadWorkbook(
   options: WorkbookOptions = {}
 ) {
   const exportRows = rows.length > 0 ? rows : [createEmptyRow(columns)];
+  const catalogs = await loadWorkbookCatalogs();
   const workbook = new ExcelJS.Workbook();
   const title = options.title ?? "Exportacion";
   const subtitle =
@@ -493,25 +633,28 @@ export async function downloadWorkbook(
     to: { row: headerRowIndex, column: columns.length },
   };
 
-  if (hasEmpresaCatalogColumns(columns)) {
+  if (hasCatalogColumns(columns)) {
     const catalogWorksheet = workbook.addWorksheet("Catalogos");
     const catalogHeaders = [
       "Ciclos Formativos",
       "Sectores",
       "Localidades o Municipios",
+      "Cursos Academicos",
     ];
     catalogWorksheet.addRow(catalogHeaders);
     styleWorkbookHeaderRow(catalogWorksheet.getRow(1));
-    buildCatalogRows().forEach((row) => {
+    buildCatalogRows(catalogs).forEach((row) => {
       catalogWorksheet.addRow([
         row["Ciclos Formativos"],
         row.Sectores,
         row["Localidades o Municipios"],
+        row["Cursos Academicos"],
       ]);
     });
     catalogWorksheet.getColumn(1).width = 34;
     catalogWorksheet.getColumn(2).width = 24;
     catalogWorksheet.getColumn(3).width = 34;
+    catalogWorksheet.getColumn(4).width = 22;
 
     if (options.template) {
       prepareTemplateEntryArea(worksheet, columns, headerRowIndex + 1, 300);
@@ -519,7 +662,8 @@ export async function downloadWorkbook(
         worksheet,
         columns,
         headerRowIndex + 1,
-        300
+        300,
+        catalogs
       );
     }
   } else if (options.template) {
