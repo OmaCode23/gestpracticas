@@ -7,7 +7,6 @@
  */
 
 import { z } from "zod";
-import { CICLOS_FORMATIVOS } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
 
@@ -19,6 +18,13 @@ const TIENE_TEXTO_UTIL_REGEX = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO_REGEX = /([^\p{L}\p{N}\s])\1{2,}/u;
 const EMAIL_REGEX =
   /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/;
+const optionalCicloFormativoId = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === "") return null;
+    return value;
+  },
+  z.coerce.number().int().positive().nullable()
+);
 
 export const empresaSchema = z.object({
   nombre: z
@@ -63,15 +69,7 @@ export const empresaSchema = z.object({
       (value) => SECTORES.includes(value),
       "El sector debe existir en el catalogo de empresa."
     ),
-  cicloFormativo: z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(""))
-    .refine(
-      (value) => !value || CICLOS_FORMATIVOS.includes(value),
-      "El ciclo formativo debe existir en el catalogo academico."
-    ),
+  cicloFormativoId: optionalCicloFormativoId,
   telefono: z
     .string()
     .trim()

@@ -759,9 +759,7 @@ async function loadSupportOptions(): Promise<SupportOptions> {
     : getCursosAcademicos(DEFAULT_NUMERO_CURSOS_VISIBLES, new Date(), DEFAULT_MES_CAMBIO_CURSO);
   const sectores = empresasJson.ok ? uniqueSorted(empresasJson.data.items.map((item) => item.sector)) : [];
   const localidades = empresasJson.ok ? uniqueSorted(empresasJson.data.items.map((item) => item.localidad)) : [];
-  const empresaCiclos = empresasJson.ok
-    ? uniqueSorted([...ciclos, ...empresasJson.data.items.map((item) => item.cicloFormativo)])
-    : ciclos;
+  const empresaCiclos = ciclos;
 
   return { ciclos, cursos, sectores, localidades, empresaCiclos };
 }

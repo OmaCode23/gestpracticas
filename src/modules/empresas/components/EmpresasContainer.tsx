@@ -20,13 +20,17 @@ const SECTOR_BADGE: Record<string, BadgeVariant> = {
   Administracion: "gray",
 };
 
-const EMPTY_FORM: EmpresaInput = {
+type EmpresaFormState = Omit<EmpresaInput, "cicloFormativoId"> & {
+  cicloFormativoId: string;
+};
+
+const EMPTY_FORM: EmpresaFormState = {
   nombre: "",
   cif: "",
   direccion: "",
   localidad: "",
   sector: "",
-  cicloFormativo: "",
+  cicloFormativoId: "",
   telefono: "",
   email: "",
   contacto: "",
@@ -38,12 +42,12 @@ const PER_PAGE = 5;
 type EmpresaCatalogos = {
   sectores: string[];
   localidades: string[];
-  ciclosFormativos: string[];
+  ciclosFormativos: Array<{ id: number; nombre: string }>;
 };
 
 export default function EmpresasContainer() {
   const router = useRouter();
-  const [form, setForm] = useState<EmpresaInput>(EMPTY_FORM);
+  const [form, setForm] = useState<EmpresaFormState>(EMPTY_FORM);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [sector, setSector] = useState("");
   const [localidad, setLocalidad] = useState("");
@@ -61,7 +65,7 @@ export default function EmpresasContainer() {
     ciclosFormativos: [],
   });
 
-  const handleFormChange = (key: keyof EmpresaInput, value: string) => {
+  const handleFormChange = (key: keyof EmpresaFormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -190,7 +194,7 @@ export default function EmpresasContainer() {
       direccion: empresa.direccion ?? "",
       localidad: empresa.localidad,
       sector: empresa.sector,
-      cicloFormativo: empresa.cicloFormativo ?? "",
+      cicloFormativoId: empresa.cicloFormativoId ? String(empresa.cicloFormativoId) : "",
       telefono: empresa.telefono ?? "",
       email: empresa.email ?? "",
       contacto: empresa.contacto ?? "",

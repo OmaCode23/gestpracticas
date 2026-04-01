@@ -9,6 +9,13 @@ import { FORMACION_FIELDS } from "@/modules/formacion/fields";
  */
 export async function getEmpresasExport() {
   const empresas = await prisma.empresa.findMany({
+    include: {
+      cicloFormativoRef: {
+        select: {
+          nombre: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -18,7 +25,7 @@ export async function getEmpresasExport() {
     [EMPRESA_FIELDS[2].label]: empresa.direccion ?? "",
     [EMPRESA_FIELDS[3].label]: empresa.localidad,
     [EMPRESA_FIELDS[4].label]: empresa.sector,
-    [EMPRESA_FIELDS[5].label]: empresa.cicloFormativo ?? "",
+    [EMPRESA_FIELDS[5].label]: empresa.cicloFormativoRef?.nombre ?? "",
     [EMPRESA_FIELDS[6].label]: empresa.telefono ?? "",
     [EMPRESA_FIELDS[7].label]: empresa.email ?? "",
     [EMPRESA_FIELDS[8].label]: empresa.contacto ?? "",
@@ -28,6 +35,13 @@ export async function getEmpresasExport() {
 
 export async function getAlumnosExport() {
   const alumnos = await prisma.alumno.findMany({
+    include: {
+      cicloFormativoRef: {
+        select: {
+          nombre: true,
+        },
+      },
+    },
     orderBy: { nombre: "asc" },
   });
 
@@ -38,7 +52,7 @@ export async function getAlumnosExport() {
     [ALUMNO_FIELDS[3].label]: alumno.nombre,
     [ALUMNO_FIELDS[4].label]: alumno.telefono,
     [ALUMNO_FIELDS[5].label]: alumno.email,
-    [ALUMNO_FIELDS[6].label]: alumno.ciclo,
+    [ALUMNO_FIELDS[6].label]: alumno.cicloFormativoRef?.nombre ?? "",
     [ALUMNO_FIELDS[7].label]: alumno.cursoCiclo,
     [ALUMNO_FIELDS[8].label]: alumno.curso,
   }));

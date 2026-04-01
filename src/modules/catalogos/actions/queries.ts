@@ -37,14 +37,17 @@ export async function getEmpresaCatalogos() {
     prisma.cicloFormativo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { nombre: true },
+      select: { id: true, nombre: true },
     }),
   ]);
 
   return {
     sectores: sectores.map((item) => item.nombre),
     localidades: localidades.map((item) => item.nombre),
-    ciclosFormativos: ciclosFormativos.map((item) => item.nombre),
+    ciclosFormativos: ciclosFormativos.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+    })),
   };
 }
 

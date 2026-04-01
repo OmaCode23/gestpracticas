@@ -15,7 +15,7 @@ function normalizeOptionalString(value?: string) {
 }
 
 export async function createFormacion(data: FormacionInput) {
-  return prisma.formacionEmpresa.create({
+  const formacion = await prisma.formacionEmpresa.create({
     data: {
       empresaId: data.empresaId,
       alumnoId: data.alumnoId,
@@ -41,7 +41,6 @@ export async function createFormacion(data: FormacionInput) {
           nia: true,
           nif: true,
           nuss: true,
-          ciclo: true,
           cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
@@ -54,10 +53,20 @@ export async function createFormacion(data: FormacionInput) {
       },
     },
   });
+
+  return {
+    ...formacion,
+    alumno: formacion.alumno
+      ? {
+          ...formacion.alumno,
+          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
+        }
+      : null,
+  };
 }
 
 export async function updateFormacion(id: number, data: FormacionUpdateInput) {
-  return prisma.formacionEmpresa.update({
+  const formacion = await prisma.formacionEmpresa.update({
     where: { id },
     data: {
       ...(data.empresaId !== undefined ? { empresaId: data.empresaId } : {}),
@@ -90,7 +99,6 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           nia: true,
           nif: true,
           nuss: true,
-          ciclo: true,
           cicloFormativoId: true,
           cursoCiclo: true,
           curso: true,
@@ -103,6 +111,16 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
       },
     },
   });
+
+  return {
+    ...formacion,
+    alumno: formacion.alumno
+      ? {
+          ...formacion.alumno,
+          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
+        }
+      : null,
+  };
 }
 
 export async function deleteFormacion(id: number) {

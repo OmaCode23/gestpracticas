@@ -5,6 +5,7 @@ import { createEmpresasBatch } from "@/modules/empresas/actions/mutations";
 import type { EmpresaInput } from "@/modules/empresas/types";
 import { empresaSchema } from "@/modules/empresas/types/schema";
 import { formacionSchema } from "@/modules/formacion/types/schema";
+import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import { createImportExportLog } from "./logs";
 import type { ZodError } from "zod";
 
@@ -58,13 +59,17 @@ function normalizeEmpresaImportRow(row: EmpresaImportRow): EmpresaInput {
     direccion: row.direccion ?? "",
     localidad: row.localidad ?? "",
     sector: row.sector ?? "",
-    cicloFormativo: row.cicloFormativo ?? "",
+    cicloFormativoId: null,
     telefono: row.telefono ?? "",
     email: row.email ?? "",
     contacto: row.contacto ?? "",
     emailContacto: row.emailContacto ?? "",
   };
 }
+
+type NormalizedEmpresaImportRow = ReturnType<typeof normalizeEmpresaImportRow> & {
+  cicloFormativo: string;
+};
 
 function normalizeAlumnoImportRow(row: AlumnoImportRow) {
   return {
@@ -84,7 +89,19 @@ function normalizeKey(value: string) {
   return value.trim().toLocaleLowerCase("es-ES");
 }
 
-function buildDuplicateErrors(rows: EmpresaInput[]) {
+async function getCiclosFormativosActivosByName() {
+  const ciclos = await prisma.cicloFormativo.findMany({
+    where: { activo: true },
+    select: {
+      id: true,
+      nombre: true,
+    },
+  });
+
+  return new Map(ciclos.map((ciclo) => [normalizeKey(ciclo.nombre), ciclo]));
+}
+
+function buildDuplicateErrors(rows: Array<{ cif: string }>) {
   const seen = new Map<string, number>();
   const errors: string[] = [];
 
@@ -109,8 +126,53 @@ function buildDuplicateErrors(rows: EmpresaInput[]) {
   return errors;
 }
 
+function buildAlumnoDuplicateErrors(rows: AlumnoInput[]) {
+  const seenNia = new Map<string, number>();
+  const seenNif = new Map<string, number>();
+  const seenNuss = new Map<string, number>();
+  const errors: string[] = [];
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const nia = row.nia.trim().toUpperCase();
+    const nif = row.nif.trim().toUpperCase();
+    const nuss = row.nuss.trim();
+
+    const firstNiaRow = seenNia.get(nia);
+    if (firstNiaRow) {
+      errors.push(`NIA duplicado en el Excel: "${nia}" aparece en las filas ${firstNiaRow} y ${excelRow}.`);
+    } else if (nia) {
+      seenNia.set(nia, excelRow);
+    }
+
+    if (nif) {
+      const firstNifRow = seenNif.get(nif);
+      if (firstNifRow) {
+        errors.push(`NIF duplicado en el Excel: "${nif}" aparece en las filas ${firstNifRow} y ${excelRow}.`);
+      } else {
+        seenNif.set(nif, excelRow);
+      }
+    }
+
+    if (nuss) {
+      const firstNussRow = seenNuss.get(nuss);
+      if (firstNussRow) {
+        errors.push(`NUSS duplicado en el Excel: "${nuss}" aparece en las filas ${firstNussRow} y ${excelRow}.`);
+      } else {
+        seenNuss.set(nuss, excelRow);
+      }
+    }
+  });
+
+  return errors;
+}
+
 export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportResult> {
-  const normalizedRows = rows.map(normalizeEmpresaImportRow);
+  const normalizedRows: NormalizedEmpresaImportRow[] = rows.map((row) => ({
+    ...normalizeEmpresaImportRow(row),
+    cicloFormativo: row.cicloFormativo ?? "",
+  }));
+  const parsedRows: EmpresaInput[] = [];
   const errors: string[] = [];
 
   if (normalizedRows.length === 0) {
@@ -127,12 +189,32 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
 
   errors.push(...buildDuplicateErrors(normalizedRows));
 
+  const ciclosByName = await getCiclosFormativosActivosByName();
+
   normalizedRows.forEach((row, index) => {
-    const parsed = empresaSchema.safeParse(row);
+    const excelRow = index + 2;
+    const cicloFormativoNombre = row.cicloFormativo?.trim() ?? "";
+    const cicloFormativo = cicloFormativoNombre
+      ? ciclosByName.get(normalizeKey(cicloFormativoNombre))
+      : null;
+
+    if (cicloFormativoNombre && !cicloFormativo) {
+      errors.push(
+        `Fila ${excelRow}: el ciclo formativo "${cicloFormativoNombre}" no existe en el catalogo activo.`
+      );
+    }
+
+    const parsed = empresaSchema.safeParse({
+      ...row,
+      cicloFormativoId: cicloFormativo?.id ?? null,
+    });
 
     if (!parsed.success) {
-      errors.push(...buildRowValidationErrors(index + 2, parsed.error));
+      errors.push(...buildRowValidationErrors(excelRow, parsed.error));
+      return;
     }
+
+    parsedRows.push(parsed.data);
   });
 
   const cifs = normalizedRows.map((row) => row.cif.trim().toUpperCase()).filter(Boolean);
@@ -165,7 +247,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
     return { ok: false, message, importedCount: 0, errors };
   }
 
-  const result = await createEmpresasBatch(normalizedRows);
+  const result = await createEmpresasBatch(parsedRows);
   const message = `Importacion completada (${result.count} registros).`;
 
   await createImportExportLog({
@@ -181,7 +263,7 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
 
 export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResult> {
   const normalizedRows = rows.map(normalizeAlumnoImportRow);
-  const parsedRows: AlumnoInput[] = [];
+  const parsedRows: Array<AlumnoInput & { cicloFormativoId: number }> = [];
   const errors: string[] = [];
 
   if (normalizedRows.length === 0) {
@@ -196,41 +278,79 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
     return { ok: false, message, importedCount: 0, errors: [message] };
   }
 
-  const seen = new Map<string, number>();
+  const [cursosValidos, ciclosByName] = await Promise.all([
+    getCursosAcademicosConfigurados(),
+    getCiclosFormativosActivosByName(),
+  ]);
+  const cursosValidosSet = new Set(cursosValidos);
 
   normalizedRows.forEach((row, index) => {
     const excelRow = index + 2;
-    const nia = row.nia.trim().toUpperCase();
-    const firstRow = seen.get(nia);
-
-    if (firstRow) {
-      errors.push(`NIA duplicado en el Excel: "${nia}" aparece en las filas ${firstRow} y ${excelRow}.`);
-    } else if (nia) {
-      seen.set(nia, excelRow);
-    }
-
     const parsed = alumnoSchema.safeParse(row);
     if (!parsed.success) {
       errors.push(...buildRowValidationErrors(excelRow, parsed.error));
-    } else {
-      parsedRows.push(parsed.data);
+      return;
     }
+
+    if (!cursosValidosSet.has(parsed.data.curso)) {
+      errors.push(`Fila ${excelRow}: El curso no es valido.`);
+    }
+
+    const cicloFormativo = ciclosByName.get(normalizeKey(parsed.data.ciclo));
+
+    if (!cicloFormativo) {
+      errors.push(`Fila ${excelRow}: El ciclo formativo no es valido.`);
+      return;
+    }
+
+    parsedRows.push({
+      ...parsed.data,
+      cicloFormativoId: cicloFormativo.id,
+    });
   });
 
-  const nias = normalizedRows.map((row) => row.nia.trim().toUpperCase()).filter(Boolean);
+  errors.push(...buildAlumnoDuplicateErrors(parsedRows));
 
-  if (nias.length > 0) {
+  const nias = parsedRows.map((row) => row.nia.trim().toUpperCase()).filter(Boolean);
+  const nifs = parsedRows.map((row) => row.nif.trim().toUpperCase()).filter(Boolean);
+  const nusses = parsedRows.map((row) => row.nuss.trim()).filter(Boolean);
+
+  if (nias.length > 0 || nifs.length > 0 || nusses.length > 0) {
     const existingAlumnos = await prisma.alumno.findMany({
-      where: { nia: { in: nias } },
-      select: { nia: true },
+      where: {
+        OR: [
+          nias.length > 0 ? { nia: { in: nias } } : undefined,
+          nifs.length > 0 ? { nif: { in: nifs } } : undefined,
+          nusses.length > 0 ? { nuss: { in: nusses } } : undefined,
+        ].filter(Boolean) as { nia?: { in: string[] }; nif?: { in: string[] }; nuss?: { in: string[] } }[],
+      },
+      select: { nia: true, nif: true, nuss: true },
     });
 
     const existingNias = new Set(existingAlumnos.map((alumno) => alumno.nia.toUpperCase()));
+    const existingNifs = new Set(
+      existingAlumnos.map((alumno) => alumno.nif?.toUpperCase() ?? "").filter(Boolean)
+    );
+    const existingNusses = new Set(
+      existingAlumnos.map((alumno) => alumno.nuss ?? "").filter(Boolean)
+    );
 
-    normalizedRows.forEach((row, index) => {
+    parsedRows.forEach((row, index) => {
       const nia = row.nia.trim().toUpperCase();
+      const nif = row.nif.trim().toUpperCase();
+      const nuss = row.nuss.trim();
+      const excelRow = normalizedRows.findIndex(
+        (candidate) => candidate.nia.trim().toUpperCase() === nia
+      ) + 2;
+
       if (existingNias.has(nia)) {
-        errors.push(`Fila ${index + 2}: ya existe un alumno con el NIA ${nia}.`);
+        errors.push(`Fila ${excelRow || index + 2}: ya existe un alumno con el NIA ${nia}.`);
+      }
+      if (nif && existingNifs.has(nif)) {
+        errors.push(`Fila ${excelRow || index + 2}: ya existe un alumno con el NIF ${nif}.`);
+      }
+      if (nuss && existingNusses.has(nuss)) {
+        errors.push(`Fila ${excelRow || index + 2}: ya existe un alumno con el NUSS ${nuss}.`);
       }
     });
   }
@@ -255,7 +375,7 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
       nuss: row.nuss.trim() || null,
       telefono: row.telefono.trim(),
       email: row.email.trim().toLowerCase(),
-      ciclo: row.ciclo.trim(),
+      cicloFormativoId: row.cicloFormativoId,
       cursoCiclo: row.cursoCiclo,
       curso: row.curso.trim(),
     })),
@@ -289,14 +409,16 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
     return { ok: false, message, importedCount: 0, errors: [message] };
   }
 
-  const [empresas, alumnos] = await Promise.all([
+  const [empresas, alumnos, cursosValidos] = await Promise.all([
     prisma.empresa.findMany({
       select: { id: true, nombre: true },
     }),
     prisma.alumno.findMany({
       select: { id: true, nombre: true },
     }),
+    getCursosAcademicosConfigurados(),
   ]);
+  const cursosValidosSet = new Set(cursosValidos);
 
   const empresasByName = new Map<string, number[]>();
   empresas.forEach((empresa) => {
@@ -347,6 +469,11 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
 
     if (!parsed.success) {
       errors.push(...buildRowValidationErrors(excelRow, parsed.error));
+      return [];
+    }
+
+    if (!cursosValidosSet.has(parsed.data.curso)) {
+      errors.push(`Fila ${excelRow}: El curso no es valido.`);
       return [];
     }
 

@@ -14,14 +14,18 @@ import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import type { EmpresaInput } from "../types";
 import LocalidadCombobox from "./LocalidadCombobox";
 
+type EmpresaFormState = Omit<EmpresaInput, "cicloFormativoId"> & {
+  cicloFormativoId: string;
+};
+
 type EmpresaFormProps = {
-  form: EmpresaInput;
+  form: EmpresaFormState;
   saving: boolean;
   editingId: number | null;
-  ciclosFormativos: string[];
+  ciclosFormativos: Array<{ id: number; nombre: string }>;
   localidades: string[];
   sectores: string[];
-  onChange: (key: keyof EmpresaInput, value: string) => void;
+  onChange: (key: keyof EmpresaFormState, value: string) => void;
   onClear: () => void;
   onSave: () => void;
 };
@@ -151,12 +155,14 @@ export default function EmpresaForm({
             <FormGroup label={FIELD_BY_KEY.cicloFormativo.formLabel ?? "Ciclo formativo"}>
               <select
                 className={INPUT_CLS}
-                value={form.cicloFormativo}
-                onChange={(e) => onChange("cicloFormativo", e.target.value)}
+                value={String(form.cicloFormativoId ?? "")}
+                onChange={(e) => onChange("cicloFormativoId", e.target.value)}
               >
                 <option value="">- Seleccionar -</option>
                 {ciclosFormativos.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
                 ))}
               </select>
             </FormGroup>

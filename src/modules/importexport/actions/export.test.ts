@@ -32,7 +32,7 @@ describe("export actions", () => {
         direccion: null,
         localidad: "Alacant/Alicante",
         sector: "Otro",
-        cicloFormativo: null,
+        cicloFormativoRef: null,
         telefono: null,
         email: null,
         contacto: null,
@@ -65,7 +65,7 @@ describe("export actions", () => {
         nombre: "Lucia Perez",
         telefono: "600000000",
         email: "lucia@mail.com",
-        ciclo: "DAM",
+        cicloFormativoRef: { nombre: "DAM" },
         cursoCiclo: 1,
         curso: "2025-2026",
       },
@@ -81,6 +81,36 @@ describe("export actions", () => {
         Correo: "lucia@mail.com",
         Ciclo: "DAM",
         "Curso Ciclo": 1,
+        Curso: "2025-2026",
+      },
+    ]);
+  });
+
+  it("mapea alumnos con opcionales nulos a celdas vacias", async () => {
+    prismaMock.alumno.findMany.mockResolvedValue([
+      {
+        nia: "NIA-02",
+        nif: null,
+        nuss: null,
+        nombre: "Alumno Sin Opcionales",
+        telefono: "600000000",
+        email: "alumno@mail.com",
+        cicloFormativoRef: { nombre: "DAM" },
+        cursoCiclo: 2,
+        curso: "2025-2026",
+      },
+    ]);
+
+    await expect(getAlumnosExport()).resolves.toEqual([
+      {
+        NIA: "NIA-02",
+        NIF: "",
+        NUSS: "",
+        Nombre: "Alumno Sin Opcionales",
+        Telefono: "600000000",
+        Correo: "alumno@mail.com",
+        Ciclo: "DAM",
+        "Curso Ciclo": 2,
         Curso: "2025-2026",
       },
     ]);
@@ -110,5 +140,43 @@ describe("export actions", () => {
         Curso: "2025-2026",
       },
     ]);
+  });
+
+  it("solicita las exportaciones con el orden esperado en cada entidad", async () => {
+    prismaMock.empresa.findMany.mockResolvedValue([]);
+    prismaMock.alumno.findMany.mockResolvedValue([]);
+    prismaMock.formacionEmpresa.findMany.mockResolvedValue([]);
+
+    await getEmpresasExport();
+    await getAlumnosExport();
+    await getFormacionExport();
+
+    expect(prismaMock.empresa.findMany).toHaveBeenCalledWith({
+      include: {
+        cicloFormativoRef: {
+          select: { nombre: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(prismaMock.alumno.findMany).toHaveBeenCalledWith({
+      include: {
+        cicloFormativoRef: {
+          select: { nombre: true },
+        },
+      },
+      orderBy: { nombre: "asc" },
+    });
+    expect(prismaMock.formacionEmpresa.findMany).toHaveBeenCalledWith({
+      include: {
+        empresa: {
+          select: { nombre: true },
+        },
+        alumno: {
+          select: { nombre: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
   });
 });

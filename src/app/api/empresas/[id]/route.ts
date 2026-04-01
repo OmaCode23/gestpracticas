@@ -104,6 +104,13 @@ export async function PATCH(
       data: empresa,
     });
   } catch (error: any) {
+    if (error instanceof Error && error.message === "CICLO_FORMATIVO_INVALIDO") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El ciclo formativo no es valido." },
+        { status: 400 }
+      );
+    }
+
     if (error?.code === "P2002") {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: "Ya existe una empresa con ese CIF" },
@@ -152,6 +159,16 @@ export async function DELETE(
       data: null,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "EMPRESA_CON_FORMACIONES") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No se puede eliminar la empresa porque participa en formaciones registradas.",
+        },
+        { status: 409 }
+      );
+    }
+
     console.error("[DELETE /api/empresas/:id]", error);
 
     return NextResponse.json<ApiResponse<never>>(

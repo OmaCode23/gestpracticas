@@ -42,6 +42,14 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
   const [items, total] = await Promise.all([
     prisma.empresa.findMany({
       where,
+      include: {
+        cicloFormativoRef: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
       orderBy: { createdAt: "desc" },
       ...(perPage
         ? {
@@ -54,7 +62,11 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
   ]);
 
   return {
-    items,
+    items: items.map((item) => ({
+      ...item,
+      cicloFormativo: item.cicloFormativoRef?.nombre ?? null,
+      cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
+    })),
     total,
     page,
     perPage: perPage ?? total,
@@ -63,7 +75,23 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
 };
 
 export async function getEmpresaById(id: number) {
-  return prisma.empresa.findUnique({
+  const empresa = await prisma.empresa.findUnique({
     where: { id },
+    include: {
+      cicloFormativoRef: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
+    },
   });
+
+  if (!empresa) return null;
+
+  return {
+    ...empresa,
+    cicloFormativo: empresa.cicloFormativoRef?.nombre ?? null,
+    cicloFormativoId: empresa.cicloFormativoRef?.id ?? empresa.cicloFormativoId ?? null,
+  };
 }

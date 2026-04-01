@@ -1,4 +1,4 @@
-export const ALUMNO_CV_MAX_BYTES = 100 * 1024;
+export const ALUMNO_CV_MAX_BYTES = 500 * 1024;
 export const ALUMNO_CV_ACCEPTED_TYPES = ["application/pdf"] as const;
 
 export function formatFileSize(size?: number | null) {
@@ -20,7 +20,7 @@ export async function prepareAlumnoCvFile(file: File) {
 
   if (file.size > ALUMNO_CV_MAX_BYTES) {
     throw new Error(
-      "El PDF supera 100 KB. Sube una version optimizada que se vea bien dentro de ese limite."
+      "El PDF supera 500 KB. Sube una version optimizada que se vea bien dentro de ese limite."
     );
   }
 

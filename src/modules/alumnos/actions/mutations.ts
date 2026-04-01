@@ -55,7 +55,6 @@ export async function createAlumno(data: AlumnoCrudInput) {
       nuss: normalizeOptionalString(data.nuss),
       telefono: normalizeRequiredString(data.telefono),
       email: normalizeRequiredEmail(data.email),
-      ciclo: cicloFormativo.nombre,
       cicloFormativoId: cicloFormativo.id,
       cursoCiclo: data.cursoCiclo,
       curso: data.curso.trim(),
@@ -82,7 +81,6 @@ export async function updateAlumno(id: number, data: AlumnoCrudUpdateInput) {
       ...(data.email !== undefined ? { email: normalizeRequiredEmail(data.email) } : {}),
       ...(cicloFormativo
         ? {
-            ciclo: cicloFormativo.nombre,
             cicloFormativoId: cicloFormativo.id,
           }
         : {}),

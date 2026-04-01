@@ -5,8 +5,6 @@
  */
 
 import { z } from "zod";
-import { CURSOS } from "@/shared/catalogs/academico";
-
 const TEXTO_UTIL = /[\p{L}\p{N}]/u;
 const SIMBOLO_REPETIDO = /([^\p{L}\p{N}\s])\1{2,}/u;
 const NIF_REGEX = /^([XYZ]\d{7}[A-Z]|\d{8}[A-Z])$/;
@@ -66,8 +64,7 @@ export const alumnoSchema = z.object({
   curso: z
     .string()
     .trim()
-    .min(1, "El curso es obligatorio.")
-    .refine((v) => CURSOS.includes(v), "El curso no es valido."),
+    .min(1, "El curso es obligatorio."),
 });
 
 export const alumnoCrudSchema = z.object({
