@@ -1,5 +1,23 @@
 # Cambios en archivos comunes
 
+## 2-4-26 Oma
+
+- Archivo: `src/modules/importexport/utils.ts`
+  Motivo: hacer tolerante el mapeo y la validacion previa de import/export ante cabeceras equivalentes con y sin tildes, para no depender de que el Excel use exactamente la misma grafia visible que las columnas actuales.
+  Impacto: la importacion y las comprobaciones previas aceptan variantes como `Telefono`/`Teléfono`, `Periodo`/`Período` o `Descripcion`/`Descripción` sin dejar campos vacios ni generar errores falsos tras el merge.
+
+- Archivo: `src/modules/importexport/utils.test.ts`
+  Motivo: actualizar las pruebas de utilidades de import/export para reflejar las etiquetas reales de columnas vigentes y cubrir la nueva tolerancia a cabeceras equivalentes.
+  Impacto: la suite vuelve a verificar correctamente la reconstruccion de filas, la deteccion de duplicados y el mapeo de telefonos con el contrato actual del modulo.
+
+- Archivo: `src/modules/importexport/actions/export.test.ts`
+  Motivo: alinear las expectativas de exportacion con los nombres de columnas actualmente usados en alumnos y formacion, incluyendo etiquetas acentuadas.
+  Impacto: los tests de exportacion validan el formato real que se entrega al usuario y dejan de fallar por diferencias cosmeticas introducidas en merges previos.
+
+- Archivo: `src/modules/importexport/actions/import.test.ts`
+  Motivo: ajustar los mensajes esperados de validacion para que coincidan con la redaccion y acentuacion reales del esquema vigente tras el merge.
+  Impacto: la suite de importacion vuelve a cubrir los casos de error funcionales sin falsos negativos por cambios solo textuales en los mensajes.
+
 ## 1-4-26 Sbs
 
 - Archivo: `src/app/empresas/page.tsx`
