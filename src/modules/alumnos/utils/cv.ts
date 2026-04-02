@@ -20,7 +20,7 @@ export async function prepareAlumnoCvFile(file: File) {
 
   if (file.size > ALUMNO_CV_MAX_BYTES) {
     throw new Error(
-      "El PDF supera 500 KB. Sube una version optimizada que se vea bien dentro de ese limite."
+      "El PDF supera 500 KB. Sube una versión optimizada que se vea bien dentro de ese límite."
     );
   }
 

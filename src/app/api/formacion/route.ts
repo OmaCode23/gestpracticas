@@ -13,7 +13,10 @@ import {
   formacionCrudSchema,
   formacionFilterSchema,
 } from "@/modules/formacion/types/schema";
-import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
+import {
+  getCursosAcademicosConfigurados,
+  getResultadosPorPaginaConfigurados,
+} from "@/modules/settings/actions/queries";
 import {
   importFormaciones,
   type FormacionImportRow,
@@ -23,13 +26,15 @@ import type { ApiResponse } from "@/shared/types/api";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const defaultPerPage = await getResultadosPorPaginaConfigurados();
 
     const parsedFilters = formacionFilterSchema.safeParse({
       curso: searchParams.get("curso") || undefined,
       ciclo: searchParams.get("ciclo") || undefined,
+      cursoCiclo: searchParams.get("cursoCiclo") || undefined,
       search: searchParams.get("search") || undefined,
       page: searchParams.get("page") || 1,
-      perPage: searchParams.get("perPage") || 10,
+      perPage: searchParams.get("perPage") || defaultPerPage,
     });
 
     if (!parsedFilters.success) {

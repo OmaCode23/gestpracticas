@@ -43,6 +43,7 @@ export async function getConfiguracionAcademica() {
   const settings = await getSettingsMap([
     SETTING_KEYS.academicoMesCambioCurso,
     SETTING_KEYS.academicoNumeroCursosVisibles,
+    SETTING_KEYS.listadosResultadosPorPagina,
   ]);
 
   return {
@@ -53,6 +54,10 @@ export async function getConfiguracionAcademica() {
     numeroCursosVisibles: parsePositiveInteger(
       settings.get(SETTING_KEYS.academicoNumeroCursosVisibles),
       SETTING_DEFAULTS.academicoNumeroCursosVisibles
+    ),
+    resultadosPorPagina: parsePositiveInteger(
+      settings.get(SETTING_KEYS.listadosResultadosPorPagina),
+      SETTING_DEFAULTS.listadosResultadosPorPagina
     ),
   };
 }
@@ -65,4 +70,9 @@ export async function getCursosAcademicosConfigurados(date = new Date()) {
     date,
     configuracion.mesCambioCurso
   );
+}
+
+export async function getResultadosPorPaginaConfigurados() {
+  const configuracion = await getConfiguracionAcademica();
+  return configuracion.resultadosPorPagina;
 }

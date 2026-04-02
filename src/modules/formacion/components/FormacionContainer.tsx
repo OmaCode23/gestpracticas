@@ -7,6 +7,7 @@ import SuccessToast from "@/components/ui/SuccessToast";
 import type { Formacion, FormacionInput } from "../types";
 import FormacionForm from "./FormacionForm";
 import FormacionTable from "./FormacionTable";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
 const EMPTY_FORM: FormacionInput = {
   empresaId: 0,
@@ -18,14 +19,14 @@ const EMPTY_FORM: FormacionInput = {
   emailTutorLaboral: "",
 };
 
-const PER_PAGE = 10;
-
 export default function FormacionContainer({
   ciclosFormativos,
   cursos,
+  resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
 }: {
   ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  resultadosPorPagina?: number;
 }) {
   const router = useRouter();
   const tableSectionRef = useRef<HTMLDivElement | null>(null);
@@ -41,6 +42,7 @@ export default function FormacionContainer({
 
   const [curso, setCurso] = useState("");
   const [ciclo, setCiclo] = useState("");
+  const [cursoCiclo, setCursoCiclo] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -114,9 +116,10 @@ export default function FormacionContainer({
       const params = new URLSearchParams();
       if (curso) params.set("curso", curso);
       if (ciclo) params.set("ciclo", ciclo);
+      if (cursoCiclo) params.set("cursoCiclo", cursoCiclo);
       if (search) params.set("search", search);
       params.set("page", String(currentPage));
-      params.set("perPage", String(PER_PAGE));
+      params.set("perPage", String(resultadosPorPagina));
 
       const res = await fetch(`/api/formacion?${params.toString()}`, {
         cache: "no-store",
@@ -147,7 +150,7 @@ export default function FormacionContainer({
   // Filtros inmediatos (selectores y paginación)
   useEffect(() => {
     load();
-  }, [curso, ciclo, page]);
+  }, [curso, ciclo, cursoCiclo, page]);
 
   // Search con debounce de 300ms
   useEffect(() => {
@@ -276,9 +279,10 @@ export default function FormacionContainer({
           loading={loading}
           page={page}
           total={total}
-          perPage={PER_PAGE}
+          perPage={resultadosPorPagina}
           curso={curso}
           ciclo={ciclo}
+          cursoCiclo={cursoCiclo}
           search={search}
           cursos={cursos}
           ciclos={cicloOptions}
@@ -288,6 +292,10 @@ export default function FormacionContainer({
           }}
           onCicloChange={(v) => {
             setCiclo(v);
+            setPage(1);
+          }}
+          onCursoCicloChange={(v) => {
+            setCursoCiclo(v);
             setPage(1);
           }}
           onSearchChange={(v) => {
@@ -349,8 +357,8 @@ export default function FormacionContainer({
                 </p>
                 <h2 className="mt-1 text-xl font-semibold text-navy">
                   {selectedFormacion.alumno?.nombre
-                    ? `Formacion de ${selectedFormacion.alumno.nombre}`
-                    : "Formacion en empresa"}
+                    ? `Formación de ${selectedFormacion.alumno.nombre}`
+                    : "Formación en empresa"}
                 </h2>
               </div>
               <Button variant="secondary" size="sm" onClick={() => setSelectedFormacion(null)}>
@@ -415,11 +423,11 @@ export default function FormacionContainer({
 
               <section className="space-y-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">
-                  Datos de la formacion
+                  Datos de la formación
                 </p>
                 <div className="grid gap-3">
                   <div className="rounded-xl border border-border bg-surface px-4 py-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Curso Academico</p>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Curso académico</p>
                     <p className="mt-1 font-medium text-navy">{selectedFormacion.curso}</p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface px-4 py-3">
@@ -427,7 +435,7 @@ export default function FormacionContainer({
                     <p className="mt-1 font-medium text-navy">{selectedFormacion.periodo}</p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface px-4 py-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Descripcion</p>
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Descripción</p>
                     <p className="mt-1 font-medium text-navy">{selectedFormacion.descripcion ?? "-"}</p>
                   </div>
                 </div>

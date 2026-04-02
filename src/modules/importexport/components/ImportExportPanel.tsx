@@ -6,6 +6,7 @@ import { Alert, PageHeader } from "@/components/ui";
 import { CARDS } from "@/modules/importexport/config";
 import { EntidadCard } from "@/modules/importexport/components/EntidadCard";
 import { ImportExportActivityTable } from "@/modules/importexport/components/ImportExportActivityTable";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 import type {
   BusyAction,
   CardConfig,
@@ -39,7 +40,11 @@ const ENTITY_LOG_LABEL: Record<Entidad, string> = {
  * maneja el estado de cada entidad, ejecuta importaciones/exportaciones
  * y mantiene sincronizado el historial de actividad.
  */
-export default function ImportExportPanel() {
+export default function ImportExportPanel({
+  resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
+}: {
+  resultadosPorPagina?: number;
+}) {
   const [status, setStatus] = useState<Record<Entidad, string>>({
     alumnos: "",
     empresas: "",
@@ -59,7 +64,7 @@ export default function ImportExportPanel() {
   const [logsError, setLogsError] = useState("");
   const [logsPage, setLogsPage] = useState(1);
   const [logsTotal, setLogsTotal] = useState(0);
-  const [logsPerPage, setLogsPerPage] = useState(5);
+  const [logsPerPage, setLogsPerPage] = useState(resultadosPorPagina);
   const [logFilters, setLogFilters] = useState<LogFilters>({
     entidad: "",
     accion: "",
@@ -77,7 +82,7 @@ export default function ImportExportPanel() {
       if (logFilters.accion) params.set("accion", logFilters.accion);
       if (logFilters.estado) params.set("estado", logFilters.estado);
       params.set("page", String(logsPage));
-      params.set("limit", "5");
+      params.set("limit", String(resultadosPorPagina));
 
       const query = params.toString();
       const res = await fetch(`/api/importexport/logs${query ? `?${query}` : ""}`, {
@@ -101,7 +106,7 @@ export default function ImportExportPanel() {
   // Recarga el historial cuando cambia cualquiera de los filtros o la pagina actual.
   useEffect(() => {
     void loadLogs();
-  }, [logFilters.entidad, logFilters.accion, logFilters.estado, logsPage]);
+  }, [logFilters.entidad, logFilters.accion, logFilters.estado, logsPage, resultadosPorPagina]);
 
   // Al cambiar filtros volvemos a la primera pagina para evitar huecos de paginacion.
   useEffect(() => {

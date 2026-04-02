@@ -7,12 +7,14 @@
 
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
-const PER_PAGE = 10;
+const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
 export async function getFormacionesPaginated(params: {
   curso?: string;
   ciclo?: string;
+  cursoCiclo?: number;
   search?: string;
   page?: number;
   perPage?: number;
@@ -32,6 +34,15 @@ export async function getFormacionesPaginated(params: {
                     nombre: params.ciclo,
                   },
                 },
+              },
+            },
+          }
+        : {},
+      params.cursoCiclo
+        ? {
+            alumno: {
+              is: {
+                cursoCiclo: params.cursoCiclo,
               },
             },
           }

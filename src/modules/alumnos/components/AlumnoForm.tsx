@@ -124,7 +124,7 @@ export default function AlumnoForm({
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <Tag>{isEditing ? "Modo edicion" : "Formulario de alta"}</Tag>
+            <Tag>{isEditing ? "Modo edición" : "Formulario de alta"}</Tag>
           </div>
         </CardHeader>
 
@@ -145,7 +145,7 @@ export default function AlumnoForm({
                 className={INPUT_CLS}
                 value={form.nia}
                 onChange={(e) => onChange("nia", sanitizeNia(e.target.value))}
-                placeholder="Numero de identificacion"
+                placeholder="Número de identificación"
                 maxLength={20}
               />
             </FormGroup>
@@ -175,7 +175,7 @@ export default function AlumnoForm({
           </FormRow>
 
           <FormRow cols={2}>
-            <FormGroup label="Telefono *">
+            <FormGroup label="Teléfono *">
               <input
                 className={INPUT_CLS}
                 inputMode="numeric"
@@ -186,7 +186,7 @@ export default function AlumnoForm({
               />
             </FormGroup>
 
-            <FormGroup label="Correo electronico *">
+            <FormGroup label="Correo electrónico *">
               <input
                 className={INPUT_CLS}
                 type="email"
@@ -231,7 +231,7 @@ export default function AlumnoForm({
           </FormRow>
 
           <FormRow cols={1}>
-            <FormGroup label="Curso academico *">
+            <FormGroup label="Curso académico *">
               <select
                 className={INPUT_CLS}
                 value={form.curso}
@@ -265,13 +265,13 @@ export default function AlumnoForm({
                   onChange={(event) => onCvSelect(event.target.files?.[0] ?? null)}
                 />
                 <p className="text-[0.92rem] font-semibold text-navy">
-                  Arrastra aqui el CV o pulsa para seleccionarlo
+                  Arrastra aquí el CV o pulsa para seleccionarlo
                 </p>
                 <p className="mt-2 text-[0.8rem] leading-relaxed text-text-mid">
-                  Formato admitido: PDF. Limite final: {formatFileSize(ALUMNO_CV_MAX_BYTES)}.
+                  Formato admitido: PDF. Límite final: {formatFileSize(ALUMNO_CV_MAX_BYTES)}.
                 </p>
                 <p className="mt-1 text-[0.76rem] text-text-light">
-                  Si el fichero supera el limite, prepara una version optimizada antes de subirla.
+                  Si el fichero supera el límite, prepara una versión optimizada antes de subirla.
                 </p>
               </label>
 
@@ -288,7 +288,7 @@ export default function AlumnoForm({
                 </p>
                 {cv.isMarkedForRemoval && cv.existingName && !cv.selectedFile ? (
                   <p className="mt-1 text-[0.78rem] text-amber-700">
-                    El CV actual se eliminara al guardar.
+                    El CV actual se eliminará al guardar.
                   </p>
                 ) : null}
                 {cv.error ? <p className="mt-1 text-[0.78rem] text-red-700">{cv.error}</p> : null}

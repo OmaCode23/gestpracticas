@@ -46,6 +46,17 @@ export async function PUT(req: NextRequest) {
       data: configuracion,
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as Error & { code?: string }).code === "CURSOS_CONFIG_INVALIDA"
+    ) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: error.message },
+        { status: 400 }
+      );
+    }
+
     console.error("[PUT /api/settings/academico]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al guardar la configuracion academica." },

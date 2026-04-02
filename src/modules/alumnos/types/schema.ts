@@ -1,7 +1,7 @@
 /**
  * src/modules/alumnos/types/schema.ts
  *
- * Validacion estricta para alumnos.
+ * Validación estricta para alumnos.
  */
 
 import { z } from "zod";
@@ -17,35 +17,35 @@ export const alumnoSchema = z.object({
     .trim()
     .min(1, "El nombre es obligatorio.")
     .max(80, "El nombre no puede superar los 80 caracteres.")
-    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto util.")
-    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene simbolos repetidos."),
+    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto útil.")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene símbolos repetidos."),
 
   nia: z
     .string()
     .trim()
     .min(1, "El NIA es obligatorio.")
     .max(20, "El NIA no puede superar los 20 caracteres.")
-    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, numeros y guiones."),
+    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, números y guiones."),
 
   nif: optionalTrimmedString()
     .transform((value) => (value ?? "").trim().toUpperCase())
-    .refine((value) => value === "" || NIF_REGEX.test(value), "El NIF debe tener un formato valido."),
+    .refine((value) => value === "" || NIF_REGEX.test(value), "El NIF debe tener un formato válido."),
 
   nuss: optionalTrimmedString()
     .transform((value) => (value ?? "").trim())
-    .refine((value) => value === "" || NUSS_REGEX.test(value), "El NUSS debe tener exactamente 12 digitos."),
+    .refine((value) => value === "" || NUSS_REGEX.test(value), "El NUSS debe tener exactamente 12 dígitos."),
 
   telefono: z
     .string()
     .trim()
-    .min(1, "El telefono es obligatorio.")
-    .regex(/^[6789]\d{8}$/, "El telefono debe tener 9 digitos y empezar por 6, 7, 8 o 9."),
+    .min(1, "El teléfono es obligatorio.")
+    .regex(/^[6789]\d{8}$/, "El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9."),
 
   email: z
     .string()
     .trim()
-    .min(1, "El correo electronico es obligatorio.")
-    .email("El email no es valido."),
+    .min(1, "El correo electrónico es obligatorio.")
+    .email("El email no es válido."),
 
   ciclo: z
     .string()
@@ -56,7 +56,7 @@ export const alumnoSchema = z.object({
     .coerce
     .number({
       required_error: "El curso ciclo es obligatorio.",
-      invalid_type_error: "El curso ciclo debe ser numerico.",
+      invalid_type_error: "El curso ciclo debe ser numérico.",
     })
     .int()
     .refine((v) => v === 1 || v === 2, "El curso ciclo debe ser 1 o 2."),
@@ -73,40 +73,40 @@ export const alumnoCrudSchema = z.object({
     .trim()
     .min(1, "El nombre es obligatorio.")
     .max(80, "El nombre no puede superar los 80 caracteres.")
-    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto util.")
-    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene simbolos repetidos."),
+    .refine((v) => TEXTO_UTIL.test(v), "El nombre debe contener texto útil.")
+    .refine((v) => !SIMBOLO_REPETIDO.test(v), "El nombre contiene símbolos repetidos."),
 
   nia: z
     .string()
     .trim()
     .min(1, "El NIA es obligatorio.")
     .max(20, "El NIA no puede superar los 20 caracteres.")
-    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, numeros y guiones."),
+    .regex(/^[A-Za-z0-9-]+$/, "El NIA solo puede contener letras, números y guiones."),
 
   nif: optionalTrimmedString()
     .transform((value) => (value ?? "").trim().toUpperCase())
-    .refine((value) => value === "" || NIF_REGEX.test(value), "El NIF debe tener un formato valido."),
+    .refine((value) => value === "" || NIF_REGEX.test(value), "El NIF debe tener un formato válido."),
 
   nuss: optionalTrimmedString()
     .transform((value) => (value ?? "").trim())
-    .refine((value) => value === "" || NUSS_REGEX.test(value), "El NUSS debe tener exactamente 12 digitos."),
+    .refine((value) => value === "" || NUSS_REGEX.test(value), "El NUSS debe tener exactamente 12 dígitos."),
 
   telefono: z
     .string()
     .trim()
-    .min(1, "El telefono es obligatorio.")
-    .regex(/^[6789]\d{8}$/, "El telefono debe tener 9 digitos y empezar por 6, 7, 8 o 9."),
+    .min(1, "El teléfono es obligatorio.")
+    .regex(/^[6789]\d{8}$/, "El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9."),
 
   email: z
     .string()
     .trim()
-    .min(1, "El correo electronico es obligatorio.")
-    .email("El email no es valido."),
+    .min(1, "El correo electrónico es obligatorio.")
+    .email("El email no es válido."),
 
   cicloFormativoId: z.coerce
     .number({
       required_error: "El ciclo formativo es obligatorio.",
-      invalid_type_error: "El ciclo formativo debe ser numerico.",
+      invalid_type_error: "El ciclo formativo debe ser numérico.",
     })
     .int()
     .positive("El ciclo formativo es obligatorio."),
@@ -114,7 +114,7 @@ export const alumnoCrudSchema = z.object({
   cursoCiclo: z.coerce
     .number({
       required_error: "El curso ciclo es obligatorio.",
-      invalid_type_error: "El curso ciclo debe ser numerico.",
+      invalid_type_error: "El curso ciclo debe ser numérico.",
     })
     .int()
     .refine((v) => v === 1 || v === 2, "El curso ciclo debe ser 1 o 2."),
@@ -135,5 +135,5 @@ export const alumnoFilterSchema = z.object({
   curso: z.string().trim().optional(),
   search: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
-  perPage: z.coerce.number().int().positive().default(10),
+  perPage: z.coerce.number().int().positive().max(100).default(10),
 });

@@ -24,13 +24,45 @@ Sistema de gestión de prácticas de empresa para institutos.
 
 ## Estructura
 
-```
+```text
 src/
-├── app/                    # Rutas, páginas y API Routes
-├── components/             # Componentes compartidos de UI y layout
-├── database/               # Cliente Prisma compartido
-├── modules/                # Lógica por módulo
-└── shared/                 # Catálogos, tipos y utilidades comunes
+├── app/                    # Páginas y API Routes (Next.js App Router)
+│   ├── page.tsx            # Inicio / Dashboard
+│   ├── layout.tsx          # Layout raíz de la aplicación
+│   ├── globals.css         # Estilos globales
+│   │
+│   ├── empresas/page.tsx
+│   ├── alumnos/page.tsx
+│   ├── formacion/page.tsx
+│   ├── importexport/page.tsx
+│   ├── informes/page.tsx
+│   ├── configuracion/page.tsx
+│   │
+│   └── api/                # Endpoints internos
+│       ├── empresas/       # [id]/route.ts, route.ts
+│       ├── alumnos/
+│       ├── ...
+│
+├── modules/                # Lógica de negocio por módulo
+│   ├── empresas/           # types/, actions/, components/, fields.ts...
+│   ├── alumnos/
+│   ├── formacion/
+│   ├── importexport/
+│   ├── informes/
+│   ├── configuracion/
+│   ├── catalogos/
+│   └── settings/
+│
+├── database/
+│   └── prisma.ts           # Singleton PrismaClient
+│
+├── components/
+│   ├── layout/             # Componentes de estructura compartida
+│   └── ui/                 # Badge, Button, Card, Pagination, Filters...
+│
+└── shared/
+    ├── catalogs/           # Semillas canónicas y utilidades compartidas
+    └── types/              # Tipos comunes de la aplicación
 
 prisma/
 ├── migrations/             # Migraciones Prisma
@@ -40,7 +72,7 @@ prisma/
 
 ## Puesta en marcha
 
-En algunos entornos Windows, ciertos comandos pueden requerir `cmd` o `npm.cmd` en lugar de `PowerShell`/`npm` por restricciones de ejecución.
+En algunos entornos Windows, ciertos comandos pueden requerir `cmd` o `npm.cmd` en lugar de `PowerShell` o `npm` por restricciones de ejecución.
 
 ```bash
 # 1. Instalar dependencias
@@ -77,36 +109,36 @@ npm run db:push
 npm run db:studio
 ```
 
-## Procedimiento para seed inicial de la BD con los catálogos
+## Procedimiento para seed inicial de la BD con los catálogos como seed
 
-### Esquema
+### Criterio general
 
-- Los cambios estructurales van en `prisma/schema.prisma`.
-- Después se generan con migraciones Prisma.
-- No se deben crear tablas ni columnas manualmente fuera del flujo de migraciones.
+- La base de datos es la fuente de verdad de los catálogos maestros.
+- La aplicación debe leer los catálogos desde la BD, no desde catálogos estáticos en tiempo de ejecución.
+- Cuando una entidad use un catálogo maestro relacionado, debe referenciarlo por su `id` y relación Prisma, no duplicar el valor como `string` salvo en procesos transitorios de migración o compatibilidad.
+- Los catálogos estáticos en `src/shared/catalogs/*` se mantienen como semillas canónicas para el `seed` inicial y, solo cuando proceda, para restauraciones explícitas de valores por defecto.
 
 ### Datos base iniciales
 
 - Los datos base de catálogos no se cargan automáticamente al leer desde la aplicación.
-- La carga inicial se hace de forma explícita con `npm.cmd run db:seed`.
+- La carga inicial se hace de forma explícita con `npm run db:seed`.
 - El seed usa las semillas canónicas definidas en código:
   - `CICLOS_FORMATIVOS_BASE`
   - `SECTORES`
   - `LOCALIDADES`
 
-### Restauración desde la aplicación
+### Restauración de valores por defecto
 
-- La pantalla de Configuración permite restaurar los ciclos formativos por defecto.
-- Esa restauración usa `CICLOS_FORMATIVOS_BASE` como fuente canónica.
-- La restauración es una acción funcional explícita; no sustituye al seed inicial del despliegue.
+- Si una pantalla de administración ofrece restaurar catálogos base, esa restauración debe ser una acción funcional explícita.
+- Esa restauración no sustituye al seed inicial del despliegue.
+- La restauración debe apoyarse en las semillas canónicas definidas en código solo como fuente de reposición controlada.
 
-### Criterio acordado
+### Regla de arquitectura
 
-- La base de datos es la fuente de verdad de los ciclos.
-- `CICLOS_FORMATIVOS_BASE` se mantiene solo como semilla canónica para:
-  - seed inicial
-  - restauración explícita de valores por defecto
-- Las lecturas normales de la aplicación no deben sembrar datos silenciosamente.
+- Lectura normal de catálogos: desde la BD.
+- Relaciones entre entidades y catálogos: por `id`.
+- Catálogos estáticos: solo para `seed` inicial y restauraciones explícitas.
+- No se deben sembrar datos silenciosamente al arrancar ni durante lecturas normales de la aplicación.
 
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
@@ -124,12 +156,34 @@ npm run start
 2. Ejecutar `npm run db:migrate`.
 3. Revisar la migración generada en `prisma/migrations/`.
 4. Si el cambio afecta a catálogos base, revisar también `prisma/seed.ts`.
-5. Si el cambio toca archivos comunes, documentarlo en `cambios-comunes.md`.
+5. Si el cambio afecta a la estrategia de catálogos maestros, revisar que la aplicación siga leyendo desde BD y no desde catálogos estáticos.
+6. Si el cambio toca archivos comunes, documentarlo en `cambios-comunes.md`.
+
+## Codificacion de caracteres
+
+En este proyecto ya se han visto varios casos de texto roto del tipo `GestiÃ³n`, `FormaciÃ³n` o `prÃ¡cticas`.
+
+La causa mas probable es una mezcla de codificaciones al editar o guardar archivos:
+
+- Archivo guardado originalmente en `UTF-8`.
+- Edicion posterior desde una herramienta o terminal que interpreta o re-guarda en `ANSI` / `Windows-1252`.
+- Reapertura posterior como `UTF-8`, lo que produce mojibake en cadenas con tildes y otros caracteres no ASCII.
+
+Recomendacion de trabajo para el equipo:
+
+- Guardar siempre los archivos de codigo y documentacion en `UTF-8`.
+- No convertir archivos a `ANSI`, `Western`, `Windows-1252` ni codificaciones locales similares.
+- Si un archivo ya muestra texto roto, corregir la cadena visible y volver a guardar el archivo completo en `UTF-8`.
+- Tener especial cuidado en Windows al editar desde distintas herramientas sobre el mismo archivo.
+
+Estandar recomendado para este repo:
+
+- `TypeScript`, `TSX`, `JavaScript`, `JSON`, `CSS`, `MD` y `Prisma`: `UTF-8`.
+- Mantener una unica codificacion en todo el repositorio para evitar corrupciones silenciosas en merges, revisiones y copias entre terminal, editor y git.
 
 ## Tests
 
 - La configuración de Vitest está ajustada para funcionar en este entorno Windows usando `threads`.
-- Para ejecutar tests:
 
 ```bash
 npm run test

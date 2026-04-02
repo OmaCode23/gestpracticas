@@ -5,16 +5,16 @@ export const FORMACION_FIELDS: ImportFieldDef[] = [
   { key: "alumno", label: "Alumno", required: true, formLabel: "Alumno" },
   {
     key: "periodo",
-    label: "Periodo",
+    label: "Período",
     required: true,
-    formLabel: "Periodo",
+    formLabel: "Período",
     placeholder: "Ej: Marzo - Junio",
   },
   {
     key: "descripcion",
-    label: "Descripcion",
-    formLabel: "Descripcion",
-    placeholder: "Descripcion de la formacion...",
+    label: "Descripción",
+    formLabel: "Descripción",
+    placeholder: "Descripción de la formación...",
   },
   {
     key: "tutorLaboral",
@@ -28,5 +28,5 @@ export const FORMACION_FIELDS: ImportFieldDef[] = [
     formLabel: "Correo tutor laboral",
     placeholder: "tutor@empresa.com",
   },
-  { key: "curso", label: "Curso", required: true, formLabel: "Curso academico" },
+  { key: "curso", label: "Curso", required: true, formLabel: "Curso académico" },
 ];

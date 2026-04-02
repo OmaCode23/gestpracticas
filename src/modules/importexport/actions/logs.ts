@@ -1,4 +1,5 @@
 import { prisma } from "@/database/prisma";
+import { getResultadosPorPaginaConfigurados } from "@/modules/settings/actions/queries";
 
 type LogAction = "Importacion" | "Exportacion";
 type LogStatus = "Completado" | "Fallido";
@@ -72,7 +73,8 @@ export async function getImportExportLogs(input?: {
     ...(input?.estado ? { estado: input.estado } : {}),
   };
   const page = Math.max(1, input?.page ?? 1);
-  const perPage = input?.limit ?? 5;
+  const defaultPerPage = await getResultadosPorPaginaConfigurados();
+  const perPage = input?.limit ?? defaultPerPage;
 
   const [items, total] = await Promise.all([
     prisma.importExportLog.findMany({

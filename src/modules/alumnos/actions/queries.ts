@@ -7,8 +7,9 @@
 
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
-const PER_PAGE = 10;
+const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
 export async function getAlumnosPaginated(params: {
   ciclo?: string;

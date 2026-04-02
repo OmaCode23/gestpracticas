@@ -131,9 +131,9 @@ export default function AlumnosTable({
                 <th>
                   Curso
                   <br />
-                  Academico
+                  Académico
                 </th>
-                <th>Telefono</th>
+                <th>Teléfono</th>
                 <th>Correo</th>
                 <th>CV</th>
                 <th>Acciones</th>

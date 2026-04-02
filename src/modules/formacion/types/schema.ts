@@ -118,7 +118,8 @@ export const formacionCrudUpdateSchema = formacionCrudSchema.partial();
 export const formacionFilterSchema = z.object({
   curso: z.string().trim().optional(),
   ciclo: z.string().trim().optional(),
+  cursoCiclo: z.coerce.number().int().refine((v) => v === 1 || v === 2).optional(),
   search: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
-  perPage: z.coerce.number().int().positive().default(10),
+  perPage: z.coerce.number().int().positive().max(100).default(10),
 });

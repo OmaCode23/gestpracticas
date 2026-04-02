@@ -9,10 +9,10 @@ const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
-  { href: "/formacion", label: "Formacion Empresa" },
+  { href: "/formacion", label: "Formación Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },
-  { href: "/configuracion", label: "Configuracion" },
+  { href: "/configuracion", label: "Configuración" },
 ] as const;
 
 export default function Navbar() {
@@ -32,7 +32,7 @@ export default function Navbar() {
         <div className="flex min-w-0 flex-col items-stretch justify-end">
           <span className="flex items-center justify-end font-display text-[1.05rem] font-bold tracking-[0.01em] text-white md:text-[1.22rem]">
             <span className="text-white">Gest</span>
-            <span className="ml-1 text-[#f3d7de]">Practicas</span>
+            <span className="ml-1 text-[#f3d7de]">Prácticas</span>
           </span>
           <div className="mt-1 inline-flex w-full items-center justify-center self-end rounded-full border border-white/18 bg-gradient-to-r from-[#f6e6cb] via-[#fff5e8] to-[#ead2d8] px-3 py-1 shadow-[0_10px_24px_rgba(0,0,0,0.16)]">
             <span className="text-[0.64rem] font-extrabold uppercase tracking-[0.22em] text-[#6d2335] md:text-[0.7rem] md:tracking-[0.28em]">
@@ -69,7 +69,7 @@ export default function Navbar() {
       <div className="ml-auto rounded-full border border-white/14 bg-white/10 px-2.5 py-1.5 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm">
         <div className="flex items-center gap-2.5 text-[0.86rem] text-white">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[0.8rem] font-bold text-navy shadow-sm">
-          AC
+            AC
           </div>
           <span className="hidden font-semibold tracking-[0.01em] text-white md:inline">Administrador</span>
         </div>
