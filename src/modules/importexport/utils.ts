@@ -19,13 +19,29 @@ type WorkbookCatalogs = {
   localidades: string[];
 };
 
+function getRowValue(row: SheetRow, column: string) {
+  if (column in row) {
+    return row[column] ?? "";
+  }
+
+  const normalizedTarget = normalizeHeader(column);
+
+  for (const [key, value] of Object.entries(row)) {
+    if (normalizeHeader(key) === normalizedTarget) {
+      return value ?? "";
+    }
+  }
+
+  return "";
+}
+
 function mapRowsByFieldConfig(
   rows: SheetRow[],
   fields: Array<{ key: string; label: string }>
 ) {
   return rows.map((row) =>
     fields.reduce<Record<string, string>>((acc, field) => {
-      acc[field.key] = row[field.label] ?? "";
+      acc[field.key] = getRowValue(row, field.label);
       return acc;
     }, {})
   );
@@ -219,7 +235,7 @@ export async function collectExcelValidationErrors(input: {
   rows.forEach((row, index) => {
     const excelRow = index + 2;
     const missingColumns = config.requiredColumns.filter(
-      (column) => row[column].trim() === ""
+      (column) => String(getRowValue(row, column)).trim() === ""
     );
 
     if (missingColumns.length > 0) {
@@ -306,9 +322,9 @@ function collectEmpresaCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalog
 
   rows.forEach((row, index) => {
     const excelRow = index + 2;
-    const localidad = row.Localidad.trim();
-    const sector = row.Sector.trim();
-    const cicloFormativo = row["Ciclo Formativo"].trim();
+    const localidad = String(getRowValue(row, "Localidad")).trim();
+    const sector = String(getRowValue(row, "Sector")).trim();
+    const cicloFormativo = String(getRowValue(row, "Ciclo Formativo")).trim();
 
     if (localidad && !localidades.has(localidad)) {
       errors.push(
@@ -337,8 +353,8 @@ function collectAlumnoCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs
 
   rows.forEach((row, index) => {
     const excelRow = index + 2;
-    const ciclo = row.Ciclo.trim();
-    const curso = row.Curso.trim();
+    const ciclo = String(getRowValue(row, "Ciclo")).trim();
+    const curso = String(getRowValue(row, "Curso")).trim();
 
     if (ciclo && !ciclos.has(ciclo)) {
       errors.push(`Fila ${excelRow}: el ciclo formativo "${ciclo}" no existe en el catalogo.`);
@@ -358,7 +374,7 @@ function collectFormacionCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatal
 
   rows.forEach((row, index) => {
     const excelRow = index + 2;
-    const curso = row.Curso.trim();
+    const curso = String(getRowValue(row, "Curso")).trim();
 
     if (curso && !cursos.has(curso)) {
       errors.push(`Fila ${excelRow}: el curso "${curso}" no existe en la configuracion academica.`);

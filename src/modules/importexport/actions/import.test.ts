@@ -333,12 +333,12 @@ describe("import actions", () => {
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual(
+        expect(result.errors).toEqual(
         expect.arrayContaining([
           "Fila 2: El NIA es obligatorio.",
-          "Fila 2: El NIA solo puede contener letras, numeros y guiones.",
-          "Fila 2: El telefono debe tener 9 digitos y empezar por 6, 7, 8 o 9.",
-          "Fila 2: El email no es valido.",
+          "Fila 2: El NIA solo puede contener letras, números y guiones.",
+          "Fila 2: El teléfono debe tener 9 dígitos y empezar por 6, 7, 8 o 9.",
+          "Fila 2: El email no es válido.",
           "Fila 2: El ciclo es obligatorio.",
           "Fila 2: El curso ciclo debe ser 1 o 2.",
           "Fila 2: El curso es obligatorio.",
@@ -346,11 +346,11 @@ describe("import actions", () => {
       );
       expect(result.errors).toHaveLength(7);
     }
-    expect(createImportExportLogMock).toHaveBeenCalledWith(
+      expect(createImportExportLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
         entidad: "Alumnos",
         estado: "Fallido",
-        detalle: expect.stringContaining("Fila 2: El email no es valido."),
+        detalle: expect.stringContaining("Fila 2: El email no es válido."),
       })
     );
   });

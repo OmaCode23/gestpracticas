@@ -80,7 +80,7 @@ describe("importexport utils", () => {
         NIF: "",
         NUSS: "",
         Nombre: "Lucia Perez",
-        Telefono: "600 000 000",
+        "Teléfono": "600 000 000",
         Correo: "lucia@mail.com",
         Ciclo: "DAM",
         "Curso Ciclo": "1",
@@ -112,14 +112,14 @@ describe("importexport utils", () => {
     const alumnosConfig = CARDS.find((card) => card.entidad === "alumnos")!;
     const errors = await collectExcelValidationErrors({
       config: alumnosConfig,
-      headerRow: ["NIA", "NIF", "NUSS", "Nombre", "Telefono", "Correo", "Ciclo", "Curso Ciclo", "Curso"],
+      headerRow: ["NIA", "NIF", "NUSS", "Nombre", "Teléfono", "Correo", "Ciclo", "Curso Ciclo", "Curso"],
       rows: [
         {
           NIA: "NIA-01",
           NIF: "12345678Z",
           NUSS: "123456789012",
           Nombre: "Lucia",
-          Telefono: "600000000",
+          "Teléfono": "600000000",
           Correo: "lucia@mail.com",
           Ciclo: "DAM",
           "Curso Ciclo": "1",
@@ -130,7 +130,7 @@ describe("importexport utils", () => {
           NIF: "12345678z",
           NUSS: "123456789012",
           Nombre: "Marta",
-          Telefono: "600000001",
+          "Teléfono": "600000001",
           Correo: "marta@mail.com",
           Ciclo: "DAW",
           "Curso Ciclo": "2",
@@ -187,7 +187,7 @@ describe("importexport utils", () => {
         NIF: "",
         NUSS: "",
         Nombre: "Lucia",
-        Telefono: "600 000 000",
+        "Teléfono": "600 000 000",
         Correo: "lucia@mail.com",
         Ciclo: "DAM",
         "Curso Ciclo": "1",
