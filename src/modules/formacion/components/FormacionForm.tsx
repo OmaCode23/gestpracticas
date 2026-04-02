@@ -52,7 +52,7 @@ export default function FormacionForm({
 
   return (
     <>
-      <SectionLabel>Alta de formacion en empresa</SectionLabel>
+      <SectionLabel>Alta de formación en empresa</SectionLabel>
 
       <Card className="mb-7">
         <CardHeader>
@@ -69,11 +69,11 @@ export default function FormacionForm({
               {"\u25BE"}
             </Button>
             <CardTitle icon="FE" iconVariant="purple">
-              {editingId !== null ? "Editar formacion" : "Nueva formacion"}
+              {editingId !== null ? "Editar formación" : "Nueva formación"}
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <Tag>{editingId !== null ? "Modo edicion" : "Formulario de alta"}</Tag>
+            <Tag>{editingId !== null ? "Modo edición" : "Formulario de alta"}</Tag>
           </div>
         </CardHeader>
 
@@ -113,7 +113,7 @@ export default function FormacionForm({
           </FormRow>
 
           <FormRow cols={2}>
-            <FormGroup label="Curso academico *">
+            <FormGroup label="Curso académico *">
               <select
                 className={INPUT_CLS}
                 value={form.curso}
@@ -137,12 +137,12 @@ export default function FormacionForm({
           </FormRow>
 
           <FormRow cols={1}>
-            <FormGroup label="Descripcion">
+            <FormGroup label="Descripción">
               <textarea
                 className={`${INPUT_CLS} h-28 resize-none`}
                 value={form.descripcion ?? ""}
                 onChange={(e) => onChange("descripcion", e.target.value)}
-                placeholder="Descripcion de la formacion..."
+                placeholder="Descripción de la formación..."
               />
             </FormGroup>
           </FormRow>
@@ -183,7 +183,7 @@ export default function FormacionForm({
               ? "Guardando..."
               : editingId !== null
                 ? "Guardar cambios"
-                : "Guardar formacion"}
+                : "Guardar formación"}
           </Button>
         </div>
       </Card>

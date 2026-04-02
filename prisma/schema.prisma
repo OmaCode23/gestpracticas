@@ -75,8 +75,8 @@ model FormacionEmpresa {
   id                 Int      @id @default(autoincrement())
   empresaId          Int
   empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Restrict)
-  alumnoId           Int?
-  alumno             Alumno?  @relation(fields: [alumnoId], references: [id])
+  alumnoId           Int
+  alumno             Alumno   @relation(fields: [alumnoId], references: [id], onDelete: Restrict)
   periodo            String?
   descripcion        String?
   tutorLaboral       String?

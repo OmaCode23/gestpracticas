@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, type BadgeVariant } from "@/components/ui";
-import { CICLO_BADGE, CICLO_LABEL } from "@/shared/catalogs/academico";
+import {
+  CICLO_BADGE,
+  CICLO_LABEL,
+  DEFAULT_RESULTADOS_POR_PAGINA,
+} from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
 import type { Empresa, PaginatedEmpresas, EmpresaInput } from "../types";
 import EmpresaForm from "./EmpresaForm";
@@ -37,15 +41,17 @@ const EMPTY_FORM: EmpresaFormState = {
   emailContacto: "",
 };
 
-const PER_PAGE = 5;
-
 type EmpresaCatalogos = {
   sectores: string[];
   localidades: string[];
   ciclosFormativos: Array<{ id: number; nombre: string }>;
 };
 
-export default function EmpresasContainer() {
+export default function EmpresasContainer({
+  resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
+}: {
+  resultadosPorPagina?: number;
+}) {
   const router = useRouter();
   const [form, setForm] = useState<EmpresaFormState>(EMPTY_FORM);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -78,6 +84,7 @@ export default function EmpresasContainer() {
       if (localidad) params.set("localidad", localidad);
       if (search) params.set("search", search);
       params.set("page", String(page));
+      params.set("limit", String(resultadosPorPagina));
 
       const res = await fetch(`/api/empresas?${params.toString()}`, {
         cache: "no-store",
@@ -120,7 +127,7 @@ export default function EmpresasContainer() {
 
   useEffect(() => {
     cargarEmpresas();
-  }, [sector, localidad, search, page]);
+  }, [sector, localidad, search, page, resultadosPorPagina]);
 
   useEffect(() => {
     void cargarCatalogos();
@@ -312,7 +319,7 @@ export default function EmpresasContainer() {
         loading={loading}
         page={page}
         total={total}
-        perPage={PER_PAGE}
+        perPage={resultadosPorPagina}
         sector={sector}
         localidad={localidad}
         search={search}

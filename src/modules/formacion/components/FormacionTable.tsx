@@ -11,7 +11,7 @@ import {
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
 import type { Formacion } from "../types";
-import { CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
+import { CICLO_BADGE } from "@/shared/catalogs/academico";
 
 interface FormacionTableProps {
   formaciones: Formacion[];
@@ -21,11 +21,13 @@ interface FormacionTableProps {
   perPage: number;
   curso: string;
   ciclo: string;
+  cursoCiclo: string;
   search: string;
   cursos: string[];
-  ciclos: string[];
+  ciclos: { id: number; nombre: string; codigo: string | null }[];
   onCursoChange: (value: string) => void;
   onCicloChange: (value: string) => void;
+  onCursoCicloChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onPageChange: (page: number) => void;
   onView: (f: Formacion) => void;
@@ -41,11 +43,13 @@ export default function FormacionTable({
   perPage,
   curso,
   ciclo,
+  cursoCiclo,
   search,
   cursos,
   ciclos,
   onCursoChange,
   onCicloChange,
+  onCursoCicloChange,
   onSearchChange,
   onPageChange,
   onView,
@@ -74,10 +78,16 @@ export default function FormacionTable({
           <FilterSelect value={ciclo} onChange={onCicloChange}>
             <option value="">Todos los ciclos</option>
             {ciclos.map((c) => (
-              <option key={c} value={c}>
-                {getCicloLabel(c)}
+              <option key={c.id} value={c.nombre}>
+                {c.codigo ?? c.nombre}
               </option>
             ))}
+          </FilterSelect>
+
+          <FilterSelect value={cursoCiclo} onChange={onCursoCicloChange}>
+            <option value="">Todos los cursos ciclo</option>
+            <option value="1">1.º</option>
+            <option value="2">2.º</option>
           </FilterSelect>
 
           <SearchBox
@@ -103,7 +113,7 @@ export default function FormacionTable({
                 <th>
                   Curso
                   <br />
-                  Academico
+                  Académico
                 </th>
                 <th>Empresa</th>
                 <th>Tutor laboral</th>
@@ -127,7 +137,10 @@ export default function FormacionTable({
                 </tr>
               ) : (
                 formaciones.map((f) => {
-                  const cicloCode = getCicloLabel(f.alumno?.ciclo);
+                  const cicloBadgeLabel =
+                    f.alumno?.cicloFormativoCodigo ??
+                    f.alumno?.cicloFormativoNombre ??
+                    "-";
 
                   return (
                     <tr key={f.id}>
@@ -143,8 +156,14 @@ export default function FormacionTable({
                       <td className="text-text-mid">{f.alumno?.nia ?? "-"}</td>
 
                       <td>
-                        <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
-                          {cicloCode}
+                        <Badge
+                          variant={
+                            f.alumno?.cicloFormativoCodigo
+                              ? (CICLO_BADGE[f.alumno.cicloFormativoCodigo] ?? "gray")
+                              : "gray"
+                          }
+                        >
+                          {cicloBadgeLabel}
                         </Badge>
                       </td>
 

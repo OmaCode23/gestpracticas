@@ -48,8 +48,9 @@ export interface Formacion {
     nia: string;
     nif: string | null;
     nuss: string | null;
-    ciclo: string;
     cicloFormativoId: number | null;
+    cicloFormativoNombre: string | null;
+    cicloFormativoCodigo: string | null;
     cursoCiclo: number;
     curso: string;
   } | null;

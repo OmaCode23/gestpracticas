@@ -1,6 +1,62 @@
 # Cambios en archivos comunes
 
-## 1-4-26
+## 1-4-26 Sbs
+
+- Archivo: `src/app/empresas/page.tsx`
+  Motivo: restaurar el `PageHeader` principal del modulo de empresas tras comprobar que habia desaparecido en un merge aunque ambas ramas mantenian todavia ese bloque.
+  Impacto: la pagina de Empresas vuelve a mostrar el encabezado principal y recupera la misma estructura visual que Alumnos y Formacion.
+
+- Archivo: `cambios-comunes.md`
+  Motivo: documentar la incidencia del encabezado de Empresas y dejar trazabilidad de que la perdida se produjo en el merge a `master` `a885c84` del 26-3-26, mientras que el estado actual de GitHub seguia sin ese `PageHeader`.
+  Impacto: queda constancia comun del origen del problema y de la reparacion aplicada para futuras revisiones de merges.
+
+- Archivo: `src/app/importexport/page.tsx`
+  Motivo: cargar desde `settings` el valor persistido de resultados por pagina tambien en la entrada server de importexport.
+  Impacto: el panel de importacion/exportacion recibe el tamano de pagina configurado en BD para el historial de actividad.
+
+- Archivo: `src/modules/importexport/components/ImportExportPanel.tsx`
+  Motivo: sustituir el limite fijo de 5 registros en el historial por la configuracion de `resultadosPorPagina` y propagarla a la consulta y a la paginacion visible.
+  Impacto: la tabla de actividad reciente de importexport usa el mismo numero de resultados por pagina que el resto de listados configurables.
+
+- Archivo: `src/modules/importexport/actions/logs.ts`
+  Motivo: usar `getResultadosPorPaginaConfigurados()` como fallback server al recuperar logs cuando no se informa `limit`.
+  Impacto: el historial de importexport sigue respetando la configuracion persistida incluso fuera del flujo cliente habitual.
+
+- Archivo: `src/app/api/importexport/logs/route.ts`
+  Motivo: aplicar tambien en la ruta API de logs el fallback de resultados por pagina configurado en `settings`.
+  Impacto: el endpoint de actividad queda alineado con la preferencia global de paginacion.
+
+- Archivo: `src/app/empresas/page.tsx`
+  Motivo: cargar desde `settings` el valor persistido de resultados por pagina tambien en la entrada server del modulo de empresas.
+  Impacto: la pantalla de empresas recibe el tamano de pagina configurado en BD igual que los listados de mis modulos, aunque el modulo pertenezca a Oma.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: sustituir el `PER_PAGE` fijo del contenedor de empresas por la configuracion de `resultadosPorPagina` y propagarla en la llamada a la API y en el componente de paginacion.
+  Impacto: el listado de empresas muestra y solicita el mismo numero de registros por pagina definido en configuracion.
+
+- Archivo: `src/modules/empresas/actions/queries.ts`
+  Motivo: usar `getResultadosPorPaginaConfigurados()` como fallback server cuando el listado de empresas se consulta sin `limit` explicito.
+  Impacto: la API de empresas sigue respetando la configuracion persistida incluso fuera del flujo cliente habitual.
+
+- Archivo: `src/shared/catalogs/academico.ts`
+  Motivo: anadir un valor por defecto compartido para el numero de resultados por pagina en listados, reutilizable desde `settings` y desde los modulos con paginacion.
+  Impacto: la aplicacion dispone de una unica referencia estatica para inicializar la nueva configuracion de paginacion antes o en ausencia del valor persistido en BD.
+
+- Archivo: `src/components/layout/Navbar.tsx`
+  Motivo: corregir etiquetas visibles de navegacion compartida para mostrar correctamente los acentos en los accesos a Formacion, Configuracion y en la marca GestPracticas.
+  Impacto: la barra comun deja de mostrar textos sin tildes en rutas que afectan directamente a mis modulos y mantiene coherencia visual en toda la app.
+
+- Archivo: `prisma/schema.prisma`
+  Motivo: resolver el conflicto del merge con `master` manteniendo obligatorio `FormacionEmpresa.alumnoId` y la restriccion `onDelete: Restrict`, a la vez que se integran los cambios comunes ya traidos para cerrar la eliminacion de los campos legacy de ciclos.
+  Impacto: el esquema comun queda coherente con las migraciones ya anadidas en `rama-sbs`, evita reabrir formaciones sin alumno y valida correctamente el estado final del merge sobre la transicion a ciclos en BD.
+
+- Archivo: `src/app/api/empresas/[id]/route.ts`
+  Motivo: resolver el conflicto del merge combinando el control excepcional que yo habia anadido para la restriccion FK (`P2003`) con el nuevo error semantico `EMPRESA_CON_FORMACIONES` llegado desde `master`.
+  Impacto: el borrado de empresas sigue devolviendo `409` con un mensaje funcional claro tanto si la proteccion llega desde la mutacion del modulo de Oma como si aflora directamente desde la base de datos.
+
+
+
+## 1-4-26 Oma
 
 - Archivo: `prisma/schema.prisma`
   Motivo: retirar del modelo comun los campos de texto heredados `Alumno.ciclo` y `Empresa.cicloFormativo`, dejando `cicloFormativoId` y `cicloFormativoRef` como unica fuente de verdad para los ciclos.
@@ -54,7 +110,49 @@
   Motivo: simplificar las opciones de filtro de ciclos para que tomen como base el catalogo maestro de ciclos activos en lugar de reconstruirse desde textos heredados de empresas.
   Impacto: informes queda mejor alineado con la fuente de verdad final y evita reforzar ciclos residuales o desactivados.
 
-## 31-3-26
+## 31-3-26 Sbs
+
+- Archivo: `src/shared/catalogs/academico.ts`
+  Motivo: eliminar la constante `CICLOS` al comprobar que ya no quedaban consumos activos en el proyecto.
+  Impacto: se limpia compatibilidad estatica ya obsoleta y se reduce el riesgo de que vuelva a usarse como si fuera un catalogo vigente.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: separar la lectura de catalogos de la siembra automatica, eliminando la llamada a `syncCatalogosBase()` desde `getEmpresaCatalogos()`.
+  Impacto: las lecturas de catalogos dejan de escribir silenciosamente en BD; la semilla base queda reservada para inicializacion o restauracion explicita.
+
+- Archivo: `prisma/seed.ts`
+  Motivo: anadir un seed explicito para poblar sectores, localidades y ciclos formativos base desde las semillas canonicas del proyecto.
+  Impacto: el despliegue o la preparacion de un entorno nuevo puede cargar datos iniciales sin depender de lecturas con efectos secundarios dentro de la aplicacion.
+
+- Archivo: `package.json`
+  Motivo: anadir el script `db:seed` y registrar el seed de Prisma para ejecutar la carga inicial de catalogos base de forma explicita.
+  Impacto: queda disponible un flujo claro de migracion + seed tanto para desarrollo como para despliegue.
+
+- Archivo: `README.md`
+  Motivo: documentar que, tras aplicar migraciones, hay que ejecutar el seed inicial de catalogos base.
+  Impacto: la puesta en marcha del proyecto deja de depender de comportamiento implicito dentro de la aplicacion y queda mejor alineada con un despliegue profesional.
+
+- Archivo: `README.md`
+  Motivo: rehacer la documentacion general del proyecto para reflejar el estado actual de modulos, scripts, tests y el procedimiento correcto de migracion, seed y restauracion de catalogos.
+  Impacto: el equipo dispone de una guia unica y coherente para preparar entornos nuevos y para mantener clara la separacion entre esquema, seed inicial y restauracion funcional desde la app.
+
+  - Archivo: `prisma/schema.prisma`
+  Motivo: hacer obligatorio `FormacionEmpresa.alumnoId` para que el esquema comun refleje que una formacion siempre vincula una empresa con un alumno.
+  Impacto: Prisma deja de permitir formaciones sin alumno y el contrato del modelo queda alineado con la validacion y los formularios actuales del modulo de formacion.
+
+- Archivo: `prisma/migrations/20260401123000_make_alumno_required_in_formacion/migration.sql`
+  Motivo: anadir la migracion comun que convierte `formaciones_empresa.alumnoId` en `NOT NULL` y recompone la clave ajena sin `SET NULL`.
+  Impacto: la base de datos impide ya formaciones sin alumno; si existieran filas legacy con `alumnoId` a `NULL`, la migracion falla con un mensaje explicito para obligar a limpiarlas antes.
+
+- Archivo: `prisma/migrations/20260401130000_restrict_delete_formacion_relations/migration.sql`
+  Motivo: anadir la migracion comun que protege las relaciones de `formaciones_empresa` frente al borrado de alumnos y empresas referenciados.
+  Impacto: ya no se puede borrar un alumno ni una empresa si participan en una formacion, mientras que eliminar una formacion no afecta ni al alumno ni a la empresa asociados.
+
+- Archivo: `src/app/api/empresas/[id]/route.ts`
+  Motivo: ajustar la respuesta de borrado en el modulo de empresas para detectar la restriccion de clave ajena cuando la empresa participa en una formacion.
+  Impacto: al intentar eliminar una empresa incluida en una formacion, la API devuelve un `409` con un mensaje funcional claro en lugar de un error generico; cambio realizado de forma excepcional sobre un modulo de Oma por afectar a una regla comun de integridad.
+
+## 31-3-26 Oma
 
 - Archivo: `cambios-comunes.md`
   Motivo: dejar trazabilidad de una prueba controlada de rendimiento con 5000 alumnos sinteticos ejecutada sobre la base actual dentro de una transaccion con rollback, para medir insercion, paginacion, busquedas y conteo sin ensuciar datos reales.
@@ -172,7 +270,7 @@
   Motivo: alinear el modulo comun de informes con el modelo actual de alumnos, formacion y catalogos, sustituyendo `contacto` por `tutorLaboral` y anadiendo los nuevos campos academicos.
   Impacto: los informes dejan de depender de nombres antiguos y de listas estaticas desfasadas, y pasan a usar opciones y columnas coherentes con la configuracion y la BD actuales.
 
-## 30-3-26
+## 30-3-26 Sbs
 
 - Archivo: `src/shared/catalogs/academico.ts`
   Motivo: separar el catalogo canonico de ciclos formativos (`nombre` + `codigo`) de las reglas de compatibilidad usadas para etiquetas y normalizacion.

@@ -9,3 +9,4 @@ prisma/dev.db
 *.log
 scripts/
 TODO.md
+cambios-propios.md

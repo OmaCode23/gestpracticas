@@ -3,6 +3,7 @@ import {
   createImportExportLog,
   getImportExportLogs,
 } from "@/modules/importexport/actions/logs";
+import { getResultadosPorPaginaConfigurados } from "@/modules/settings/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 
 /**
@@ -12,11 +13,12 @@ import type { ApiResponse } from "@/shared/types/api";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const defaultPerPage = await getResultadosPorPaginaConfigurados();
 
     // La ruta convierte los parametros de URL en el contrato tipado del modulo.
     const paginatedLogs = await getImportExportLogs({
       page: Number(searchParams.get("page") || 1),
-      limit: Number(searchParams.get("limit") || 5),
+      limit: Number(searchParams.get("limit") || defaultPerPage),
       entidad: searchParams.get("entidad") || undefined,
       accion: searchParams.get("accion") || undefined,
       estado: searchParams.get("estado") || undefined,

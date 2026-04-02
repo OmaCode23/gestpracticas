@@ -2,6 +2,7 @@ import type { BadgeVariant } from "@/components/ui";
 
 export const DEFAULT_MES_CAMBIO_CURSO = 9;
 export const DEFAULT_NUMERO_CURSOS_VISIBLES = 3;
+export const DEFAULT_RESULTADOS_POR_PAGINA = 10;
 
 function normalizeMesCambioCurso(mesCambioCurso = DEFAULT_MES_CAMBIO_CURSO) {
   return Math.min(Math.max(Math.trunc(mesCambioCurso), 1), 12);
@@ -47,8 +48,6 @@ export function getCursosAcademicos(
     formatCursoAcademico(cursoBase - index)
   );
 }
-
-export const CICLOS = ["DAM", "DAW", "ASIR", "SMR", "ADG", "IEA", "TH"];
 
 export const CURSOS = getCursosAcademicos();
 

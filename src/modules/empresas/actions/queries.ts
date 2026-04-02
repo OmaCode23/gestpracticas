@@ -8,13 +8,13 @@
  */
 
 import { prisma } from "@/database/prisma";
+import { getResultadosPorPaginaConfigurados } from "@/modules/settings/actions/queries";
 import type { EmpresaFilters, PaginatedEmpresas } from "../types";
 
-const PER_PAGE = 5;
-
 export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmpresas> {
+  const defaultPerPage = await getResultadosPorPaginaConfigurados();
   const page = Math.max(1, filters.page ?? 1);
-  const perPage = filters.all ? undefined : filters.limit ?? PER_PAGE;
+  const perPage = filters.all ? undefined : filters.limit ?? defaultPerPage;
 
   const where = {
     ...(filters.sector ? { sector: filters.sector } : {}),

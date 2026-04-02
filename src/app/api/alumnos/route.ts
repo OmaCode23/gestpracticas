@@ -10,20 +10,24 @@ import { revalidatePath } from "next/cache";
 import { getAlumnosPaginated } from "@/modules/alumnos/actions/queries";
 import { createAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoCrudSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
-import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
+import {
+  getCursosAcademicosConfigurados,
+  getResultadosPorPaginaConfigurados,
+} from "@/modules/settings/actions/queries";
 import { importAlumnos, type AlumnoImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const defaultPerPage = await getResultadosPorPaginaConfigurados();
 
     const parsedFilters = alumnoFilterSchema.safeParse({
       ciclo: searchParams.get("ciclo") || undefined,
       curso: searchParams.get("curso") || undefined,
       search: searchParams.get("search") || undefined,
       page: searchParams.get("page") || 1,
-      perPage: searchParams.get("perPage") || 10,
+      perPage: searchParams.get("perPage") || defaultPerPage,
     });
 
     if (!parsedFilters.success) {

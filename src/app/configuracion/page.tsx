@@ -1,5 +1,4 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { PageHeader } from "@/components/ui";
 import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 import ConfiguracionPanel from "@/modules/configuracion/components/ConfiguracionPanel";
@@ -16,12 +15,14 @@ export default async function ConfiguracionPage() {
 
   return (
     <div>
-      <PageHeader
-        breadcrumb="Inicio"
-        breadcrumbHighlight="/ Configuracion"
-        title="Configuracion"
-        subtitle="Consulta los catalogos maestros del sistema y prepara su futura administracion."
-      />
+      <div className="mb-8">
+        <p className="mb-2 text-[0.78rem] text-text-light">
+          Inicio <span className="text-blue">/ Configuración</span>
+        </p>
+        <h1 className="font-display text-[1.75rem] font-bold leading-tight text-navy">
+          Configuración
+        </h1>
+      </div>
 
       <ConfiguracionPanel
         ciclosFormativos={ciclosFormativos}

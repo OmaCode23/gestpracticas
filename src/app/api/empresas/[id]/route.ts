@@ -158,8 +158,11 @@ export async function DELETE(
       ok: true,
       data: null,
     });
-  } catch (error) {
-    if (error instanceof Error && error.message === "EMPRESA_CON_FORMACIONES") {
+  } catch (error: any) {
+    if (
+      (error instanceof Error && error.message === "EMPRESA_CON_FORMACIONES") ||
+      error?.code === "P2003"
+    ) {
       return NextResponse.json<ApiResponse<never>>(
         {
           ok: false,

@@ -46,7 +46,9 @@ export async function createFormacion(data: FormacionInput) {
           curso: true,
           cicloFormativoRef: {
             select: {
+              id: true,
               nombre: true,
+              codigo: true,
             },
           },
         },
@@ -104,7 +106,9 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
           curso: true,
           cicloFormativoRef: {
             select: {
+              id: true,
               nombre: true,
+              codigo: true,
             },
           },
         },

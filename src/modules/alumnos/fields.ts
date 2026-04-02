@@ -6,7 +6,7 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
     label: "NIA",
     required: true,
     formLabel: "NIA",
-    placeholder: "Numero de identificacion",
+    placeholder: "Número de identificación",
   },
   {
     key: "nif",
@@ -18,7 +18,7 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
     key: "nuss",
     label: "NUSS",
     formLabel: "NUSS",
-    placeholder: "12 digitos",
+    placeholder: "12 dígitos",
   },
   {
     key: "nombre",
@@ -29,16 +29,16 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
   },
   {
     key: "telefono",
-    label: "Telefono",
+    label: "Teléfono",
     required: true,
-    formLabel: "Telefono",
+    formLabel: "Teléfono",
     placeholder: "600000000",
   },
   {
     key: "email",
     label: "Correo",
     required: true,
-    formLabel: "Correo electronico",
+    formLabel: "Correo electrónico",
     placeholder: "alumno@educa.gva.es",
   },
   {
@@ -58,6 +58,6 @@ export const ALUMNO_FIELDS: ImportFieldDef[] = [
     key: "curso",
     label: "Curso",
     required: true,
-    formLabel: "Curso academico",
+    formLabel: "Curso académico",
   },
 ];

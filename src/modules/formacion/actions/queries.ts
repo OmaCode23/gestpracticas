@@ -7,12 +7,14 @@
 
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
-const PER_PAGE = 10;
+const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
 export async function getFormacionesPaginated(params: {
   curso?: string;
   ciclo?: string;
+  cursoCiclo?: number;
   search?: string;
   page?: number;
   perPage?: number;
@@ -32,6 +34,15 @@ export async function getFormacionesPaginated(params: {
                     nombre: params.ciclo,
                   },
                 },
+              },
+            },
+          }
+        : {},
+      params.cursoCiclo
+        ? {
+            alumno: {
+              is: {
+                cursoCiclo: params.cursoCiclo,
               },
             },
           }
@@ -99,7 +110,9 @@ export async function getFormacionesPaginated(params: {
             curso: true,
             cicloFormativoRef: {
               select: {
+                id: true,
                 nombre: true,
+                codigo: true,
               },
             },
           },
@@ -123,6 +136,10 @@ export async function getFormacionesPaginated(params: {
       alumno: item.alumno
         ? {
             ...item.alumno,
+            cicloFormativoId:
+              item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
+            cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
+            cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
             ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
           }
         : null,
@@ -164,7 +181,9 @@ export async function getFormacionById(id: number) {
           curso: true,
           cicloFormativoRef: {
             select: {
+              id: true,
               nombre: true,
+              codigo: true,
             },
           },
         },
@@ -183,6 +202,10 @@ export async function getFormacionById(id: number) {
     alumno: item.alumno
       ? {
           ...item.alumno,
+          cicloFormativoId:
+            item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
+          cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
+          cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
           ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,

@@ -8,6 +8,7 @@ import AlumnosTable from "./AlumnosTable";
 import type { Alumno } from "@/modules/alumnos/types";
 import SuccessToast from "@/components/ui/SuccessToast";
 import { prepareAlumnoCvFile } from "@/modules/alumnos/utils/cv";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
 const EMPTY = {
   nombre: "",
@@ -30,14 +31,14 @@ const EMPTY_CV = {
   isProcessing: false,
 };
 
-const PER_PAGE = 10;
-
 export default function AlumnosContainer({
   ciclosFormativos,
   cursos,
+  resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
 }: {
   ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  resultadosPorPagina?: number;
 }) {
   const router = useRouter();
   const tableSectionRef = useRef<HTMLDivElement | null>(null);
@@ -170,7 +171,7 @@ export default function AlumnosContainer({
       if (curso) params.set("curso", curso);
       if (search) params.set("search", search);
       params.set("page", String(currentPage));
-      params.set("perPage", String(PER_PAGE));
+      params.set("perPage", String(resultadosPorPagina));
 
       const res = await fetch(`/api/alumnos?${params.toString()}`, {
         cache: "no-store",
@@ -225,7 +226,7 @@ export default function AlumnosContainer({
       !form.curso
     ) {
       return alert(
-        "Rellena todos los campos obligatorios: nombre, NIA, telefono, correo, ciclo, curso ciclo y curso."
+        "Rellena todos los campos obligatorios: nombre, NIA, teléfono, correo, ciclo, curso ciclo y curso."
       );
     }
 
@@ -326,7 +327,7 @@ export default function AlumnosContainer({
 
   // Eliminar
   const handleEliminar = async (id: number) => {
-    if (!confirm("Eliminar este alumno?")) return;
+    if (!confirm("¿Eliminar este alumno?")) return;
 
     try {
       const res = await fetch(`/api/alumnos/${id}`, {
@@ -415,7 +416,7 @@ export default function AlumnosContainer({
   };
 
   const handleDeleteAllCv = async () => {
-    if (!confirm("Se eliminaran todos los CVs adjuntos de los alumnos. Quieres continuar?")) {
+    if (!confirm("Se eliminarán todos los CV adjuntos de los alumnos. ¿Quieres continuar?")) {
       return;
     }
 
@@ -437,7 +438,7 @@ export default function AlumnosContainer({
       setNotification(
         json.data.deletedCount > 0
           ? `Se eliminaron ${json.data.deletedCount} CV(s) correctamente.`
-          : "No habia CVs adjuntos para eliminar."
+          : "No había CV adjuntos para eliminar."
       );
     } catch (error) {
       console.error(error);
@@ -462,10 +463,10 @@ export default function AlumnosContainer({
       <div ref={tableSectionRef}>
         <AlumnosTable
           alumnos={alumnos}
-          ciclos={ciclosFormativos.map((item) => item.nombre)}
+          ciclos={ciclosFormativos}
           cursos={cursos}
           total={total}
-          perPage={PER_PAGE}
+          perPage={resultadosPorPagina}
           ciclo={ciclo}
           curso={curso}
           search={search}
@@ -572,7 +573,9 @@ export default function AlumnosContainer({
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Ciclo</p>
-                <p className="mt-1 font-medium text-navy">{selectedAlumno.ciclo}</p>
+                <p className="mt-1 font-medium text-navy">
+                  {selectedAlumno.cicloFormativoNombre ?? "-"}
+                </p>
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Curso ciclo</p>
@@ -583,7 +586,7 @@ export default function AlumnosContainer({
                 <p className="mt-1 font-medium text-navy">{selectedAlumno.curso}</p>
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Telefono</p>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">Teléfono</p>
                 <p className="mt-1 font-medium text-navy">{selectedAlumno.telefono ?? "-"}</p>
               </div>
               <div className="rounded-xl border border-border bg-surface px-4 py-3 sm:col-span-2">

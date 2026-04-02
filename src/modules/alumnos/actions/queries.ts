@@ -7,8 +7,9 @@
 
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 
-const PER_PAGE = 10;
+const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
 export async function getAlumnosPaginated(params: {
   ciclo?: string;
@@ -47,6 +48,7 @@ export async function getAlumnosPaginated(params: {
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -62,6 +64,8 @@ export async function getAlumnosPaginated(params: {
       ...item,
       ciclo: item.cicloFormativoRef?.nombre ?? "",
       cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
+      cicloFormativoNombre: item.cicloFormativoRef?.nombre ?? null,
+      cicloFormativoCodigo: item.cicloFormativoRef?.codigo ?? null,
       cvUpdatedAt: item.cvUpdatedAt?.toISOString() ?? null,
     })),
     total,
@@ -79,6 +83,7 @@ export async function getAlumnoById(id: number) {
         select: {
           id: true,
           nombre: true,
+          codigo: true,
         },
       },
     },
@@ -90,6 +95,8 @@ export async function getAlumnoById(id: number) {
     ...alumno,
     ciclo: alumno.cicloFormativoRef?.nombre ?? "",
     cicloFormativoId: alumno.cicloFormativoRef?.id ?? alumno.cicloFormativoId ?? null,
+    cicloFormativoNombre: alumno.cicloFormativoRef?.nombre ?? null,
+    cicloFormativoCodigo: alumno.cicloFormativoRef?.codigo ?? null,
     cvUpdatedAt: alumno.cvUpdatedAt?.toISOString() ?? null,
   };
 }

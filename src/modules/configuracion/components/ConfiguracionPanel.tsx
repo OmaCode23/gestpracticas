@@ -9,10 +9,14 @@ import {
   CardHeader,
   CardTitle,
   INPUT_CLS,
-  SectionLabel,
   Tag,
 } from "@/components/ui";
-import { CICLO_BADGE } from "@/shared/catalogs/academico";
+import {
+  CICLO_BADGE,
+  DEFAULT_MES_CAMBIO_CURSO,
+  DEFAULT_NUMERO_CURSOS_VISIBLES,
+  DEFAULT_RESULTADOS_POR_PAGINA,
+} from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
 import SuccessToast from "@/components/ui/SuccessToast";
 
@@ -32,6 +36,7 @@ type CicloFormativoItem = {
 type ConfiguracionAcademica = {
   mesCambioCurso: number;
   numeroCursosVisibles: number;
+  resultadosPorPagina: number;
 };
 
 type FormState = {
@@ -126,7 +131,7 @@ export default function ConfiguracionPanel({
 
   async function handleCreate() {
     if (!createForm.nombre.trim() || !createForm.codigo.trim()) {
-      alert("Nombre y codigo son obligatorios.");
+      alert("Nombre y código son obligatorios.");
       return;
     }
 
@@ -175,7 +180,7 @@ export default function ConfiguracionPanel({
       alert(
         editingField.field === "nombre"
           ? "El nombre es obligatorio."
-          : "El codigo es obligatorio."
+          : "El código es obligatorio."
       );
       return;
     }
@@ -242,8 +247,13 @@ export default function ConfiguracionPanel({
   }
 
   async function handleDelete(ciclo: CicloFormativoItem) {
+    if (isCicloInUse(ciclo)) {
+      alert("No se puede eliminar porque el ciclo está en uso.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Se eliminara el ciclo "${ciclo.nombre}". Solo se puede borrar si no aparece en ningun registro. Continuar?`
+      `Se eliminará el ciclo "${ciclo.nombre}". Solo se puede borrar si no aparece en ningún registro. ¿Continuar?`
     );
 
     if (!confirmed) return;
@@ -271,7 +281,7 @@ export default function ConfiguracionPanel({
 
   async function handleRestoreBase() {
     const confirmed = window.confirm(
-      "Se restauraran los ciclos formativos iniciales de la aplicacion. Se crearan los que falten y se reactivaran los iniciales inactivos. Los ciclos personalizados no se borraran. Continuar?"
+      "Se restaurarán los ciclos formativos iniciales de la aplicación. Se crearán los que falten y se reactivarán los iniciales inactivos. Los ciclos personalizados no se borrarán. ¿Continuar?"
     );
 
     if (!confirmed) return;
@@ -320,10 +330,78 @@ export default function ConfiguracionPanel({
 
       setConfiguracionAcademica(json.data);
       router.refresh();
-      setNotification("Configuracion academica guardada correctamente.");
+      setNotification("Configuración guardada correctamente.");
     } catch (error) {
       console.error(error);
-      alert("No se pudo guardar la configuracion academica.");
+      alert("No se pudo guardar la configuración.");
+    } finally {
+      setSavingAcademica(false);
+    }
+  }
+
+  async function handleRestoreConfiguracionAcademicaDefaults() {
+    const defaults = {
+      mesCambioCurso: DEFAULT_MES_CAMBIO_CURSO,
+      numeroCursosVisibles: DEFAULT_NUMERO_CURSOS_VISIBLES,
+      resultadosPorPagina: configuracionAcademica.resultadosPorPagina,
+    };
+
+    try {
+      setSavingAcademica(true);
+
+      const res = await fetch("/api/settings/academico", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(defaults),
+      });
+
+      const json: ApiResponse<ConfiguracionAcademica> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      setConfiguracionAcademica(json.data);
+      router.refresh();
+      setNotification("Cursos académicos restaurados a valores por defecto.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron restaurar los valores por defecto.");
+    } finally {
+      setSavingAcademica(false);
+    }
+  }
+
+  async function handleRestoreResultadosPorPaginaDefault() {
+    const defaults = {
+      mesCambioCurso: configuracionAcademica.mesCambioCurso,
+      numeroCursosVisibles: configuracionAcademica.numeroCursosVisibles,
+      resultadosPorPagina: DEFAULT_RESULTADOS_POR_PAGINA,
+    };
+
+    try {
+      setSavingAcademica(true);
+
+      const res = await fetch("/api/settings/academico", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(defaults),
+      });
+
+      const json: ApiResponse<ConfiguracionAcademica> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      setConfiguracionAcademica(json.data);
+      router.refresh();
+      setNotification("Resultados por página restaurados a valores por defecto.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron restaurar los valores por defecto.");
     } finally {
       setSavingAcademica(false);
     }
@@ -332,8 +410,6 @@ export default function ConfiguracionPanel({
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
-
-      <SectionLabel>Catalogos maestros</SectionLabel>
 
       <Card className="overflow-hidden">
         <CardHeader>
@@ -346,11 +422,11 @@ export default function ConfiguracionPanel({
         </CardHeader>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
+          <table className="min-w-full rounded-none bg-transparent text-left text-sm">
             <thead className="bg-surface">
               <tr className="text-[0.75rem] uppercase tracking-[0.08em] text-text-light">
                 <th className="px-6 py-3 font-semibold">Nombre</th>
-                <th className="px-6 py-3 font-semibold">Codigo</th>
+                <th className="px-6 py-3 font-semibold">Código</th>
                 <th className="px-6 py-3 font-semibold">Modificado</th>
                 <th className="px-6 py-3 font-semibold">Estado</th>
                 <th className="px-6 py-3 text-right font-semibold">Acciones</th>
@@ -457,8 +533,8 @@ export default function ConfiguracionPanel({
                         <button
                           type="button"
                           onClick={() => openInlineEdit(ciclo, "codigo")}
-                          title="Editar codigo"
-                          aria-label="Editar codigo"
+                          title="Editar código"
+                          aria-label="Editar código"
                           disabled={isCicloInUse(ciclo)}
                           className={[
                             "mt-1.5 inline-flex h-4 w-4 items-center justify-center rounded-md border text-[0.46rem] transition-colors",
@@ -516,10 +592,9 @@ export default function ConfiguracionPanel({
                         variant="danger"
                         size="sm"
                         onClick={() => handleDelete(ciclo)}
-                        disabled={isCicloInUse(ciclo)}
                         title={
                           isCicloInUse(ciclo)
-                            ? "No se puede eliminar porque el ciclo esta en uso."
+                            ? "No se puede eliminar porque el ciclo está en uso."
                             : "Eliminar ciclo"
                         }
                       >
@@ -530,7 +605,7 @@ export default function ConfiguracionPanel({
                 </tr>
               ))}
 
-              <tr className="border-t-2 border-[#cdb8a1] bg-[#f3e7da] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
+              <tr className="border-y border-border bg-[#f3e7da] hover:bg-[#f3e7da]">
                 <td className="px-6 py-4 align-middle">
                   <input
                     className={INPUT_CLS}
@@ -557,7 +632,7 @@ export default function ConfiguracionPanel({
                           .replace(/[^A-Z0-9-]/g, ""),
                       }))
                     }
-                    placeholder="Codigo"
+                    placeholder="Código"
                     maxLength={20}
                   />
                 </td>
@@ -587,7 +662,7 @@ export default function ConfiguracionPanel({
           </table>
         </div>
 
-        <div className="flex justify-end border-t border-border bg-white px-6 py-4">
+        <div className="flex justify-end border-t border-border bg-surface px-6 py-4">
           <Button
             variant="secondary"
             size="sm"
@@ -600,13 +675,11 @@ export default function ConfiguracionPanel({
       </Card>
 
       <div className="mt-8">
-        <SectionLabel>Ajustes academicos</SectionLabel>
-
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <div className="flex w-full flex-wrap items-center gap-3">
               <CardTitle icon="CA" iconVariant="amber">
-                Cursos academicos &nbsp;&nbsp;&nbsp; (2024-2025, 2025-2026, ...)
+                Cursos académicos &nbsp;&nbsp;&nbsp; (2024-2025, 2025-2026, ...)
               </CardTitle>
             </div>
           </CardHeader>
@@ -636,7 +709,7 @@ export default function ConfiguracionPanel({
 
             <label className="space-y-2">
               <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
-                Numero de cursos visibles
+                Número de cursos visibles
               </span>
               <input
                 className={INPUT_CLS}
@@ -654,14 +727,74 @@ export default function ConfiguracionPanel({
             </label>
           </div>
 
-          <div className="flex justify-end border-t border-border bg-white px-6 py-4">
+          <div className="flex justify-end gap-2 border-t border-border bg-surface px-6 py-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRestoreConfiguracionAcademicaDefaults}
+              disabled={savingAcademica}
+            >
+              Restaurar valores por defecto
+            </Button>
             <Button
               variant="primary"
               size="sm"
               onClick={handleSaveConfiguracionAcademica}
               disabled={savingAcademica}
             >
-              {savingAcademica ? "Guardando..." : "Guardar configuracion"}
+              {savingAcademica ? "Guardando..." : "Guardar configuración"}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex w-full flex-wrap items-center gap-3">
+              <CardTitle icon="OA" iconVariant="blue">
+                Otros ajustes
+              </CardTitle>
+            </div>
+          </CardHeader>
+
+          <div className="p-6">
+            <label className="space-y-2">
+              <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
+                Resultados por página
+              </span>
+              <input
+                className={INPUT_CLS}
+                type="number"
+                min={1}
+                max={100}
+                value={configuracionAcademica.resultadosPorPagina}
+                onChange={(e) =>
+                  setConfiguracionAcademica((prev) => ({
+                    ...prev,
+                    resultadosPorPagina: Number(e.target.value || 1),
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-border bg-surface px-6 py-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRestoreResultadosPorPaginaDefault}
+              disabled={savingAcademica}
+            >
+              Restaurar valores por defecto
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSaveConfiguracionAcademica}
+              disabled={savingAcademica}
+            >
+              {savingAcademica ? "Guardando..." : "Guardar configuración"}
             </Button>
           </div>
         </Card>

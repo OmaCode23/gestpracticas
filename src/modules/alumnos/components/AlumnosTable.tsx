@@ -10,12 +10,12 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import { CICLO_BADGE, getCicloLabel } from "@/shared/catalogs/academico";
+import { CICLO_BADGE } from "@/shared/catalogs/academico";
 import type { Alumno } from "@/modules/alumnos/types";
 
 interface AlumnosTableProps {
   alumnos: Alumno[];
-  ciclos: string[];
+  ciclos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
   total: number;
   perPage: number;
@@ -74,8 +74,8 @@ export default function AlumnosTable({
           >
             <option value="">Todos los ciclos</option>
             {ciclos.map((c) => (
-              <option key={c} value={c}>
-                {getCicloLabel(c)}
+              <option key={c.id} value={c.nombre}>
+                {c.codigo ?? c.nombre}
               </option>
             ))}
           </FilterSelect>
@@ -131,9 +131,9 @@ export default function AlumnosTable({
                 <th>
                   Curso
                   <br />
-                  Academico
+                  Académico
                 </th>
-                <th>Telefono</th>
+                <th>Teléfono</th>
                 <th>Correo</th>
                 <th>CV</th>
                 <th>Acciones</th>
@@ -149,7 +149,8 @@ export default function AlumnosTable({
                 </tr>
               ) : (
                 alumnos.map((a) => {
-                  const cicloCode = getCicloLabel(a.ciclo);
+                  const cicloBadgeLabel =
+                    a.cicloFormativoCodigo ?? a.cicloFormativoNombre ?? "-";
 
                   return (
                     <tr key={a.id}>
@@ -162,8 +163,14 @@ export default function AlumnosTable({
                       <td className="text-text-mid">{a.nia}</td>
 
                       <td>
-                        <Badge variant={CICLO_BADGE[cicloCode] ?? "gray"}>
-                          {cicloCode}
+                        <Badge
+                          variant={
+                            a.cicloFormativoCodigo
+                              ? (CICLO_BADGE[a.cicloFormativoCodigo] ?? "gray")
+                              : "gray"
+                          }
+                        >
+                          {cicloBadgeLabel}
                         </Badge>
                       </td>
 

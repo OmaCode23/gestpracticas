@@ -145,7 +145,17 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       ok: true,
       data: null,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.code === "P2003") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No se puede eliminar el alumno porque esta incluido en una formacion.",
+        },
+        { status: 409 }
+      );
+    }
+
     console.error("[DELETE /api/alumnos/:id]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al eliminar" },
