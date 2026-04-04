@@ -1,6 +1,8 @@
 import { prisma } from "@/database/prisma";
 import { CICLOS_FORMATIVOS_BASE } from "@/shared/catalogs/academico";
+import { SECTORES } from "@/shared/catalogs/empresa";
 import type { CicloFormativoInput, CicloFormativoUpdateInput } from "../types/ciclos";
+import type { SectorInput, SectorUpdateInput } from "../types/sectores";
 
 function normalizeNombre(value: string) {
   return value.trim();
@@ -8,6 +10,91 @@ function normalizeNombre(value: string) {
 
 function normalizeCodigo(value: string) {
   return value.trim().toUpperCase();
+}
+
+async function getSectorUsageCounts(id: number) {
+  const sector = await prisma.sector.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          empresas: true,
+        },
+      },
+    },
+  });
+
+  return {
+    empresasCount: sector?._count.empresas ?? 0,
+  };
+}
+
+export async function createSector(data: SectorInput) {
+  return prisma.sector.create({
+    data: {
+      nombre: normalizeNombre(data.nombre),
+      activo: data.activo ?? true,
+    },
+  });
+}
+
+export async function updateSector(id: number, data: SectorUpdateInput) {
+  const { empresasCount } = await getSectorUsageCounts(id);
+  const isProtectedEdit = data.nombre !== undefined && empresasCount > 0;
+
+  if (isProtectedEdit) {
+    const error = new Error("SECTOR_EN_USO");
+    (error as Error & { meta?: { empresasCount: number } }).meta = {
+      empresasCount,
+    };
+    throw error;
+  }
+
+  return prisma.sector.update({
+    where: { id },
+    data: {
+      ...(data.nombre !== undefined ? { nombre: normalizeNombre(data.nombre) } : {}),
+      ...(data.activo !== undefined ? { activo: data.activo } : {}),
+    },
+  });
+}
+
+export async function restoreSectoresBase() {
+  const results = await prisma.$transaction(
+    SECTORES.map((nombre) =>
+      prisma.sector.upsert({
+        where: { nombre },
+        update: {
+          activo: true,
+        },
+        create: {
+          nombre,
+          activo: true,
+        },
+      })
+    )
+  );
+
+  return {
+    total: results.length,
+    items: results,
+  };
+}
+
+export async function deleteSector(id: number) {
+  const { empresasCount } = await getSectorUsageCounts(id);
+
+  if (empresasCount > 0) {
+    const error = new Error("SECTOR_EN_USO");
+    (error as Error & { meta?: { empresasCount: number } }).meta = {
+      empresasCount,
+    };
+    throw error;
+  }
+
+  return prisma.sector.delete({
+    where: { id },
+  });
 }
 
 async function getCicloUsageCounts(id: number) {

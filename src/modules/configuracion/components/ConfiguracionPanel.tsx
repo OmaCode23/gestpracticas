@@ -33,6 +33,17 @@ type CicloFormativoItem = {
   };
 };
 
+type SectorItem = {
+  id: number;
+  nombre: string;
+  activo: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  _count: {
+    empresas: number;
+  };
+};
+
 type ConfiguracionAcademica = {
   mesCambioCurso: number;
   numeroCursosVisibles: number;
@@ -75,28 +86,46 @@ function isCicloInUse(ciclo: CicloFormativoItem) {
   return ciclo._count.alumnos > 0 || ciclo._count.empresas > 0;
 }
 
+function isSectorInUse(sector: SectorItem) {
+  return sector._count.empresas > 0;
+}
+
 export default function ConfiguracionPanel({
+  sectores: initialSectores,
   ciclosFormativos: initialCiclosFormativos,
   configuracionAcademica: initialConfiguracionAcademica,
 }: {
+  sectores: SectorItem[];
   ciclosFormativos: CicloFormativoItem[];
   configuracionAcademica: ConfiguracionAcademica;
 }) {
   const router = useRouter();
+  const [sectores, setSectores] = useState<SectorItem[]>(initialSectores);
   const [ciclosFormativos, setCiclosFormativos] =
     useState<CicloFormativoItem[]>(initialCiclosFormativos);
   const [configuracionAcademica, setConfiguracionAcademica] =
     useState<ConfiguracionAcademica>(initialConfiguracionAcademica);
+  const [createSectorName, setCreateSectorName] = useState("");
   const [createForm, setCreateForm] = useState<FormState>(EMPTY_FORM);
+  const [editingSectorName, setEditingSectorName] = useState<{
+    id: number;
+    value: string;
+  } | null>(null);
   const [editingField, setEditingField] = useState<{
     id: number;
     field: "nombre" | "codigo";
     value: string;
   } | null>(null);
+  const [savingSector, setSavingSector] = useState(false);
   const [savingCycle, setSavingCycle] = useState(false);
+  const [restoringSectores, setRestoringSectores] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [savingAcademica, setSavingAcademica] = useState(false);
   const [notification, setNotification] = useState("");
+
+  useEffect(() => {
+    setSectores(initialSectores);
+  }, [initialSectores]);
 
   useEffect(() => {
     setCiclosFormativos(initialCiclosFormativos);
@@ -106,14 +135,32 @@ export default function ConfiguracionPanel({
     setConfiguracionAcademica(initialConfiguracionAcademica);
   }, [initialConfiguracionAcademica]);
 
+  const sectoresActivos = sectores.filter((item) => item.activo).length;
   const activos = ciclosFormativos.filter((item) => item.activo).length;
 
   function resetCreateForm() {
     setCreateForm(EMPTY_FORM);
   }
 
+  function closeSectorInlineEdit() {
+    setEditingSectorName(null);
+  }
+
   function closeInlineEdit() {
     setEditingField(null);
+  }
+
+  async function reloadSectores() {
+    const res = await fetch("/api/catalogos/sectores", {
+      cache: "no-store",
+    });
+    const json: ApiResponse<SectorItem[]> = await res.json();
+
+    if (!json.ok) {
+      throw new Error(json.error);
+    }
+
+    setSectores(json.data);
   }
 
   async function reloadCiclos() {
@@ -127,6 +174,40 @@ export default function ConfiguracionPanel({
     }
 
     setCiclosFormativos(json.data);
+  }
+
+  async function handleCreateSector() {
+    if (!createSectorName.trim()) {
+      alert("El nombre es obligatorio.");
+      return;
+    }
+
+    try {
+      setSavingSector(true);
+
+      const res = await fetch("/api/catalogos/sectores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre: createSectorName }),
+      });
+
+      const json: ApiResponse<SectorItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadSectores();
+      router.refresh();
+      setCreateSectorName("");
+      setNotification("Sector creado correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo guardar el sector.");
+    } finally {
+      setSavingSector(false);
+    }
   }
 
   async function handleCreate() {
@@ -171,6 +252,53 @@ export default function ConfiguracionPanel({
       field,
       value: field === "nombre" ? ciclo.nombre : ciclo.codigo ?? "",
     });
+  }
+
+  function openSectorInlineEdit(sector: SectorItem) {
+    if (isSectorInUse(sector)) return;
+
+    setEditingSectorName({
+      id: sector.id,
+      value: sector.nombre,
+    });
+  }
+
+  async function saveSectorInlineEdit() {
+    if (!editingSectorName) return;
+
+    if (!editingSectorName.value.trim()) {
+      alert("El nombre es obligatorio.");
+      return;
+    }
+
+    try {
+      setSavingSector(true);
+
+      const res = await fetch(`/api/catalogos/sectores/${editingSectorName.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: editingSectorName.value,
+        }),
+      });
+
+      const json: ApiResponse<SectorItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadSectores();
+      router.refresh();
+      closeSectorInlineEdit();
+      setNotification("Sector actualizado correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo actualizar el sector.");
+    } finally {
+      setSavingSector(false);
+    }
   }
 
   async function saveInlineEdit() {
@@ -218,6 +346,34 @@ export default function ConfiguracionPanel({
     }
   }
 
+  async function handleToggleSectorActivo(sector: SectorItem) {
+    try {
+      const res = await fetch(`/api/catalogos/sectores/${sector.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activo: !sector.activo }),
+      });
+
+      const json: ApiResponse<SectorItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadSectores();
+      router.refresh();
+      setNotification(
+        sector.activo
+          ? "Sector desactivado correctamente."
+          : "Sector activado correctamente."
+      );
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo actualizar el estado del sector.");
+    }
+  }
+
   async function handleToggleActivo(ciclo: CicloFormativoItem) {
     try {
       const res = await fetch(`/api/catalogos/ciclos-formativos/${ciclo.id}`, {
@@ -243,6 +399,39 @@ export default function ConfiguracionPanel({
     } catch (error) {
       console.error(error);
       alert("No se pudo actualizar el estado del ciclo formativo.");
+    }
+  }
+
+  async function handleDeleteSector(sector: SectorItem) {
+    if (sector._count.empresas > 0) {
+      alert("No se puede eliminar porque el sector esta en uso.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Se eliminara el sector "${sector.nombre}". Solo se puede borrar si no aparece en ninguna empresa. ¿Continuar?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/catalogos/sectores/${sector.id}`, {
+        method: "DELETE",
+      });
+
+      const json: ApiResponse<null> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadSectores();
+      router.refresh();
+      setNotification("Sector eliminado correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudo eliminar el sector.");
     }
   }
 
@@ -276,6 +465,38 @@ export default function ConfiguracionPanel({
     } catch (error) {
       console.error(error);
       alert("No se pudo eliminar el ciclo formativo.");
+    }
+  }
+
+  async function handleRestoreSectoresBase() {
+    const confirmed = window.confirm(
+      "Se restauraran los sectores iniciales de la aplicacion. Se crearan los que falten y se reactivaran los iniciales inactivos. Los sectores personalizados no se borraran. ¿Continuar?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setRestoringSectores(true);
+
+      const res = await fetch("/api/catalogos/sectores/restaurar", {
+        method: "POST",
+      });
+
+      const json: ApiResponse<{ total: number }> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadSectores();
+      router.refresh();
+      setNotification("Sectores iniciales restaurados correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron restaurar los sectores iniciales.");
+    } finally {
+      setRestoringSectores(false);
     }
   }
 
@@ -474,7 +695,11 @@ export default function ConfiguracionPanel({
                         <button
                           type="button"
                           onClick={() => openInlineEdit(ciclo, "nombre")}
-                          title="Editar nombre"
+                          title={
+                            isCicloInUse(ciclo)
+                              ? "No se puede editar porque el ciclo esta en uso."
+                              : "Editar nombre"
+                          }
                           aria-label="Editar nombre"
                           disabled={isCicloInUse(ciclo)}
                           className={[
@@ -533,7 +758,11 @@ export default function ConfiguracionPanel({
                         <button
                           type="button"
                           onClick={() => openInlineEdit(ciclo, "codigo")}
-                          title="Editar código"
+                          title={
+                            isCicloInUse(ciclo)
+                              ? "No se puede editar porque el ciclo esta en uso."
+                              : "Editar código"
+                          }
                           aria-label="Editar código"
                           disabled={isCicloInUse(ciclo)}
                           className={[
@@ -673,6 +902,188 @@ export default function ConfiguracionPanel({
           </Button>
         </div>
       </Card>
+
+      <div className="mt-8">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex w-full flex-wrap items-center gap-3">
+              <CardTitle icon="SE" iconVariant="blue">
+                Sectores
+              </CardTitle>
+              <Tag>{`${sectoresActivos} activos / ${sectores.length} totales`}</Tag>
+            </div>
+          </CardHeader>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full rounded-none bg-transparent text-left text-sm">
+              <thead className="bg-surface">
+                <tr className="text-[0.75rem] uppercase tracking-[0.08em] text-text-light">
+                  <th className="px-6 py-3 font-semibold">Nombre</th>
+                  <th className="px-6 py-3 font-semibold">Modificado</th>
+                  <th className="px-6 py-3 font-semibold">Empresas</th>
+                  <th className="px-6 py-3 font-semibold">Estado</th>
+                  <th className="px-6 py-3 text-right font-semibold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sectores.map((sector) => (
+                  <tr
+                    key={sector.id}
+                    className="border-t border-border odd:bg-white even:bg-surface/40"
+                  >
+                    <td className="px-6 py-4">
+                      {editingSectorName?.id === sector.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            className={INPUT_CLS}
+                            value={editingSectorName.value}
+                            onChange={(e) =>
+                              setEditingSectorName((prev) =>
+                                prev ? { ...prev, value: e.target.value } : prev
+                              )
+                            }
+                            maxLength={120}
+                            autoFocus
+                          />
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={saveSectorInlineEdit}
+                            disabled={savingSector}
+                          >
+                            {savingSector ? "..." : "OK"}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={closeSectorInlineEdit}
+                          >
+                            X
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openSectorInlineEdit(sector)}
+                            title={
+                              isSectorInUse(sector)
+                                ? "No se puede editar porque el sector esta en uso."
+                                : "Editar nombre"
+                            }
+                            aria-label="Editar nombre"
+                            disabled={isSectorInUse(sector)}
+                            className={[
+                              "mt-1.5 inline-flex h-4 w-4 items-center justify-center rounded-md border text-[0.46rem] transition-colors",
+                              isSectorInUse(sector)
+                                ? "cursor-not-allowed border-border bg-surface text-text-light opacity-55"
+                                : "border-border bg-surface2 text-text-mid hover:bg-[#e5d7d0] hover:text-navy",
+                            ].join(" ")}
+                          >
+                            {"\u270F\uFE0F"}
+                          </button>
+                          <span className="font-medium text-navy">{sector.nombre}</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-text-mid">
+                      {formatDate(sector.updatedAt)}
+                    </td>
+                    <td className="px-6 py-4 text-text-mid">{sector._count.empresas}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label={
+                            sector.activo ? "Desactivar sector" : "Activar sector"
+                          }
+                          title={sector.activo ? "Desactivar" : "Activar"}
+                          onClick={() => handleToggleSectorActivo(sector)}
+                          className={[
+                            "relative inline-flex h-6 w-10 items-center rounded-full transition-colors duration-200",
+                            sector.activo ? "bg-accent" : "bg-[#d7c7c3]",
+                          ].join(" ")}
+                        >
+                          <span
+                            className={[
+                              "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200",
+                              sector.activo ? "translate-x-5" : "translate-x-1",
+                            ].join(" ")}
+                          />
+                        </button>
+                        <span className="min-w-[92px] text-left text-[0.82rem] font-medium text-text-mid">
+                          {sector.activo ? "Activado" : "Desactivado"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end">
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDeleteSector(sector)}
+                          title={
+                            isSectorInUse(sector)
+                              ? "No se puede eliminar porque el sector esta en uso."
+                              : "Eliminar sector"
+                          }
+                        >
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+
+                <tr className="border-y border-border bg-[#f3e7da] hover:bg-[#f3e7da]">
+                  <td className="px-6 py-4 align-middle">
+                    <input
+                      className={INPUT_CLS}
+                      value={createSectorName}
+                      onChange={(e) => setCreateSectorName(e.target.value)}
+                      placeholder="Nuevo sector"
+                      maxLength={120}
+                    />
+                  </td>
+                  <td className="px-6 py-4 text-text-light">Nuevo registro</td>
+                  <td className="px-6 py-4 text-text-light">-</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleCreateSector}
+                        disabled={savingSector}
+                      >
+                        {savingSector ? "Guardando..." : "Guardar"}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setCreateSectorName("")}
+                      >
+                        Limpiar
+                      </Button>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4" />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex justify-end border-t border-border bg-surface px-6 py-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleRestoreSectoresBase}
+              disabled={restoringSectores}
+            >
+              {restoringSectores ? "Restaurando..." : "Restaurar sectores iniciales"}
+            </Button>
+          </div>
+        </Card>
+      </div>
 
       <div className="mt-8">
         <Card className="overflow-hidden">

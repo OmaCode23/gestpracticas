@@ -2,6 +2,50 @@
 
 ## 4-4-26 Sbs
 
+- Archivo: `src/modules/catalogos/types/sectores.ts`
+  Motivo: definir el schema comun de validacion para altas y ediciones del catalogo maestro de sectores desde Configuracion.
+  Impacto: la API de sectores comparte reglas de entrada consistentes antes de tocar la BD y evita validaciones ad hoc en cada ruta.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: anadir una consulta comun `getSectores()` para listar todos los sectores con estado, fechas y numero de empresas relacionadas.
+  Impacto: Configuracion puede administrar el catalogo de sectores desde BD con informacion suficiente para activar, renombrar y proteger borrados.
+
+- Archivo: `src/modules/catalogos/actions/mutations.ts`
+  Motivo: incorporar las mutaciones comunes de sectores para crear, editar, restaurar la semilla base, bloquear el borrado cuando el sector ya esta en uso y tambien impedir renombrarlo si ya lo usan empresas.
+  Impacto: el catalogo maestro de sectores queda gestionado con la misma politica conservadora aplicada a ciclos, permitiendo activar o desactivar sin romper referencias, pero evitando renombrados de valores ya operativos.
+
+- Archivo: `src/app/api/catalogos/sectores/route.ts`
+  Motivo: exponer la ruta comun de listado y alta de sectores para la pantalla de Configuracion.
+  Impacto: la UI puede leer y crear sectores contra un endpoint propio, alineado con el patron ya usado en ciclos formativos.
+
+- Archivo: `src/app/api/catalogos/sectores/[id]/route.ts`
+  Motivo: anadir la ruta comun de actualizacion y borrado de sectores con validacion de id y mensajes funcionales tanto para bloqueo de borrado como para intento de renombrado cuando el sector ya esta en uso.
+  Impacto: Configuracion mantiene un contrato HTTP claro y coherente con la politica de catalogos protegidos una vez tienen uso real.
+
+- Archivo: `src/app/api/catalogos/sectores/restaurar/route.ts`
+  Motivo: incorporar una accion explicita para restaurar los sectores base definidos en la semilla canonica del proyecto.
+  Impacto: el equipo puede reponer desde Configuracion los sectores iniciales sin sembrar datos silenciosamente durante lecturas normales.
+
+- Archivo: `src/app/api/catalogos/sectores/route.test.ts`
+  Motivo: cubrir con pruebas de ruta el listado y alta de sectores, incluyendo validacion de entrada, conflicto por duplicado y revalidacion de Configuracion.
+  Impacto: el contrato HTTP del alta de sectores queda protegido frente a regresiones en mensajes, estados y respuesta JSON.
+
+- Archivo: `src/app/api/catalogos/sectores/[id]/route.test.ts`
+  Motivo: anadir cobertura de API para la edicion y el borrado de sectores, incluyendo ids invalidos, no encontrados, duplicados y bloqueo por uso en empresas tanto al editar como al borrar.
+  Impacto: las operaciones de mantenimiento de sectores quedan verificadas tambien en su capa HTTP, no solo en las mutaciones internas.
+
+- Archivo: `src/app/api/catalogos/sectores/restaurar/route.test.ts`
+  Motivo: verificar la ruta de restauracion explicita de sectores base y su manejo de error.
+  Impacto: la accion de reposicion desde Configuracion mantiene cobertura automatizada completa en el endpoint.
+
+- Archivo: `src/modules/catalogos/actions/mutations.sectores.test.ts`
+  Motivo: cubrir con pruebas unitarias la normalizacion, la restauracion base y el bloqueo por uso tanto del renombrado como del borrado en el CRUD comun de sectores.
+  Impacto: la gestion de sectores queda protegida frente a regresiones en la capa compartida antes de que otros modulos dependan de ella.
+
+- Archivo: `src/app/configuracion/page.tsx`
+  Motivo: cargar tambien el catalogo de sectores en la entrada server de la pagina de Configuracion.
+  Impacto: la vista recibe en SSR los sectores actuales de BD junto con ciclos y settings, sin depender de una carga inicial cliente adicional.
+
 - Archivo: `src/modules/empresas/actions/mutations.ts`
   Motivo: arrancar la segunda fase de la transicion resolviendo en servidor `sectorId` y `localidadId` desde los catalogos activos cuando se crean, editan o importan empresas, manteniendo por ahora el contrato cliente basado en nombres visibles.
   Impacto: la persistencia de empresas empieza a poblar ya las relaciones reales con `sectores` y `localidades` sin exigir un cambio simultaneo en la UI ni en el payload del formulario.

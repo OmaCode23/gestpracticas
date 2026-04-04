@@ -140,6 +140,14 @@ npm run db:studio
 - Catálogos estáticos: solo para `seed` inicial y restauraciones explícitas.
 - No se deben sembrar datos silenciosamente al arrancar ni durante lecturas normales de la aplicación.
 
+## Política de protección al editar o borrar un sector o un ciclo en la página de Configuración
+
+- La edición se impedirá para un sector/ciclo que ya está en uso (referenciado en otra tabla);
+- El borrado se impedirá para un sector/ciclo que ya está en uso (referenciado en otra tabla);
+- Al darle al botón de restaurar a valores por defecto, no hace falta impedir el borrado de los que estén siendo usados porque no se borra nada, se reactivan los desactivados de los sectores/ciclos base, y se restauran los borrados de los sectores/ciclos base, mientras que los personalizados no se tocan;
+si un sector/ciclo base ha sido editado, no se reconocerá como el mismo que el base, y quedarán tanto el personalizado (editado a partir del base) como el base;
+- Desactivar un sector/ciclo hará que no aparezca en formularios que permitan usarlos en un nuevo registro, y sin embargo seguirán siendo válidos en los registros existentes;
+
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
 ```bash

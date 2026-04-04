@@ -348,8 +348,14 @@ export default function FormacionContainer({
       </div>
 
       {selectedFormacion ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4">
-          <div className="max-h-[85vh] w-full max-w-6xl overflow-y-auto rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4"
+          onClick={() => setSelectedFormacion(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-6xl overflow-y-auto rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border px-6 py-5">
               <div>
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">

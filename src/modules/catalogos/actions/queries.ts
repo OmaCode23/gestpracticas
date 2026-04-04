@@ -36,6 +36,24 @@ export async function getEmpresaCatalogos() {
   };
 }
 
+export async function getSectores() {
+  return prisma.sector.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      activo: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          empresas: true,
+        },
+      },
+    },
+  });
+}
+
 export async function getCiclosFormativos() {
   return prisma.cicloFormativo.findMany({
     orderBy: { nombre: "asc" },

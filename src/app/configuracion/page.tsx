@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
+import { getCiclosFormativos, getSectores } from "@/modules/catalogos/actions/queries";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 import ConfiguracionPanel from "@/modules/configuracion/components/ConfiguracionPanel";
 
@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function ConfiguracionPage() {
   noStore();
 
-  const [ciclosFormativos, configuracionAcademica] = await Promise.all([
+  const [sectores, ciclosFormativos, configuracionAcademica] = await Promise.all([
+    getSectores(),
     getCiclosFormativos(),
     getConfiguracionAcademica(),
   ]);
@@ -25,6 +26,7 @@ export default async function ConfiguracionPage() {
       </div>
 
       <ConfiguracionPanel
+        sectores={sectores}
         ciclosFormativos={ciclosFormativos}
         configuracionAcademica={configuracionAcademica}
       />
