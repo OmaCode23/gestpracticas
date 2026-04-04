@@ -177,8 +177,8 @@ export async function createEmpresasBatch(data: EmpresaInput[]) {
   return prisma.empresa.createMany({
     data: normalizedData.map((item) => ({
       ...normalizeEmpresaData(item),
-      sectorId: sectoresActivos.get(item.sector) ?? null,
-      localidadId: localidadesActivas.get(item.localidad) ?? null,
+      sectorId: sectoresActivos.get(item.sector)!,
+      localidadId: localidadesActivas.get(item.localidad)!,
       cicloFormativoId:
         typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null,
     })),

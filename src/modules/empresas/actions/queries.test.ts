@@ -96,6 +96,7 @@ describe("empresas queries", () => {
       sector: "Otro",
       localidad: "Alacant/Alicante",
       search: "demo",
+      page: 1,
       all: false,
     });
 
@@ -164,7 +165,7 @@ describe("empresas queries", () => {
     prismaMock.empresa.findMany.mockResolvedValue([]);
     prismaMock.empresa.count.mockResolvedValue(0);
 
-    const result = await getEmpresas({ all: true });
+    const result = await getEmpresas({ page: 1, all: true });
 
     expect(prismaMock.empresa.findMany).toHaveBeenCalledWith({
       where: {},

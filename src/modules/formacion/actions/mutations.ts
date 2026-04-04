@@ -79,7 +79,6 @@ export async function createFormacion(data: FormacionInput) {
     alumno: formacion.alumno
       ? {
           ...formacion.alumno,
-          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };
@@ -156,7 +155,6 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
     alumno: formacion.alumno
       ? {
           ...formacion.alumno,
-          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };

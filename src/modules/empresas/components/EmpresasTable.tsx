@@ -25,8 +25,8 @@ type EmpresasTableProps = {
   search: string;
   sectores: CatalogoOption[];
   localidades: CatalogoOption[];
+  ciclosFormativos: Array<{ id: number; nombre: string; codigo: string | null }>;
   cicloBadge: Record<string, BadgeVariant>;
-  cicloLabel: Record<string, string>;
   sectorBadge: Record<string, BadgeVariant>;
   onSectorChange: (value: string) => void;
   onLocalidadChange: (value: string) => void;
@@ -47,8 +47,8 @@ export default function EmpresasTable({
   search,
   sectores,
   localidades,
+  ciclosFormativos,
   cicloBadge,
-  cicloLabel,
   sectorBadge,
   onSectorChange,
   onLocalidadChange,
@@ -120,7 +120,7 @@ export default function EmpresasTable({
               ) : (
                 empresas.map((e) => {
                   const cicloCode =
-                    cicloLabel[e.cicloFormativo ?? ""] ??
+                    ciclosFormativos.find((ciclo) => ciclo.nombre === e.cicloFormativo)?.codigo ??
                     e.cicloFormativo ??
                     "—";
 

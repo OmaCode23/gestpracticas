@@ -15,7 +15,7 @@ export async function getEmpresaCatalogos() {
     prisma.cicloFormativo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, codigo: true },
     }),
   ]);
 
@@ -31,6 +31,7 @@ export async function getEmpresaCatalogos() {
     ciclosFormativos: ciclosFormativos.map((item) => ({
       id: item.id,
       nombre: item.nombre,
+      codigo: item.codigo,
     })),
   };
 }

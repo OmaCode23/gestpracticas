@@ -148,7 +148,6 @@ export async function getFormacionesPaginated(params: {
               item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
             cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
             cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
-            ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
           }
         : null,
     })),
@@ -221,7 +220,6 @@ export async function getFormacionById(id: number) {
             item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
           cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
           cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
-          ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };

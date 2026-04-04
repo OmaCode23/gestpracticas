@@ -572,7 +572,7 @@ function FilterInput({
       </span>
       {filter.key === "localidad" || filter.key === "empresaLocalidad" ? (
         <LocalidadCombobox
-          localidades={options}
+          localidades={options.map((nombre, index) => ({ id: index + 1, nombre }))}
           value={value}
           onChange={onChange}
           size="filter"
@@ -782,7 +782,7 @@ async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
         nuss: string | null;
         telefono: string;
         email: string;
-        ciclo: string;
+        cicloFormativoNombre: string | null;
         cursoCiclo: number;
         curso: string;
       }>;
@@ -795,7 +795,7 @@ async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
       nuss: item.nuss,
       telefono: item.telefono,
       email: item.email,
-      ciclo: item.ciclo,
+      ciclo: item.cicloFormativoNombre ?? "",
       cursoCiclo: formatCursoCicloValue(item.cursoCiclo),
       curso: item.curso,
       search: `${item.nombre} ${item.nia} ${item.nif ?? ""} ${item.nuss ?? ""}`,
@@ -853,7 +853,7 @@ async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
         nia: string;
         nif: string | null;
         nuss: string | null;
-        ciclo: string;
+        cicloFormativoNombre: string | null;
         cursoCiclo: number;
       } | null;
     }>;
@@ -868,7 +868,7 @@ async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
     alumnoNia: item.alumno?.nia ?? "",
     alumnoNif: item.alumno?.nif ?? "",
     alumnoNuss: item.alumno?.nuss ?? "",
-    alumnoCiclo: item.alumno?.ciclo ?? "",
+    alumnoCiclo: item.alumno?.cicloFormativoNombre ?? "",
     alumnoCursoCiclo: formatCursoCicloValue(item.alumno?.cursoCiclo),
     curso: item.curso,
     periodo: item.periodo,

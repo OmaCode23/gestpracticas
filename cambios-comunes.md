@@ -127,6 +127,70 @@
   Impacto: la suite de utilidades sigue verificando la validacion previa de Excel contra el contrato actual del endpoint de catalogos.
 
 - Archivo: `src/modules/informes/components/InformesPanel.tsx`
+  Motivo: arrancar la limpieza final de la transicion de ciclos haciendo que informes consuma `cicloFormativoNombre` en alumnos y formacion, en lugar de seguir dependiendo de los aliases legacy `ciclo`.
+  Impacto: el primer modulo pendiente de esta transicion queda alineado con el contrato final de ciclos sin exigir todavia cambios simultaneos en el resto de consumidores.
+
+- Archivo: `TODO.md`
+  Motivo: convertir el cierre pendiente de la transicion de ciclos en una checklist por fases pequenas, marcando ya como completado el paso de `informes`.
+  Impacto: el resto de la limpieza queda secuenciado de forma mas segura y visible antes de retirar aliases y helpers comunes.
+
+- Archivo: `src/modules/alumnos/actions/queries.ts`
+  Motivo: retirar el alias legacy `ciclo` de las respuestas de alumnos al comprobar que las vistas cliente ya consumen `cicloFormativoNombre` y `cicloFormativoCodigo`.
+  Impacto: alumnos queda un paso mas cerca del contrato final de ciclos y deja de exponer un campo redundante de compatibilidad.
+
+- Archivo: `TODO.md`
+  Motivo: marcar como completado el cierre del alias `ciclo` en alumnos dentro de la checklist de transicion de ciclos.
+  Impacto: el seguimiento del trabajo pendiente refleja ya que esta segunda fase ha quedado resuelta.
+
+- Archivo: `src/modules/formacion/actions/queries.ts`
+  Motivo: retirar el alias legacy `ciclo` del alumno en las respuestas de formacion al comprobar que las vistas cliente ya consumen `cicloFormativoNombre` y `cicloFormativoCodigo`.
+  Impacto: formacion deja de exponer otro campo redundante de compatibilidad y se acerca al contrato final de ciclos.
+
+- Archivo: `src/modules/formacion/actions/mutations.ts`
+  Motivo: alinear tambien las respuestas inmediatas de create/update de formacion con la retirada del alias legacy `ciclo`.
+  Impacto: todo el modulo mantiene un unico contrato de salida para ciclos del alumno, sin mezclar aliases heredados.
+
+- Archivo: `TODO.md`
+  Motivo: marcar como completado el cierre del alias `ciclo` en formacion dentro de la checklist de transicion de ciclos.
+  Impacto: el seguimiento del trabajo pendiente refleja ya que esta tercera fase ha quedado resuelta.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: ampliar el catalogo comun de empresas para devolver tambien `codigo` en ciclos formativos.
+  Impacto: empresas puede pintar el badge del ciclo desde el catalogo activo sin depender de helpers estaticos de compatibilidad.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: dejar de pasar `CICLO_LABEL` a la tabla de empresas y apoyarse solo en el catalogo cargado desde la API comun.
+  Impacto: el contenedor elimina otra dependencia runtime a helpers estaticos de ciclos.
+
+- Archivo: `src/modules/empresas/components/EmpresasTable.tsx`
+  Motivo: resolver el codigo visible del ciclo desde el catalogo activo cargado en cliente, en lugar de usar `CICLO_LABEL`.
+  Impacto: la tabla de empresas queda alineada con la fuente de verdad de ciclos y deja de depender de compatibilidades heredadas.
+
+- Archivo: `src/shared/catalogs/academico.ts`
+  Motivo: eliminar `CICLOS_FORMATIVOS`, `CICLO_LABEL` y `getCicloLabel` al comprobar que ya no quedaban consumidores runtime tras completar la limpieza de ciclos.
+  Impacto: el archivo comun conserva la semilla canonica y los badges vigentes, sin helpers sobrantes de la transicion.
+
+- Archivo: `TODO.md`
+  Motivo: marcar como completada la revision final de `CICLO_LABEL` y `CICLOS_FORMATIVOS` dentro de la checklist de transicion de ciclos.
+  Impacto: el seguimiento refleja que ya no quedan helpers runtime pendientes de revisar en esta transicion.
+
+- Archivo: `TODO.md`
+  Motivo: cerrar tambien la comprobacion final de consumidores cliente de `alumnos` y `formacion` y retirar del `TODO` el bloque de la transicion de ciclos ya completada.
+  Impacto: el archivo de pendientes deja de arrastrar restos de una migracion ya cerrada y vuelve a reflejar solo trabajo realmente abierto.
+
+- Archivo: `src/modules/informes/components/InformesPanel.tsx`
+  Motivo: adaptar el uso de `LocalidadCombobox` en filtros de informes para pasarle opciones tipadas `{ id, nombre }`, igual que el resto del proyecto.
+  Impacto: se evita un desajuste de tipos que podia terminar rompiendo la compilacion del cliente al cargar informes.
+
+- Archivo: `src/modules/empresas/actions/queries.test.ts`
+  Motivo: ajustar las llamadas de prueba al contrato tipado actual de `getEmpresas`, informando `page` de forma explicita.
+  Impacto: la comprobacion de tipos queda limpia y las pruebas siguen cubriendo el comportamiento real del listado de empresas.
+
+- Archivo: `src/modules/empresas/actions/mutations.ts`
+  Motivo: alinear la importacion masiva de empresas con el esquema final, marcando `sectorId` y `localidadId` como obligatorios tras la validacion previa y el cierre de la migracion.
+  Impacto: Prisma deja de recibir `null` imposibles en `createMany` y el runtime de empresas vuelve a quedar consistente con la base de datos actual.
+
+- Archivo: `src/modules/informes/components/InformesPanel.tsx`
   Motivo: completar la misma primera fase en informes, cargando `sectores` y `localidades` desde `/api/catalogos/empresas` en lugar de reconstruirlos a partir de las empresas ya existentes.
   Impacto: los filtros de informes muestran el catalogo activo aunque todavia no haya empresas usando alguno de sus valores, y se reduce la dependencia del dato textual persistido en `Empresa`.
 

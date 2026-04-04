@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button, type BadgeVariant } from "@/components/ui";
 import {
   CICLO_BADGE,
-  CICLO_LABEL,
   DEFAULT_RESULTADOS_POR_PAGINA,
 } from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
@@ -49,7 +48,7 @@ const EMPTY_FORM: EmpresaFormState = {
 type EmpresaCatalogos = {
   sectores: CatalogoOption[];
   localidades: CatalogoOption[];
-  ciclosFormativos: Array<{ id: number; nombre: string }>;
+  ciclosFormativos: Array<{ id: number; nombre: string; codigo: string | null }>;
 };
 
 export default function EmpresasContainer({
@@ -330,8 +329,8 @@ export default function EmpresasContainer({
         search={search}
         sectores={catalogos.sectores}
         localidades={catalogos.localidades}
+        ciclosFormativos={catalogos.ciclosFormativos}
         cicloBadge={CICLO_BADGE}
-        cicloLabel={CICLO_LABEL}
         sectorBadge={SECTOR_BADGE}
         onSectorChange={(value) => {
           setSector(value);
