@@ -1,5 +1,135 @@
 # Cambios en archivos comunes
 
+## 4-4-26 Sbs
+
+- Archivo: `src/modules/empresas/actions/mutations.ts`
+  Motivo: arrancar la segunda fase de la transicion resolviendo en servidor `sectorId` y `localidadId` desde los catalogos activos cuando se crean, editan o importan empresas, manteniendo por ahora el contrato cliente basado en nombres visibles.
+  Impacto: la persistencia de empresas empieza a poblar ya las relaciones reales con `sectores` y `localidades` sin exigir un cambio simultaneo en la UI ni en el payload del formulario.
+
+- Archivo: `src/modules/empresas/actions/mutations.test.ts`
+  Motivo: cubrir con pruebas unitarias la resolucion de `sectorId` y `localidadId` en altas, ediciones e importacion masiva de empresas.
+  Impacto: la nueva logica server de catalogos queda verificada de forma aislada antes de seguir avanzando hacia la limpieza de campos legacy.
+
+- Archivo: `src/modules/catalogos/actions/queries.ts`
+  Motivo: ampliar el contrato comun de catalogos de empresas para exponer tambien `id` y `nombre` en sectores y localidades, igual que ya se hacia con ciclos.
+  Impacto: la UI y los consumidores comunes pueden prepararse para trabajar con relaciones reales sin perder los nombres visibles necesarios en formularios, filtros e import/export.
+
+- Archivo: `src/modules/empresas/types/index.ts`
+  Motivo: introducir un tipo compartido `CatalogoOption` para representar opciones de catalogo tipadas por `id` y `nombre`.
+  Impacto: empresas deja de repetir contratos ad hoc y puede evolucionar hacia ids reales con menos riesgo de desalineacion entre componentes.
+
+- Archivo: `src/modules/empresas/components/LocalidadCombobox.tsx`
+  Motivo: adaptar el combobox de localidades a opciones tipadas del catalogo maestro, manteniendo como valor visible el nombre seleccionado.
+  Impacto: el componente sigue funcionando igual para el usuario, pero ya no depende de arrays planos si en la siguiente fase necesitamos propagar ids al formulario.
+
+- Archivo: `src/modules/empresas/components/EmpresaForm.tsx`
+  Motivo: hacer que el formulario de empresas consuma sectores y localidades como opciones tipadas de catalogo, manteniendo por ahora el envio por nombre para no romper el contrato cliente.
+  Impacto: el formulario queda preparado para el siguiente salto a ids sin mezclar todavia ese cambio con la UX actual.
+
+- Archivo: `src/modules/empresas/components/EmpresasTable.tsx`
+  Motivo: adaptar los filtros visibles del listado de empresas a las nuevas opciones tipadas del catalogo de sectores y localidades.
+  Impacto: la tabla mantiene el mismo comportamiento funcional, pero ya consume el contrato unificado del catalogo maestro.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: alinear el contenedor de empresas con el nuevo contrato de catalogos tipados para sectores y localidades devueltos por la API comun.
+  Impacto: el modulo puede seguir mostrando y filtrando por nombre mientras internamente deja preparada la capa cliente para trabajar con ids mas adelante.
+
+- Archivo: `src/modules/empresas/types/index.ts`
+  Motivo: ampliar el contrato compartido de `Empresa` para exponer tambien `sectorId` y `localidadId`.
+  Impacto: cliente y servidor ya pueden transportar las relaciones reales de catalogo aunque todavia convivan con registros legacy sin migrar.
+
+- Archivo: `src/modules/empresas/actions/queries.ts`
+  Motivo: iniciar la tercera fase en lecturas, incluyendo `sectorRef` y `localidadRef` y derivando desde ellas `sector`, `localidad`, `sectorId` y `localidadId`.
+  Impacto: el listado y el detalle de empresas quedan alineados con el modelo relacional final de catalogos y ya no dependen de columnas legacy de texto.
+
+- Archivo: `src/modules/empresas/actions/queries.test.ts`
+  Motivo: cubrir la normalizacion de lecturas de empresas ya sobre relaciones de sector y localidad como modelo final.
+  Impacto: queda verificado que la capa de consultas responde con nombres e ids coherentes sin depender de columnas legacy.
+
+- Archivo: `src/modules/empresas/actions/queries.ts`
+  Motivo: hacer que los filtros de empresas consulten por las relaciones `sectorRef` y `localidadRef` como unica fuente operativa de catalogo.
+  Impacto: las busquedas y listados quedan alineados con el catalogo maestro final y dejan de depender de columnas legacy de texto.
+
+- Archivo: `src/modules/importexport/actions/import.ts`
+  Motivo: completar la validacion server de importacion de empresas resolviendo tambien `sector` y `localidad` contra catalogos activos de BD antes de llegar a la mutacion final.
+  Impacto: el usuario recibe incidencias por fila mas claras en import/export y se evita aceptar datos que ya no existan en el catalogo operativo.
+
+- Archivo: `src/modules/importexport/actions/import.test.ts`
+  Motivo: cubrir el bloqueo de importaciones de empresas cuando `sector` o `localidad` no existen en el catalogo activo.
+  Impacto: la importacion masiva queda protegida frente a regresiones en esta validacion ya alineada con la fuente de verdad en BD.
+
+- Archivo: `src/modules/formacion/actions/queries.ts`
+  Motivo: hacer que las lecturas comunes de formacion resuelvan `sector` y `localidad` de la empresa desde `sectorRef` y `localidadRef`.
+  Impacto: formacion consume ya la fuente relacional final de catalogos en empresas y deja de depender de columnas legacy.
+
+- Archivo: `src/modules/formacion/actions/queries.test.ts`
+  Motivo: cubrir la resolucion de `sector` y `localidad` de empresa en formacion directamente desde las relaciones de catalogo.
+  Impacto: queda verificada la lectura del modelo final sin dependencias de columnas legacy.
+
+- Archivo: `src/modules/formacion/actions/mutations.ts`
+  Motivo: alinear tambien las respuestas de alta y edicion de formacion para que `sector` y `localidad` de la empresa salgan desde `sectorRef` y `localidadRef`.
+  Impacto: formacion evita reintroducir datos legacy en respuestas inmediatas tras crear o editar registros y mantiene un unico criterio de lectura en todo el modulo.
+
+- Archivo: `src/modules/formacion/actions/mutations.test.ts`
+  Motivo: cubrir en mutaciones de formacion la resolucion de empresa desde relaciones de catalogo.
+  Impacto: las respuestas de create/update quedan protegidas frente a regresiones ya sobre el modelo final sin legacy.
+
+- Archivo: `src/modules/formacion/types/index.ts`
+  Motivo: alinear los tipos compartidos de `formacion` con la forma real de las respuestas, exponiendo tambien `sectorId`, `localidadId` y `cicloFormativoId`/`cicloFormativo` de la empresa.
+  Impacto: reducimos desajustes entre runtime y TypeScript en el modelo final ya sin columnas legacy para sector y localidad.
+
+- Archivo: `src/shared/utils/empresaCatalogos.ts`
+  Motivo: centralizar en un helper comun la normalizacion de `sector`, `localidad` y `cicloFormativo` de empresa desde sus relaciones de catalogo.
+  Impacto: el criterio de lectura compartido queda mantenido en un unico punto ya sobre el modelo final sin columnas legacy.
+
+- Archivo: `src/modules/importexport/actions/export.ts`
+  Motivo: hacer que la exportacion de empresas saque `sector` y `localidad` directamente desde las relaciones de catalogo.
+  Impacto: los excels de empresas quedan desacoplados de las columnas legacy y alineados con el modelo final.
+
+- Archivo: `src/modules/importexport/actions/export.test.ts`
+  Motivo: ajustar la cobertura de exportacion para comprobar que sector y localidad salen del modelo relacional final.
+  Impacto: la salida Excel queda protegida frente a regresiones ya sin depender de columnas legacy.
+
+- Archivo: `src/modules/empresas/types/schema.ts`
+  Motivo: retirar de la validacion compartida de empresas la dependencia runtime de `SECTORES` y `LOCALIDADES` estaticos, dejando la comprobacion de catalogo real en la capa server contra la BD.
+  Impacto: el formulario y la API dejan de validar contra semillas de codigo que ya solo deben servir para `seed` o restauraciones, y quedan alineados con la regla de que la fuente operativa de catalogos es la base de datos.
+
+- Archivo: `prisma/migrations/20260404194500_drop_legacy_empresa_sector_localidad_text_fields/migration.sql`
+  Motivo: cerrar definitivamente la transicion de catalogos de empresas con una unica migracion que completa el enlace por ids, bloquea si quedan registros sin resolver, elimina las columnas legacy de texto y hace obligatorios `sectorId` y `localidadId`.
+  Impacto: el esquema fisico y el modelo Prisma quedan alineados ya sin compatibilidades transitorias para sector y localidad.
+
+- Archivo: `README.md`
+  Motivo: se anoto inicialmente una verificacion operativa temporal tras el backfill de catalogos de empresas, pero se decide trasladarla a `TODO.md` porque no forma parte de la documentacion permanente del proyecto.
+  Impacto: el `README` vuelve a recoger solo reglas estables del repositorio, mientras que el control transitorio de auditoria queda donde corresponde hasta completar toda la migracion.
+
+- Archivo: `src/app/api/empresas/route.ts`
+  Motivo: propagar a la API de alta de empresas errores semanticos claros cuando el sector o la localidad ya no existen en el catalogo activo.
+  Impacto: el cliente recibe respuestas funcionales de validacion en vez de errores genericos si el catalogo de BD ha cambiado respecto a lo que la UI aun mostraba.
+
+- Archivo: `src/app/api/empresas/[id]/route.ts`
+  Motivo: propagar tambien en la API de edicion de empresas los nuevos errores semanticos ligados a sectores y localidades inactivos o inexistentes.
+  Impacto: las ediciones quedan alineadas con la validacion server de catalogos reales sin mezclar fallos funcionales con errores internos.
+
+- Archivo: `src/app/api/empresas/route.test.ts`
+  Motivo: anadir cobertura de la nueva respuesta `400` cuando el servidor detecta un sector fuera del catalogo activo.
+  Impacto: la ruta de alta queda protegida frente a regresiones en el nuevo manejo de errores de catalogo.
+
+- Archivo: `src/app/api/empresas/[id]/route.test.ts`
+  Motivo: anadir cobertura de la nueva respuesta `400` cuando el servidor detecta una localidad fuera del catalogo activo durante una edicion.
+  Impacto: la ruta de actualizacion mantiene trazabilidad automatizada del contrato de error introducido en esta fase.
+
+- Archivo: `src/modules/importexport/utils.ts`
+  Motivo: completar la primera fase de bajo riesgo de la transicion de catalogos, haciendo que las validaciones previas y las plantillas Excel tomen `sectores` y `localidades` desde `/api/catalogos/empresas` en lugar de seguir leyendo los arrays estaticos en codigo.
+  Impacto: import/export pasa a reflejar el catalogo activo real de BD para sectores y localidades sin tocar todavia la persistencia de empresas ni los ids de esas relaciones.
+
+- Archivo: `src/modules/importexport/utils.test.ts`
+  Motivo: ajustar el mock del endpoint de catalogos para cubrir tambien `sectores` y `localidades` servidos desde la API comun.
+  Impacto: la suite de utilidades sigue verificando la validacion previa de Excel contra el contrato actual del endpoint de catalogos.
+
+- Archivo: `src/modules/informes/components/InformesPanel.tsx`
+  Motivo: completar la misma primera fase en informes, cargando `sectores` y `localidades` desde `/api/catalogos/empresas` en lugar de reconstruirlos a partir de las empresas ya existentes.
+  Impacto: los filtros de informes muestran el catalogo activo aunque todavia no haya empresas usando alguno de sus valores, y se reduce la dependencia del dato textual persistido en `Empresa`.
+
 ## 2-4-26 Oma
 
 - Archivo: `src/modules/importexport/utils.ts`

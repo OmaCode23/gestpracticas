@@ -30,8 +30,10 @@ describe("export actions", () => {
         cif: "B12345678",
         nombre: "Empresa Demo",
         direccion: null,
-        localidad: "Alacant/Alicante",
-        sector: "Otro",
+        localidadId: 11,
+        localidadRef: { id: 11, nombre: "Alacant/Alicante" },
+        sectorId: 7,
+        sectorRef: { id: 7, nombre: "Otro" },
         cicloFormativoRef: null,
         telefono: null,
         email: null,
@@ -153,6 +155,12 @@ describe("export actions", () => {
 
     expect(prismaMock.empresa.findMany).toHaveBeenCalledWith({
       include: {
+        sectorRef: {
+          select: { id: true, nombre: true },
+        },
+        localidadRef: {
+          select: { id: true, nombre: true },
+        },
         cicloFormativoRef: {
           select: { nombre: true },
         },

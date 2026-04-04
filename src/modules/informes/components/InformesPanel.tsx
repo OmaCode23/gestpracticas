@@ -739,17 +739,20 @@ function ReportTable({
 }
 
 async function loadSupportOptions(): Promise<SupportOptions> {
-  const [ciclosResponse, settingsResponse, empresasResponse] = await Promise.all([
+  const [ciclosResponse, settingsResponse, catalogosResponse] = await Promise.all([
     fetch("/api/catalogos/ciclos-formativos", { cache: "no-store" }),
     fetch("/api/settings/academico", { cache: "no-store" }),
-    fetch("/api/empresas?all=true", { cache: "no-store" }),
+    fetch("/api/catalogos/empresas", { cache: "no-store" }),
   ]);
 
   const ciclosJson: ApiResponse<Array<{ nombre: string; activo: boolean }>> = await ciclosResponse.json();
   const settingsJson: ApiResponse<{ mesCambioCurso: number; numeroCursosVisibles: number }> =
     await settingsResponse.json();
-  const empresasJson: ApiResponse<{ items: Array<{ sector: string; localidad: string; cicloFormativo: string | null }> }> =
-    await empresasResponse.json();
+  const catalogosJson: ApiResponse<{
+    sectores: Array<{ id: number; nombre: string }>;
+    localidades: Array<{ id: number; nombre: string }>;
+    ciclosFormativos: Array<{ id: number; nombre: string }>;
+  }> = await catalogosResponse.json();
 
   const ciclos = ciclosJson.ok
     ? uniqueSorted(ciclosJson.data.filter((item) => item.activo).map((item) => item.nombre))
@@ -757,8 +760,12 @@ async function loadSupportOptions(): Promise<SupportOptions> {
   const cursos = settingsJson.ok
     ? getCursosAcademicos(settingsJson.data.numeroCursosVisibles, new Date(), settingsJson.data.mesCambioCurso)
     : getCursosAcademicos(DEFAULT_NUMERO_CURSOS_VISIBLES, new Date(), DEFAULT_MES_CAMBIO_CURSO);
-  const sectores = empresasJson.ok ? uniqueSorted(empresasJson.data.items.map((item) => item.sector)) : [];
-  const localidades = empresasJson.ok ? uniqueSorted(empresasJson.data.items.map((item) => item.localidad)) : [];
+  const sectores = catalogosJson.ok
+    ? uniqueSorted(catalogosJson.data.sectores.map((item) => item.nombre))
+    : [];
+  const localidades = catalogosJson.ok
+    ? uniqueSorted(catalogosJson.data.localidades.map((item) => item.nombre))
+    : [];
   const empresaCiclos = ciclos;
 
   return { ciclos, cursos, sectores, localidades, empresaCiclos };

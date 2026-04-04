@@ -11,7 +11,7 @@ import {
   INPUT_CLS,
 } from "@/components/ui";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
-import type { EmpresaInput } from "../types";
+import type { CatalogoOption, EmpresaInput } from "../types";
 import LocalidadCombobox from "./LocalidadCombobox";
 
 type EmpresaFormState = Omit<EmpresaInput, "cicloFormativoId"> & {
@@ -23,8 +23,8 @@ type EmpresaFormProps = {
   saving: boolean;
   editingId: number | null;
   ciclosFormativos: Array<{ id: number; nombre: string }>;
-  localidades: string[];
-  sectores: string[];
+  localidades: CatalogoOption[];
+  sectores: CatalogoOption[];
   onChange: (key: keyof EmpresaFormState, value: string) => void;
   onClear: () => void;
   onSave: () => void;
@@ -147,7 +147,9 @@ export default function EmpresaForm({
               >
                 <option value="">- Seleccionar -</option>
                 {sectores.map((s) => (
-                  <option key={s}>{s}</option>
+                  <option key={s.id} value={s.nombre}>
+                    {s.nombre}
+                  </option>
                 ))}
               </select>
             </FormGroup>

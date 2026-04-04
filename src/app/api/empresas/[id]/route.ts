@@ -110,6 +110,18 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    if (error instanceof Error && error.message === "SECTOR_INVALIDO") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El sector no existe en el catalogo activo." },
+        { status: 400 }
+      );
+    }
+    if (error instanceof Error && error.message === "LOCALIDAD_INVALIDA") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "La localidad no existe en el catalogo activo." },
+        { status: 400 }
+      );
+    }
 
     if (error?.code === "P2002") {
       return NextResponse.json<ApiResponse<never>>(

@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { INPUT_CLS } from "@/components/ui";
+import type { CatalogoOption } from "../types";
 
 type LocalidadComboboxProps = {
-  localidades: string[];
+  localidades: CatalogoOption[];
   value: string;
   onChange: (value: string) => void;
   size?: "form" | "filter";
@@ -64,7 +65,7 @@ export default function LocalidadCombobox({
     let items = localidades;
 
     if (activeLetter) {
-      items = items.filter((localidad) => getLetterLabel(localidad) === activeLetter);
+      items = items.filter((localidad) => getLetterLabel(localidad.nombre) === activeLetter);
     }
 
     if (!normalizedQuery) {
@@ -72,13 +73,13 @@ export default function LocalidadCombobox({
     }
 
     return items.filter((localidad) =>
-      normalizeText(localidad).includes(normalizedQuery)
+      normalizeText(localidad.nombre).includes(normalizedQuery)
     );
   }, [activeLetter, localidades, query]);
 
-  const handleSelect = (localidad: string) => {
-    onChange(localidad);
-    setQuery(localidad);
+  const handleSelect = (localidad: CatalogoOption) => {
+    onChange(localidad.nombre);
+    setQuery(localidad.nombre);
     setIsOpen(false);
   };
 
@@ -170,17 +171,17 @@ export default function LocalidadCombobox({
             ) : (
               filteredLocalidades.map((localidad) => (
                 <button
-                  key={localidad}
+                  key={localidad.id}
                   type="button"
                   onClick={() => handleSelect(localidad)}
                   className={[
                     optionClassName,
-                    localidad === value
+                    localidad.nombre === value
                       ? "bg-blue-50 text-blue-700"
                       : "text-navy hover:bg-surface",
                   ].join(" ")}
                 >
-                  {localidad}
+                  {localidad.nombre}
                 </button>
               ))
             )}

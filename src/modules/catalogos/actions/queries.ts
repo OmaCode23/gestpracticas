@@ -5,12 +5,12 @@ export async function getEmpresaCatalogos() {
     prisma.sector.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { nombre: true },
+      select: { id: true, nombre: true },
     }),
     prisma.localidad.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { nombre: true },
+      select: { id: true, nombre: true },
     }),
     prisma.cicloFormativo.findMany({
       where: { activo: true },
@@ -20,8 +20,14 @@ export async function getEmpresaCatalogos() {
   ]);
 
   return {
-    sectores: sectores.map((item) => item.nombre),
-    localidades: localidades.map((item) => item.nombre),
+    sectores: sectores.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+    })),
+    localidades: localidades.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+    })),
     ciclosFormativos: ciclosFormativos.map((item) => ({
       id: item.id,
       nombre: item.nombre,

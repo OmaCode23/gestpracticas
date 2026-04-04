@@ -9,8 +9,6 @@ import {
   getCursosAcademicos,
 } from "@/shared/catalogs/academico";
 import type { CardConfig, ImportErrorResponse, SheetRow } from "./types";
-import { SECTORES } from "@/shared/catalogs/empresa";
-import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
 
 type WorkbookCatalogs = {
   ciclosFormativos: string[];
@@ -187,6 +185,16 @@ async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
         (item) => item.nombre
       )
     : [];
+  const sectores = catalogosJson?.ok
+    ? (
+        (catalogosJson.data.sectores as Array<{ id: number; nombre: string }> | undefined) ?? []
+      ).map((item) => item.nombre)
+    : [];
+  const localidades = catalogosJson?.ok
+    ? (
+        (catalogosJson.data.localidades as Array<{ id: number; nombre: string }> | undefined) ?? []
+      ).map((item) => item.nombre)
+    : [];
   const cursos = settingsJson?.ok
     ? getCursosAcademicos(
         settingsJson.data.numeroCursosVisibles,
@@ -202,8 +210,8 @@ async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
   return {
     ciclosFormativos,
     cursos,
-    sectores: SECTORES,
-    localidades: LOCALIDADES,
+    sectores,
+    localidades,
   };
 }
 

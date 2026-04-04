@@ -94,6 +94,25 @@ describe("PATCH /api/empresas/[id]", () => {
     });
   });
 
+  it("devuelve 400 cuando la localidad no existe en el catalogo activo", async () => {
+    getEmpresaByIdMock.mockResolvedValue({ id: 3 });
+    updateEmpresaMock.mockRejectedValue(new Error("LOCALIDAD_INVALIDA"));
+
+    const response = await PATCH(
+      {
+        json: vi.fn().mockResolvedValue({ localidad: "Alacant/Alicante" }),
+      } as any,
+      { params: { id: "3" } }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      error: "La localidad no existe en el catalogo activo.",
+    });
+  });
+
   it("actualiza y revalida rutas", async () => {
     getEmpresaByIdMock.mockResolvedValue({ id: 3 });
     updateEmpresaMock.mockResolvedValue({ id: 3, nombre: "Empresa Actualizada" });

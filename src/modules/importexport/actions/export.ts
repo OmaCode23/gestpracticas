@@ -2,6 +2,7 @@ import { prisma } from "@/database/prisma";
 import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import { FORMACION_FIELDS } from "@/modules/formacion/fields";
+import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 
 /**
  * Obtiene las empresas de la base de datos y las transforma al formato de columnas
@@ -10,6 +11,18 @@ import { FORMACION_FIELDS } from "@/modules/formacion/fields";
 export async function getEmpresasExport() {
   const empresas = await prisma.empresa.findMany({
     include: {
+      sectorRef: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
+      localidadRef: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
       cicloFormativoRef: {
         select: {
           nombre: true,
@@ -19,18 +32,22 @@ export async function getEmpresasExport() {
     orderBy: { createdAt: "desc" },
   });
 
-  return empresas.map((empresa) => ({
-    [EMPRESA_FIELDS[0].label]: empresa.cif,
-    [EMPRESA_FIELDS[1].label]: empresa.nombre,
-    [EMPRESA_FIELDS[2].label]: empresa.direccion ?? "",
-    [EMPRESA_FIELDS[3].label]: empresa.localidad,
-    [EMPRESA_FIELDS[4].label]: empresa.sector,
-    [EMPRESA_FIELDS[5].label]: empresa.cicloFormativoRef?.nombre ?? "",
-    [EMPRESA_FIELDS[6].label]: empresa.telefono ?? "",
-    [EMPRESA_FIELDS[7].label]: empresa.email ?? "",
-    [EMPRESA_FIELDS[8].label]: empresa.contacto ?? "",
-    [EMPRESA_FIELDS[9].label]: empresa.emailContacto ?? "",
-  }));
+  return empresas.map((empresa) => {
+    const normalizedEmpresa = normalizeEmpresaCatalogos(empresa);
+
+    return {
+      [EMPRESA_FIELDS[0].label]: empresa.cif,
+      [EMPRESA_FIELDS[1].label]: empresa.nombre,
+      [EMPRESA_FIELDS[2].label]: empresa.direccion ?? "",
+      [EMPRESA_FIELDS[3].label]: normalizedEmpresa.localidad ?? "",
+      [EMPRESA_FIELDS[4].label]: normalizedEmpresa.sector ?? "",
+      [EMPRESA_FIELDS[5].label]: normalizedEmpresa.cicloFormativo ?? "",
+      [EMPRESA_FIELDS[6].label]: empresa.telefono ?? "",
+      [EMPRESA_FIELDS[7].label]: empresa.email ?? "",
+      [EMPRESA_FIELDS[8].label]: empresa.contacto ?? "",
+      [EMPRESA_FIELDS[9].label]: empresa.emailContacto ?? "",
+    };
+  });
 }
 
 export async function getAlumnosExport() {

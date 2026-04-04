@@ -8,6 +8,7 @@
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
 import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 
 const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
@@ -88,8 +89,18 @@ export async function getFormacionesPaginated(params: {
           select: {
             id: true,
             nombre: true,
-            sector: true,
-            localidad: true,
+            sectorId: true,
+            sectorRef: {
+              select: {
+                nombre: true,
+              },
+            },
+            localidadId: true,
+            localidadRef: {
+              select: {
+                nombre: true,
+              },
+            },
             cicloFormativoId: true,
             cicloFormativoRef: {
               select: {
@@ -129,10 +140,7 @@ export async function getFormacionesPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
-      empresa: {
-        ...item.empresa,
-        cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
-      },
+      empresa: normalizeEmpresaCatalogos(item.empresa),
       alumno: item.alumno
         ? {
             ...item.alumno,
@@ -159,8 +167,18 @@ export async function getFormacionById(id: number) {
         select: {
           id: true,
           nombre: true,
-          sector: true,
-          localidad: true,
+          sectorId: true,
+          sectorRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          localidadId: true,
+          localidadRef: {
+            select: {
+              nombre: true,
+            },
+          },
           cicloFormativoId: true,
           cicloFormativoRef: {
             select: {
@@ -195,10 +213,7 @@ export async function getFormacionById(id: number) {
 
   return {
     ...item,
-    empresa: {
-      ...item.empresa,
-      cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
-    },
+    empresa: normalizeEmpresaCatalogos(item.empresa),
     alumno: item.alumno
       ? {
           ...item.alumno,

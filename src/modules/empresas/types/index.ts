@@ -12,6 +12,10 @@ import { empresaSchema, empresaFilterSchema } from "./schema";
 export type EmpresaInput = z.infer<typeof empresaSchema>;
 export type EmpresaUpdateInput = Partial<EmpresaInput>;
 export type EmpresaFilters = z.infer<typeof empresaFilterSchema>;
+export type CatalogoOption = {
+  id: number;
+  nombre: string;
+};
 
 export type Empresa = {
   id: number;
@@ -19,7 +23,9 @@ export type Empresa = {
   cif: string;
   direccion: string | null;
   localidad: string;
+  localidadId: number | null;
   sector: string;
+  sectorId: number | null;
   cicloFormativo: string | null;
   cicloFormativoId: number | null;
   telefono: string | null;

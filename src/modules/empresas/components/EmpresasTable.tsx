@@ -11,7 +11,7 @@ import {
 } from "@/components/ui";
 import { SearchBox, FilterSelect } from "@/components/ui/Filters";
 import Pagination from "@/components/ui/Pagination";
-import type { Empresa } from "../types";
+import type { CatalogoOption, Empresa } from "../types";
 import LocalidadCombobox from "./LocalidadCombobox";
 
 type EmpresasTableProps = {
@@ -23,8 +23,8 @@ type EmpresasTableProps = {
   sector: string;
   localidad: string;
   search: string;
-  sectores: string[];
-  localidades: string[];
+  sectores: CatalogoOption[];
+  localidades: CatalogoOption[];
   cicloBadge: Record<string, BadgeVariant>;
   cicloLabel: Record<string, string>;
   sectorBadge: Record<string, BadgeVariant>;
@@ -67,7 +67,9 @@ export default function EmpresasTable({
           <FilterSelect value={sector} onChange={onSectorChange}>
             <option value="">Todos los sectores</option>
             {sectores.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s.id} value={s.nombre}>
+                {s.nombre}
+              </option>
             ))}
           </FilterSelect>
 

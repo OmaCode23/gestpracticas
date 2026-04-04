@@ -132,6 +132,33 @@ describe("POST /api/empresas", () => {
     });
   });
 
+  it("devuelve 400 cuando el sector no existe en el catalogo activo", async () => {
+    createEmpresaMock.mockRejectedValue(new Error("SECTOR_INVALIDO"));
+
+    const response = await POST({
+      json: vi.fn().mockResolvedValue({
+        nombre: "Empresa Demo",
+        cif: "B12345678",
+        direccion: "",
+        localidad: "Alacant/Alicante",
+        sector: "Otro",
+        cicloFormativoId: "",
+        telefono: "600000000",
+        email: "info@empresa.com",
+        contacto: "Ana Perez",
+        emailContacto: "ana@empresa.com",
+      }),
+    } as any);
+
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      error: "El sector no existe en el catalogo activo.",
+    });
+  });
+
   it("devuelve 409 cuando el CIF ya existe", async () => {
     createEmpresaMock.mockRejectedValue({
       code: "P2002",

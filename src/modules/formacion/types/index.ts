@@ -39,7 +39,11 @@ export interface Formacion {
     id: number;
     nombre: string;
     sector: string;
+    sectorId: number | null;
     localidad: string;
+    localidadId: number | null;
+    cicloFormativoId: number | null;
+    cicloFormativo: string | null;
   } | null;
 
   alumno?: {

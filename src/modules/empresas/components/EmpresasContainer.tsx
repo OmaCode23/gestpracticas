@@ -9,7 +9,12 @@ import {
   DEFAULT_RESULTADOS_POR_PAGINA,
 } from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
-import type { Empresa, PaginatedEmpresas, EmpresaInput } from "../types";
+import type {
+  CatalogoOption,
+  Empresa,
+  PaginatedEmpresas,
+  EmpresaInput,
+} from "../types";
 import EmpresaForm from "./EmpresaForm";
 import EmpresasTable from "./EmpresasTable";
 
@@ -42,8 +47,8 @@ const EMPTY_FORM: EmpresaFormState = {
 };
 
 type EmpresaCatalogos = {
-  sectores: string[];
-  localidades: string[];
+  sectores: CatalogoOption[];
+  localidades: CatalogoOption[];
   ciclosFormativos: Array<{ id: number; nombre: string }>;
 };
 

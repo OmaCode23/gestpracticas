@@ -21,6 +21,14 @@ describe("importexport utils", () => {
             ? {
                 ok: true,
                 data: {
+                  sectores: [
+                    { id: 1, nombre: "Otro" },
+                    { id: 2, nombre: "Tecnologia" },
+                  ],
+                  localidades: [
+                    { id: 3, nombre: "Alacant/Alicante" },
+                    { id: 4, nombre: "Elx/Elche" },
+                  ],
                   ciclosFormativos: [
                     { id: 1, nombre: "DAM" },
                     { id: 2, nombre: "DAW" },
