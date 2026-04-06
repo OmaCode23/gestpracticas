@@ -55,6 +55,26 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       meta?: { alumnosCount?: number; empresasCount?: number };
     };
 
+    if (updateError?.message === "CICLO_FORMATIVO_BASE_NO_EDITABLE") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No se puede editar un ciclo formativo base.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (updateError?.message === "CICLO_FORMATIVO_CODIGO_RESERVADO") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "Ese codigo esta reservado para un ciclo formativo base. Usa la restauracion de valores por defecto.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (updateError?.message === "CICLO_FORMATIVO_EN_USO") {
       const alumnosCount = updateError.meta?.alumnosCount ?? 0;
       const empresasCount = updateError.meta?.empresasCount ?? 0;
@@ -121,6 +141,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     const deleteError = error as Error & {
       meta?: { alumnosCount?: number; empresasCount?: number };
     };
+
+    if (deleteError?.message === "CICLO_FORMATIVO_BASE_NO_ELIMINABLE") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No se puede eliminar un ciclo formativo base.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (deleteError?.message === "CICLO_FORMATIVO_EN_USO") {
       const alumnosCount = deleteError.meta?.alumnosCount ?? 0;

@@ -13,6 +13,8 @@ const { prismaMock } = vi.hoisted(() => ({
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      deleteMany: vi.fn(),
+      findMany: vi.fn(),
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
@@ -27,7 +29,9 @@ vi.mock("@/database/prisma", () => ({
 describe("catalogos sector mutations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    prismaMock.$transaction.mockImplementation(async (operations: unknown[]) => operations);
+    prismaMock.$transaction.mockImplementation(async (operations: unknown[]) =>
+      Promise.all(operations)
+    );
   });
 
   it("crea un sector normalizando el nombre", async () => {
@@ -95,7 +99,25 @@ describe("catalogos sector mutations", () => {
     expect(prismaMock.sector.delete).not.toHaveBeenCalled();
   });
 
-  it("restaura los sectores base reactivando o creando los que falten", async () => {
+  it("restaura los sectores base y elimina personalizados no usados", async () => {
+    prismaMock.sector.findMany.mockResolvedValue([
+      {
+        id: 1,
+        nombre: SECTORES[0],
+        _count: { empresas: 0 },
+      },
+      {
+        id: 2,
+        nombre: "Sector propio",
+        _count: { empresas: 0 },
+      },
+      {
+        id: 3,
+        nombre: "Sector propio en uso",
+        _count: { empresas: 2 },
+      },
+    ]);
+    prismaMock.sector.deleteMany.mockResolvedValue({ count: 1 });
     prismaMock.sector.upsert.mockImplementation(({ where }: { where: { nombre: string } }) => ({
       id: where.nombre.length,
       nombre: where.nombre,
@@ -104,9 +126,17 @@ describe("catalogos sector mutations", () => {
 
     const result = await restoreSectoresBase();
 
+    expect(prismaMock.sector.deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: {
+          in: [2],
+        },
+      },
+    });
     expect(prismaMock.sector.upsert).toHaveBeenCalledTimes(SECTORES.length);
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     expect(result.total).toBe(SECTORES.length);
+    expect(result.deletedCustomCount).toBe(1);
     expect(result.items[0]).toEqual(
       expect.objectContaining({
         nombre: SECTORES[0],

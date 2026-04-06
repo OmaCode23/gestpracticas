@@ -2,6 +2,66 @@
 
 ## 4-4-26 Sbs
 
+- Archivo: `src/modules/catalogos/actions/mutations.ts`
+  Motivo: ajustar tambien la restauracion comun de `Sector` para que elimine los sectores personalizados que no esten en uso, manteniendo solo los que tengan empresas relacionadas.
+  Impacto: la reposicion de sectores base deja el catalogo mas limpio sin romper referencias existentes y sin renunciar a conservar personalizados activos en datos reales.
+
+- Archivo: `src/modules/catalogos/actions/mutations.sectores.test.ts`
+  Motivo: ampliar la cobertura de sectores para comprobar el borrado de personalizados no usados durante la restauracion base.
+  Impacto: la nueva limpieza del catalogo de sectores queda protegida frente a regresiones en la capa comun.
+
+- Archivo: `src/app/api/catalogos/sectores/restaurar/route.test.ts`
+  Motivo: alinear la prueba de la ruta de restauracion de sectores con el nuevo retorno que informa tambien de los personalizados eliminados.
+  Impacto: la capa HTTP de restauracion mantiene cobertura coherente con el comportamiento real de la mutacion comun.
+
+- Archivo: `src/modules/configuracion/components/ConfiguracionPanel.tsx`
+  Motivo: actualizar el texto de confirmacion de restaurar sectores para advertir que los personalizados no usados tambien se eliminaran.
+  Impacto: la UI informa mejor del efecto real de la accion antes de ejecutarla.
+
+- Archivo: `README.md`
+  Motivo: corregir la documentacion funcional de sectores para reflejar que la restauracion ya no conserva todos los personalizados, sino solo los que estan en uso.
+  Impacto: la regla escrita del proyecto vuelve a coincidir con el runtime de Configuracion y con la politica acordada para sectores.
+
+- Archivo: `src/modules/catalogos/actions/mutations.ts`
+  Motivo: endurecer la politica comun de `CicloFormativo`, reservando los codigos base, impidiendo editar o borrar ciclos base y haciendo que la restauracion elimine personalizados no usados y bloquee conflictos de codigos reservados en uso.
+  Impacto: se evita el problema de colision con la unicidad de `codigo` al restaurar valores base y se consolida un catalogo canonico estable para los ciclos iniciales.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/route.ts`
+  Motivo: propagar en la API de alta el nuevo error funcional cuando se intenta crear un ciclo con un codigo reservado para el catalogo base.
+  Impacto: Configuracion recibe una respuesta clara y evita introducir manualmente variantes que chocarian con la restauracion canonica.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/[id]/route.ts`
+  Motivo: anadir respuestas funcionales especificas para ciclos base no editables/no eliminables y para cambios de codigo hacia valores reservados.
+  Impacto: la API de mantenimiento de ciclos expresa ya toda la nueva politica sin mezclar estos casos con errores genericos o con la proteccion por uso.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/restaurar/route.ts`
+  Motivo: hacer visible en la API de restauracion el bloqueo funcional cuando existen ciclos personalizados en uso con codigos reservados del catalogo base.
+  Impacto: el usuario recibe un motivo accionable si la restauracion no puede completarse por un conflicto estructural de codigos.
+
+- Archivo: `src/modules/configuracion/components/ConfiguracionPanel.tsx`
+  Motivo: reflejar en la UI de Configuracion la nueva diferencia entre ciclos base y personalizados, deshabilitando edicion y borrado de los base y actualizando el texto de confirmacion de restauracion.
+  Impacto: la pantalla de Configuracion evita proponer acciones que el servidor ya no permite y explica mejor el efecto real de restaurar ciclos.
+
+- Archivo: `src/modules/catalogos/actions/mutations.ciclos.test.ts`
+  Motivo: cubrir con pruebas unitarias la nueva politica de ciclos base, los codigos reservados y la restauracion con borrado de personalizados no usados y bloqueo por conflicto.
+  Impacto: la logica comun de ciclos queda protegida frente a regresiones en los casos funcionales mas delicados de esta nueva fase.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/route.test.ts`
+  Motivo: anadir cobertura de API para el rechazo de altas con codigos reservados en ciclos.
+  Impacto: el contrato HTTP del alta de ciclos queda alineado con la nueva reserva de codigos base.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/[id]/route.test.ts`
+  Motivo: cubrir tambien a nivel de ruta las nuevas restricciones de ciclos base no editables/no eliminables y el veto a mover personalizados a codigos reservados.
+  Impacto: la capa API mantiene trazabilidad automatizada de la nueva politica especifica de ciclos.
+
+- Archivo: `src/app/api/catalogos/ciclos-formativos/restaurar/route.test.ts`
+  Motivo: verificar la nueva respuesta de restauracion cuando existe un conflicto con codigos reservados en ciclos personalizados en uso.
+  Impacto: el bloqueo funcional de la restauracion queda protegido frente a regresiones en la capa HTTP.
+
+- Archivo: `README.md`
+  Motivo: actualizar la documentacion funcional para distinguir la politica de `Sector` y la de `CicloFormativo`, incluyendo la inmutabilidad manual de los ciclos base y el nuevo comportamiento de restauracion.
+  Impacto: el equipo dispone de una regla escrita y coherente con el runtime actual, especialmente en lo relativo a codigos reservados y restauracion segura.
+
 - Archivo: `src/modules/catalogos/types/sectores.ts`
   Motivo: definir el schema comun de validacion para altas y ediciones del catalogo maestro de sectores desde Configuracion.
   Impacto: la API de sectores comparte reglas de entrada consistentes antes de tocar la BD y evita validaciones ad hoc en cada ruta.

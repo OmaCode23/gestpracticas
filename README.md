@@ -140,13 +140,16 @@ npm run db:studio
 - Catálogos estáticos: solo para `seed` inicial y restauraciones explícitas.
 - No se deben sembrar datos silenciosamente al arrancar ni durante lecturas normales de la aplicación.
 
-## Política de protección al editar o borrar un sector o un ciclo en la página de Configuración
+## Política de protección al editar un curso, ciclo, sector, etc, en la página de Configuración
 
-- La edición se impedirá para un sector/ciclo que ya está en uso (referenciado en otra tabla);
-- El borrado se impedirá para un sector/ciclo que ya está en uso (referenciado en otra tabla);
-- Al darle al botón de restaurar a valores por defecto, no hace falta impedir el borrado de los que estén siendo usados porque no se borra nada, se reactivan los desactivados de los sectores/ciclos base, y se restauran los borrados de los sectores/ciclos base, mientras que los personalizados no se tocan;
-si un sector/ciclo base ha sido editado, no se reconocerá como el mismo que el base, y quedarán tanto el personalizado (editado a partir del base) como el base;
-- Desactivar un sector/ciclo hará que no aparezca en formularios que permitan usarlos en un nuevo registro, y sin embargo seguirán siendo válidos en los registros existentes;
+Un curso, ciclo, sector, etc, en uso, es uno cuyo valor o id aparece referenciado en algún registro de la BD.<br>
+Un ciclo o sector base es uno de los que tiene la aplicación inicialmente, o tras restaurar a los valores por defecto.
+
+- La edición y el borrado se impedirá para un sector o ciclo que ya está en uso.
+- La edición y el borrado se impedirá para un ciclo base (para impedir una situación en la que puedan resultar dos ciclos con el mismo código).
+- Al darle al botón de restaurar a valores por defecto, se reactivan o recrean los sectores o ciclos base, y se eliminan los sectores o ciclos personalizados salvo los que estén en uso. Si un sector base había sido editado dando lugar a uno personalizado, y el personalizado fue usado, tras la restauración quedarán tanto el personalizado como el base (no ocurre con los ciclos).
+- Desactivar un sector o un ciclo hará que no aparezca en formularios que permitan usarlos en un nuevo registro, y sin embargo seguirán siendo válidos en los registros existentes.
+- Se impedirá cambiar la configuración de cursos ("2025-2026", ...), si la nueva configuración ocasiona que se invalide algún registro actual de la BD.
 
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
@@ -167,9 +170,9 @@ npm run start
 5. Si el cambio afecta a la estrategia de catálogos maestros, revisar que la aplicación siga leyendo desde BD y no desde catálogos estáticos.
 6. Si el cambio toca archivos comunes, documentarlo en `cambios-comunes.md`.
 
-## Codificacion de caracteres
+## Codificación de caracteres
 
-En este proyecto ya se han visto varios casos de texto roto del tipo `GestiÃ³n`, `FormaciÃ³n` o `prÃ¡cticas`.
+En archivos de este proyecto se han visto problemas frecuentes de codificación de caracteres especialmente visibles en los acentos.
 
 La causa mas probable es una mezcla de codificaciones al editar o guardar archivos:
 

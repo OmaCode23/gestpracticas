@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import {
   CICLO_BADGE,
+  CICLOS_FORMATIVOS_BASE,
   DEFAULT_MES_CAMBIO_CURSO,
   DEFAULT_NUMERO_CURSOS_VISIBLES,
   DEFAULT_RESULTADOS_POR_PAGINA,
@@ -75,6 +76,8 @@ const MONTH_OPTIONS = [
   { value: 12, label: "Diciembre" },
 ];
 
+const BASE_CICLO_CODES = new Set(CICLOS_FORMATIVOS_BASE.map((item) => item.codigo));
+
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("es-ES", {
     dateStyle: "short",
@@ -84,6 +87,10 @@ function formatDate(value: Date | string) {
 
 function isCicloInUse(ciclo: CicloFormativoItem) {
   return ciclo._count.alumnos > 0 || ciclo._count.empresas > 0;
+}
+
+function isBaseCiclo(ciclo: CicloFormativoItem) {
+  return Boolean(ciclo.codigo && BASE_CICLO_CODES.has(ciclo.codigo));
 }
 
 function isSectorInUse(sector: SectorItem) {
@@ -245,7 +252,7 @@ export default function ConfiguracionPanel({
   }
 
   function openInlineEdit(ciclo: CicloFormativoItem, field: "nombre" | "codigo") {
-    if (isCicloInUse(ciclo)) return;
+    if (isBaseCiclo(ciclo) || isCicloInUse(ciclo)) return;
 
     setEditingField({
       id: ciclo.id,
@@ -436,6 +443,11 @@ export default function ConfiguracionPanel({
   }
 
   async function handleDelete(ciclo: CicloFormativoItem) {
+    if (isBaseCiclo(ciclo)) {
+      alert("No se puede eliminar un ciclo formativo base.");
+      return;
+    }
+
     if (isCicloInUse(ciclo)) {
       alert("No se puede eliminar porque el ciclo está en uso.");
       return;
@@ -470,7 +482,7 @@ export default function ConfiguracionPanel({
 
   async function handleRestoreSectoresBase() {
     const confirmed = window.confirm(
-      "Se restauraran los sectores iniciales de la aplicacion. Se crearan los que falten y se reactivaran los iniciales inactivos. Los sectores personalizados no se borraran. ¿Continuar?"
+      "Se restauraran los sectores iniciales de la aplicacion. Se crearan los que falten, se reactivaran los iniciales inactivos y se eliminaran los sectores personalizados que no esten en uso. ¿Continuar?"
     );
 
     if (!confirmed) return;
@@ -502,7 +514,7 @@ export default function ConfiguracionPanel({
 
   async function handleRestoreBase() {
     const confirmed = window.confirm(
-      "Se restaurarán los ciclos formativos iniciales de la aplicación. Se crearán los que falten y se reactivarán los iniciales inactivos. Los ciclos personalizados no se borrarán. ¿Continuar?"
+      "Se restaurarán los ciclos formativos iniciales de la aplicación. Se crearán los que falten, se reactivarán los iniciales inactivos y se eliminarán los ciclos personalizados que no estén en uso. ¿Continuar?"
     );
 
     if (!confirmed) return;
@@ -696,15 +708,17 @@ export default function ConfiguracionPanel({
                           type="button"
                           onClick={() => openInlineEdit(ciclo, "nombre")}
                           title={
-                            isCicloInUse(ciclo)
+                            isBaseCiclo(ciclo)
+                              ? "No se puede editar un ciclo formativo base."
+                              : isCicloInUse(ciclo)
                               ? "No se puede editar porque el ciclo esta en uso."
                               : "Editar nombre"
                           }
                           aria-label="Editar nombre"
-                          disabled={isCicloInUse(ciclo)}
+                          disabled={isBaseCiclo(ciclo) || isCicloInUse(ciclo)}
                           className={[
                             "mt-1.5 inline-flex h-4 w-4 items-center justify-center rounded-md border text-[0.46rem] transition-colors",
-                            isCicloInUse(ciclo)
+                            isBaseCiclo(ciclo) || isCicloInUse(ciclo)
                               ? "cursor-not-allowed border-border bg-surface text-text-light opacity-55"
                               : "border-border bg-surface2 text-text-mid hover:bg-[#e5d7d0] hover:text-navy",
                           ].join(" ")}
@@ -759,15 +773,17 @@ export default function ConfiguracionPanel({
                           type="button"
                           onClick={() => openInlineEdit(ciclo, "codigo")}
                           title={
-                            isCicloInUse(ciclo)
+                            isBaseCiclo(ciclo)
+                              ? "No se puede editar un ciclo formativo base."
+                              : isCicloInUse(ciclo)
                               ? "No se puede editar porque el ciclo esta en uso."
                               : "Editar código"
                           }
                           aria-label="Editar código"
-                          disabled={isCicloInUse(ciclo)}
+                          disabled={isBaseCiclo(ciclo) || isCicloInUse(ciclo)}
                           className={[
                             "mt-1.5 inline-flex h-4 w-4 items-center justify-center rounded-md border text-[0.46rem] transition-colors",
-                            isCicloInUse(ciclo)
+                            isBaseCiclo(ciclo) || isCicloInUse(ciclo)
                               ? "cursor-not-allowed border-border bg-surface text-text-light opacity-55"
                               : "border-border bg-surface2 text-text-mid hover:bg-[#e5d7d0] hover:text-navy",
                           ].join(" ")}
@@ -822,7 +838,9 @@ export default function ConfiguracionPanel({
                         size="sm"
                         onClick={() => handleDelete(ciclo)}
                         title={
-                          isCicloInUse(ciclo)
+                          isBaseCiclo(ciclo)
+                            ? "No se puede eliminar un ciclo formativo base."
+                            : isCicloInUse(ciclo)
                             ? "No se puede eliminar porque el ciclo está en uso."
                             : "Eliminar ciclo"
                         }

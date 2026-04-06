@@ -23,6 +23,7 @@ describe("POST /api/catalogos/sectores/restaurar", () => {
     restoreSectoresBaseMock.mockResolvedValue({
       total: 2,
       items: [{ id: 1, nombre: "Tecnologia" }],
+      deletedCustomCount: 1,
     });
 
     const response = await POST();
@@ -34,6 +35,7 @@ describe("POST /api/catalogos/sectores/restaurar", () => {
       data: {
         total: 2,
         items: [{ id: 1, nombre: "Tecnologia" }],
+        deletedCustomCount: 1,
       },
     });
     expect(revalidatePathMock).toHaveBeenCalledWith("/configuracion");
