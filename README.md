@@ -100,6 +100,7 @@ La aplicación quedará disponible en `http://localhost:3000`.
 npm run dev        # Desarrollo
 npm run build      # Build de producción
 npm run start      # Servidor de producción
+npm run package:demo # Genera paquete demo en dist-demo/
 npm run test       # Tests con Vitest
 npm run lint       # Lint
 npm run db:generate
@@ -161,6 +162,30 @@ npm run build
 npm run start
 ```
 
+## Preparacion de paquete demo para evaluacion
+
+Para generar una carpeta separada con la aplicacion compilada para demo:
+
+```bash
+npm run build
+npm run package:demo
+```
+
+El resultado se genera en `dist-demo/`.
+
+Ese paquete:
+
+- esta pensado para ejecucion y evaluacion, no para continuar el desarrollo;
+- mantiene intacto el codigo fuente del proyecto original;
+- incluye la salida `standalone` de Next.js y los archivos minimos necesarios para arrancar la aplicacion.
+
+
+Para ejecutarlo en el equipo de destino, dentro de `dist-demo/` bastaria con ajustar `.env` y lanzar:
+
+```bash
+node server.js
+```
+
 ## Procedimiento recomendado cuando se cambie el esquema
 
 1. Editar `prisma/schema.prisma`.
@@ -199,3 +224,20 @@ Estandar recomendado para este repo:
 ```bash
 npm run test
 ```
+
+## Pruebas recomendadas a añadir
+
+Las pruebas actuales con `Vitest` son utiles para validar logica, handlers y reglas de negocio sobre el codigo fuente, pero no cubren por si solas el comportamiento de la aplicacion ya compilada ni la interfaz funcionando en el navegador.
+
+Para ir mas alla de ese nivel, se recomienda añadir pruebas end-to-end con una herramienta como `Playwright`.
+
+Objetivos de esas pruebas:
+
+- arrancar la aplicacion en ejecucion real y recorrerla como usuario
+- comprobar formularios, tablas, filtros, toasts y navegacion
+- detectar diferencias entre `npm run dev` y la aplicacion compilada tras `npm run build`
+- validar llamadas `GET`, `POST`, `PUT`, `PATCH` y `DELETE` desde la interfaz real
+- detectar errores de produccion que no aparecen al probar solo handlers o funciones aisladas
+
+
+

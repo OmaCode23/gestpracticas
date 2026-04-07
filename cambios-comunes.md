@@ -154,6 +154,23 @@
   Motivo: anadir tambien a la plantilla Excel de alumnos una lista desplegable para la columna `Curso Ciclo`, alineada con las opciones funcionales actuales permitidas en la aplicacion (`1` y `2`).
   Impacto: el usuario puede rellenar la plantilla con un selector guiado tambien en ese campo y reduce errores manuales al importar alumnos.
 
+- Archivo: `src/app/api/settings/academico/route.ts`
+  Motivo: forzar esta ruta de configuracion academica a modo dinamico en produccion tras detectar en la demo compilada un `405 Method Not Allowed` al intentar restaurar cursos academicos o resultados por pagina.
+  Impacto: la ruta deja de quedar tratada como estatica en el build y vuelve a aceptar correctamente peticiones `PUT` en la version demo / produccion.
+
+- Archivo: `src/app/api/settings/academico/route.test.ts`
+  Motivo: anadir una regresion automatizada que exige `dynamic = "force-dynamic"` y cubrir explicitamente los payloads usados por la UI al restaurar valores por defecto.
+  Impacto: se reduce el riesgo de reintroducir silenciosamente en el futuro el mismo fallo detectado solo al ejecutar la app compilada.
+
+- Archivo: `src/app/api/catalogos/empresas/route.ts`
+  Motivo: forzar tambien a modo dinamico la ruta que sirve sectores, localidades y ciclos al formulario de empresas, tras detectar en la demo que un sector personalizado creado en Configuracion no aparecia en su desplegable.
+  Impacto: los catalogos del formulario de empresas dejan de quedar congelados en el build y reflejan correctamente altas o cambios hechos en Configuracion dentro de la app compilada.
+
+- Archivo: `src/app/api/catalogos/empresas/route.test.ts`
+  Motivo: anadir cobertura automatizada para asegurar que la ruta de catalogos de empresas sigue siendo dinamica y devuelve correctamente los catalogos activos.
+  Impacto: queda protegida frente a regresiones de produccion otra ruta especialmente sensible a diferencias entre `npm run dev` y la demo compilada.
+
+
 ## 4-4-26 Sbs
 
 - Archivo: `src/modules/catalogos/actions/mutations.ts`

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GET, PUT } from "./route";
+import { GET, PUT, dynamic } from "./route";
 
 const {
   getConfiguracionAcademicaMock,
@@ -26,6 +26,10 @@ vi.mock("next/cache", () => ({
 describe("GET /api/settings/academico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("fuerza modo dinamico para evitar regresiones del build de produccion", () => {
+    expect(dynamic).toBe("force-dynamic");
   });
 
   it("devuelve la configuracion academica", async () => {
@@ -135,5 +139,69 @@ describe("PUT /api/settings/academico", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/alumnos");
     expect(revalidatePathMock).toHaveBeenCalledWith("/formacion");
     expect(revalidatePathMock).toHaveBeenCalledWith("/configuracion");
+  });
+
+  it("acepta el payload usado al restaurar cursos academicos por defecto", async () => {
+    saveConfiguracionAcademicaMock.mockResolvedValue({
+      mesCambioCurso: 9,
+      numeroCursosVisibles: 3,
+      resultadosPorPagina: 20,
+    });
+
+    const response = await PUT({
+      json: vi.fn().mockResolvedValue({
+        mesCambioCurso: 9,
+        numeroCursosVisibles: 3,
+        resultadosPorPagina: 20,
+      }),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(saveConfiguracionAcademicaMock).toHaveBeenCalledWith({
+      mesCambioCurso: 9,
+      numeroCursosVisibles: 3,
+      resultadosPorPagina: 20,
+    });
+    expect(body).toEqual({
+      ok: true,
+      data: {
+        mesCambioCurso: 9,
+        numeroCursosVisibles: 3,
+        resultadosPorPagina: 20,
+      },
+    });
+  });
+
+  it("acepta el payload usado al restaurar resultados por pagina por defecto", async () => {
+    saveConfiguracionAcademicaMock.mockResolvedValue({
+      mesCambioCurso: 8,
+      numeroCursosVisibles: 4,
+      resultadosPorPagina: 10,
+    });
+
+    const response = await PUT({
+      json: vi.fn().mockResolvedValue({
+        mesCambioCurso: 8,
+        numeroCursosVisibles: 4,
+        resultadosPorPagina: 10,
+      }),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(saveConfiguracionAcademicaMock).toHaveBeenCalledWith({
+      mesCambioCurso: 8,
+      numeroCursosVisibles: 4,
+      resultadosPorPagina: 10,
+    });
+    expect(body).toEqual({
+      ok: true,
+      data: {
+        mesCambioCurso: 8,
+        numeroCursosVisibles: 4,
+        resultadosPorPagina: 10,
+      },
+    });
   });
 });
