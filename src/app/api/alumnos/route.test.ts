@@ -91,6 +91,7 @@ describe("GET /api/alumnos", () => {
       search: "ana",
       page: 2,
       perPage: 12,
+      all: false,
     });
     expect(response.status).toBe(200);
     expect(body).toEqual({
@@ -103,6 +104,34 @@ describe("GET /api/alumnos", () => {
         totalPages: 1,
       },
     });
+  });
+
+  it("permite pedir todos los alumnos con all=true", async () => {
+    getAlumnosPaginatedMock.mockResolvedValue({
+      items: [{ id: 1, nombre: "Ana" }, { id: 2, nombre: "Luis" }],
+      total: 2,
+      page: 1,
+      perPage: 2,
+      totalPages: 1,
+    });
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams({
+          all: "true",
+        }),
+      },
+    } as any);
+
+    expect(getAlumnosPaginatedMock).toHaveBeenCalledWith({
+      ciclo: undefined,
+      curso: undefined,
+      search: undefined,
+      page: 1,
+      perPage: 10,
+      all: true,
+    });
+    expect(response.status).toBe(200);
   });
 });
 

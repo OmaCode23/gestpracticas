@@ -29,7 +29,7 @@ interface AlumnosTableProps {
   onPageChange: (p: number) => void;
   onVer: (alumno: Alumno) => void;
   onEditar: (alumno: Alumno) => void;
-  onEliminar: (id: number) => void;
+  onEliminar: (alumno: Alumno) => void;
   onDownloadAllCv: () => void;
   onDeleteAllCv: () => void;
   bulkCvBusy: "download" | "delete" | null;
@@ -213,7 +213,7 @@ export default function AlumnosTable({
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => onEliminar(a.id)}
+                            onClick={() => onEliminar(a)}
                           >
                             {"\u{1F5D1}\uFE0F"}
                           </Button>

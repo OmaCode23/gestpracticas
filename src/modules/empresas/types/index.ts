@@ -27,6 +27,7 @@ export type Empresa = {
   sector: string;
   sectorId: number | null;
   cicloFormativo: string | null;
+  cicloFormativoCodigo: string | null;
   cicloFormativoId: number | null;
   telefono: string | null;
   email: string | null;

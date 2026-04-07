@@ -183,6 +183,19 @@ export default function ConfiguracionPanel({
     setCiclosFormativos(json.data);
   }
 
+  async function reloadConfiguracionAcademica() {
+    const res = await fetch("/api/settings/academico", {
+      cache: "no-store",
+    });
+    const json: ApiResponse<ConfiguracionAcademica> = await res.json();
+
+    if (!json.ok) {
+      throw new Error(json.error);
+    }
+
+    setConfiguracionAcademica(json.data);
+  }
+
   async function handleCreateSector() {
     if (!createSectorName.trim()) {
       alert("El nombre es obligatorio.");
@@ -557,6 +570,7 @@ export default function ConfiguracionPanel({
       const json: ApiResponse<ConfiguracionAcademica> = await res.json();
 
       if (!json.ok) {
+        await reloadConfiguracionAcademica();
         alert(json.error);
         return;
       }

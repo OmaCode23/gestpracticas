@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, type BadgeVariant } from "@/components/ui";
 import {
@@ -8,6 +8,7 @@ import {
   DEFAULT_RESULTADOS_POR_PAGINA,
 } from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
+import { empresaSchema } from "../types/schema";
 import type {
   CatalogoOption,
   Empresa,
@@ -57,6 +58,8 @@ export default function EmpresasContainer({
   resultadosPorPagina?: number;
 }) {
   const router = useRouter();
+  const formWrapperRef = useRef<HTMLDivElement | null>(null);
+  const toggleButtonRef = useRef<HTMLButtonElement | null>(null);
   const [form, setForm] = useState<EmpresaFormState>(EMPTY_FORM);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [sector, setSector] = useState("");
@@ -74,9 +77,28 @@ export default function EmpresasContainer({
     localidades: [],
     ciclosFormativos: [],
   });
+  const [formSectores, setFormSectores] = useState<Array<CatalogoOption & { label?: string }>>([]);
+  const [formCiclosFormativos, setFormCiclosFormativos] = useState<
+    Array<{ id: number; nombre: string; codigo: string | null }>
+  >([]);
 
   const handleFormChange = (key: keyof EmpresaFormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const closeForm = () => {
+    if (
+      formWrapperRef.current &&
+      document.activeElement instanceof HTMLElement &&
+      formWrapperRef.current.contains(document.activeElement)
+    ) {
+      document.activeElement.blur();
+      toggleButtonRef.current?.focus();
+    }
+
+    setIsFormOpen(false);
+    setFormSectores(catalogos.sectores);
+    setFormCiclosFormativos(catalogos.ciclosFormativos);
   };
 
   async function cargarEmpresas() {
@@ -123,6 +145,8 @@ export default function EmpresasContainer({
       }
 
       setCatalogos(json.data);
+      setFormSectores(json.data.sectores);
+      setFormCiclosFormativos(json.data.ciclosFormativos);
     } catch (error) {
       console.error(error);
       alert("No se pudieron cargar los catalogos de empresas.");
@@ -138,6 +162,24 @@ export default function EmpresasContainer({
   }, []);
 
   useEffect(() => {
+    setFormSectores((current) => {
+      const currentInactive = current.filter(
+        (sectorOption) => !catalogos.sectores.some((activeSector) => activeSector.id === sectorOption.id)
+      );
+      return [...catalogos.sectores, ...currentInactive];
+    });
+  }, [catalogos.sectores]);
+
+  useEffect(() => {
+    setFormCiclosFormativos((current) => {
+      const currentInactive = current.filter(
+        (ciclo) => !catalogos.ciclosFormativos.some((activeCiclo) => activeCiclo.id === ciclo.id)
+      );
+      return [...catalogos.ciclosFormativos, ...currentInactive];
+    });
+  }, [catalogos.ciclosFormativos]);
+
+  useEffect(() => {
     if (!notification) return;
 
     const timeoutId = window.setTimeout(() => {
@@ -150,6 +192,12 @@ export default function EmpresasContainer({
   const handleGuardar = async () => {
     if (!form.nombre || !form.cif || !form.localidad || !form.sector) {
       alert("Nombre, CIF, localidad y sector son obligatorios.");
+      return;
+    }
+
+    const parsed = empresaSchema.safeParse(form);
+    if (!parsed.success) {
+      alert(parsed.error.errors[0].message);
       return;
     }
 
@@ -181,7 +229,7 @@ export default function EmpresasContainer({
 
       setForm(EMPTY_FORM);
       setEditingId(null);
-      setIsFormOpen(false);
+      closeForm();
       setPage(1);
       await cargarEmpresas();
       router.refresh();
@@ -199,6 +247,31 @@ export default function EmpresasContainer({
   };
 
   const handleEditar = (empresa: Empresa) => {
+    const sectorActualInactivo =
+      empresa.sectorId &&
+      empresa.sector &&
+      !catalogos.sectores.some((sectorOption) => sectorOption.id === empresa.sectorId)
+        ? [
+            {
+              id: empresa.sectorId,
+              nombre: empresa.sector,
+              label: `${empresa.sector} (inactivo)`,
+            },
+          ]
+        : [];
+    const cicloActualInactivo =
+      empresa.cicloFormativoId &&
+      empresa.cicloFormativo &&
+      !catalogos.ciclosFormativos.some((ciclo) => ciclo.id === empresa.cicloFormativoId)
+        ? [
+            {
+              id: empresa.cicloFormativoId,
+              nombre: `${empresa.cicloFormativo} (inactivo)`,
+              codigo: null,
+            },
+          ]
+        : [];
+
     setForm({
       nombre: empresa.nombre,
       cif: empresa.cif,
@@ -212,6 +285,8 @@ export default function EmpresasContainer({
       emailContacto: empresa.emailContacto ?? "",
     });
 
+    setFormSectores([...catalogos.sectores, ...sectorActualInactivo]);
+    setFormCiclosFormativos([...catalogos.ciclosFormativos, ...cicloActualInactivo]);
     setEditingId(empresa.id);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -244,6 +319,8 @@ export default function EmpresasContainer({
   const handleLimpiar = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setFormSectores(catalogos.sectores);
+    setFormCiclosFormativos(catalogos.ciclosFormativos);
   };
 
   return (
@@ -281,14 +358,17 @@ export default function EmpresasContainer({
 
       <div className="mb-4 flex justify-end">
         <Button
+          ref={toggleButtonRef}
           variant={isFormOpen ? "secondary" : "primary"}
           onClick={() => {
             if (isFormOpen) {
               handleLimpiar();
-              setIsFormOpen(false);
+              closeForm();
               return;
             }
 
+            setFormSectores(catalogos.sectores);
+            setFormCiclosFormativos(catalogos.ciclosFormativos);
             setIsFormOpen(true);
           }}
         >
@@ -297,21 +377,21 @@ export default function EmpresasContainer({
       </div>
 
       <div
+        ref={formWrapperRef}
         className={[
           "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
           isFormOpen
             ? "mb-7 max-h-[1200px] translate-y-0 opacity-100"
             : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
         ].join(" ")}
-        aria-hidden={!isFormOpen}
       >
         <EmpresaForm
           form={form}
           saving={saving}
           editingId={editingId}
-          ciclosFormativos={catalogos.ciclosFormativos}
+          ciclosFormativos={formCiclosFormativos}
           localidades={catalogos.localidades}
-          sectores={catalogos.sectores}
+          sectores={formSectores}
           onChange={handleFormChange}
           onClear={handleLimpiar}
           onSave={handleGuardar}

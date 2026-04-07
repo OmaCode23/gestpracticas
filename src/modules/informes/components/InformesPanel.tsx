@@ -773,7 +773,7 @@ async function loadSupportOptions(): Promise<SupportOptions> {
 
 async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
   if (reportKey === "alumnos") {
-    const response = await fetch("/api/alumnos?perPage=500", { cache: "no-store" });
+    const response = await fetch("/api/alumnos?all=true", { cache: "no-store" });
     const json: ApiResponse<{
       items: Array<{
         nombre: string;
@@ -834,7 +834,7 @@ async function fetchReportRows(reportKey: ReportKey): Promise<ReportRow[]> {
     }));
   }
 
-  const response = await fetch("/api/formacion?perPage=500", { cache: "no-store" });
+  const response = await fetch("/api/formacion?all=true", { cache: "no-store" });
   const json: ApiResponse<{
     items: Array<{
       curso: string;

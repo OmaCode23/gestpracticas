@@ -122,4 +122,5 @@ export const formacionFilterSchema = z.object({
   search: z.string().trim().optional(),
   page: z.coerce.number().int().positive().default(1),
   perPage: z.coerce.number().int().positive().max(100).default(10),
+  all: z.coerce.boolean().optional().default(false),
 });

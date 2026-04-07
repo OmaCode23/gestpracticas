@@ -36,7 +36,11 @@ describe("empresas queries", () => {
         localidadId: 11,
         localidadRef: { id: 11, nombre: "Alacant/Alicante" },
         cicloFormativoId: 4,
-        cicloFormativoRef: { id: 4, nombre: "DAM" },
+        cicloFormativoRef: {
+          id: 4,
+          nombre: "Desarrollo de Aplicaciones Multiplataforma",
+          codigo: "DAM",
+        },
       },
     ]);
     prismaMock.empresa.count.mockResolvedValue(25);
@@ -63,6 +67,7 @@ describe("empresas queries", () => {
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -83,8 +88,13 @@ describe("empresas queries", () => {
       localidadId: 11,
       localidadRef: { id: 11, nombre: "Alacant/Alicante" },
       cicloFormativoId: 4,
-      cicloFormativoRef: { id: 4, nombre: "DAM" },
-      cicloFormativo: "DAM",
+      cicloFormativoRef: {
+        id: 4,
+        nombre: "Desarrollo de Aplicaciones Multiplataforma",
+        codigo: "DAM",
+      },
+      cicloFormativo: "Desarrollo de Aplicaciones Multiplataforma",
+      cicloFormativoCodigo: "DAM",
     });
   });
 
@@ -152,6 +162,7 @@ describe("empresas queries", () => {
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -186,6 +197,7 @@ describe("empresas queries", () => {
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -221,6 +233,7 @@ describe("empresas queries", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
   });
 
@@ -250,6 +263,7 @@ describe("empresas queries", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
   });
 });

@@ -24,7 +24,7 @@ type EmpresaFormProps = {
   editingId: number | null;
   ciclosFormativos: Array<{ id: number; nombre: string }>;
   localidades: CatalogoOption[];
-  sectores: CatalogoOption[];
+  sectores: Array<CatalogoOption & { label?: string }>;
   onChange: (key: keyof EmpresaFormState, value: string) => void;
   onClear: () => void;
   onSave: () => void;
@@ -148,7 +148,7 @@ export default function EmpresaForm({
                 <option value="">- Seleccionar -</option>
                 {sectores.map((s) => (
                   <option key={s.id} value={s.nombre}>
-                    {s.nombre}
+                    {s.label ?? s.nombre}
                   </option>
                 ))}
               </select>

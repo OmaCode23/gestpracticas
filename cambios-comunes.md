@@ -1,5 +1,159 @@
 # Cambios en archivos comunes
 
+## 7-4-26 Sbs
+
+- Archivo: `src/app/icon.png`
+  Motivo: incorporar un icono estatico para App Router y eliminar el `404`/`ERR_EMPTY_RESPONSE` que estaba generando el favicon al arrancar la aplicacion en desarrollo.
+  Impacto: la app deja de emitir ese ruido evitable en consola del navegador al cargar cualquier pagina.
+
+- Archivo: `src/modules/alumnos/types/schema.ts`
+  Motivo: ampliar el schema comun de filtros de alumnos con el flag `all`.
+  Impacto: otros modulos pueden pedir el listado completo de alumnos sin forzar un `perPage` invalido.
+
+- Archivo: `src/modules/alumnos/actions/queries.ts`
+  Motivo: adaptar la consulta comun de alumnos para soportar `all=true`, omitiendo `skip/take` cuando se pide el conjunto completo.
+  Impacto: se mantiene la paginacion normal en listados y se habilitan cargas completas seguras para formularios auxiliares e informes.
+
+- Archivo: `src/app/api/alumnos/route.ts`
+  Motivo: propagar el nuevo filtro `all` en la ruta de alumnos.
+  Impacto: la capa HTTP queda alineada con la consulta comun y evita respuestas `400` al pedir todos los alumnos desde otras pantallas.
+
+- Archivo: `src/modules/formacion/components/FormacionContainer.tsx`
+  Motivo: sustituir la carga invalida `perPage=9999` por `all=true` al poblar el selector de alumnos del formulario de formacion.
+  Impacto: desaparece el error real `GET /api/alumnos?perPage=9999 400` que se veia en consola al entrar en la pagina de formacion.
+
+- Archivo: `src/modules/formacion/types/schema.ts`
+  Motivo: ampliar tambien el schema de filtros de formacion con el flag `all`.
+  Impacto: se habilita la lectura completa de formaciones desde la API sin abrir una excepcion insegura en `perPage`.
+
+- Archivo: `src/modules/formacion/actions/queries.ts`
+  Motivo: adaptar la consulta comun de formacion para omitir paginacion cuando se solicita `all=true`.
+  Impacto: informes y otros consumidores pueden pedir todas las formaciones sin provocar errores de validacion ni resultados truncados.
+
+- Archivo: `src/app/api/formacion/route.ts`
+  Motivo: hacer visible el nuevo flag `all` en la ruta de listado de formacion.
+  Impacto: la API de formacion queda consistente con la de alumnos y empresas para los casos de lectura completa.
+
+- Archivo: `src/modules/informes/components/InformesPanel.tsx`
+  Motivo: reemplazar las cargas `perPage=500` de alumnos y formacion por `all=true` en la generacion de informes.
+  Impacto: se evita un segundo foco de errores `400` silenciosos en consola y se estabiliza el modulo de informes al trabajar con datasets completos.
+
+- Archivo: `src/app/api/alumnos/route.test.ts`
+  Motivo: cubrir a nivel de API el nuevo contrato `all=true` de alumnos.
+  Impacto: la ruta de alumnos queda protegida frente a regresiones en este nuevo modo de lectura completa.
+
+- Archivo: `src/app/api/formacion/route.test.ts`
+  Motivo: anadir cobertura de API para `all=true` tambien en formacion.
+  Impacto: el endpoint de formacion queda validado en el nuevo caso de uso introducido para informes.
+
+- Archivo: `src/modules/formacion/actions/queries.test.ts`
+  Motivo: verificar en pruebas unitarias que la consulta comun de formacion omite `skip/take` cuando se pide todo el conjunto.
+  Impacto: se protege frente a regresiones la logica que evita errores de paginacion artificial al consumir formaciones completas.
+
+- Archivo: `src/app/api/alumnos/[id]/cv/route.test.ts`
+  Motivo: ajustar y consolidar la cobertura del flujo de subida de CV para asegurar que la ruta funciona tambien con mocks reales del archivo en test.
+  Impacto: el submodulo de CV queda estable y cubierto en los casos de error y exito mas sensibles.
+
+- Archivo: `src/modules/alumnos/utils/cv.test.ts`
+  Motivo: cubrir utilidades cliente del CV para formato, validacion de MIME y limite de tamano.
+  Impacto: la capa de preparacion del archivo antes del upload queda protegida frente a regresiones funcionales.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: validar el formulario de empresas en cliente antes de enviar `POST/PATCH` y corregir el cierre del panel para no ocultarlo mientras el foco sigue retenido dentro.
+  Impacto: se evita el `400` evitable al guardar datos invalidos desde la UI y desaparece el warning de accesibilidad por `aria-hidden` al navegar o cerrar el formulario.
+
+- Archivo: `src/components/ui/index.tsx`
+  Motivo: convertir el componente comun `Button` en `forwardRef` para poder devolver el foco al boton lanzador cuando se colapsan paneles interactivos.
+  Impacto: la libreria UI soporta mejor patrones accesibles de gestion de foco sin hacks locales ni selectores DOM fragiles.
+
+- Archivo: `src/modules/alumnos/components/AlumnosContainer.tsx`
+  Motivo: validar tambien en cliente el formulario de alumnos antes de lanzar `POST` o `PATCH`, alineando la UI con el mismo schema compartido que usa la API.
+  Impacto: se evita el `400` evitable al editar o crear alumnos con datos que ya eran invalidos segun servidor, y el usuario recibe el mensaje correcto antes de enviar la peticion.
+
+- Archivo: `src/modules/formacion/components/FormacionContainer.tsx`
+  Motivo: validar tambien en cliente el formulario de formacion antes de lanzar `POST` o `PATCH`, usando el mismo schema compartido que ya protege la API.
+  Impacto: se evita el `400` evitable al guardar formaciones invalidas desde la UI y el usuario recibe el mensaje de validacion correcto antes de enviar la peticion.
+
+- Archivo: `src/modules/alumnos/components/AlumnosContainer.tsx`
+  Motivo: comprobar antes de guardar o actualizar que el curso seleccionado sigue estando dentro de la configuracion academica vigente, incluso si esta se ha cambiado mientras la pantalla seguia abierta.
+  Impacto: se evita el `400` por cursos desfasados al editar alumnos tras tocar Configuracion y la UI se resincroniza con los cursos realmente vigentes.
+
+- Archivo: `src/modules/formacion/components/FormacionContainer.tsx`
+  Motivo: aplicar la misma comprobacion de cursos academicos vigentes tambien en el formulario de formacion.
+  Impacto: alumnos y formacion siguen el mismo criterio cuando Configuracion cambia en paralelo y se evita repetir el mismo error por datos de formulario desactualizados.
+
+- Archivo: `src/modules/alumnos/actions/mutations.ts`
+  Motivo: permitir en servidor la edicion de un alumno que ya tenia asignado un ciclo formativo despues desactivado, siempre que mantenga ese mismo ciclo historico.
+  Impacto: editar datos no estructurales del alumno deja de fallar con `400` cuando su ciclo se ha desactivado en Configuracion, sin abrir la puerta a reasignar ciclos inactivos a otros casos.
+
+- Archivo: `src/modules/alumnos/actions/mutations.test.ts`
+  Motivo: cubrir el caso de actualizacion que conserva el mismo ciclo ya inactivo y seguir protegiendo el rechazo cuando el ciclo enviado no es valido.
+  Impacto: la nueva excepcion funcional para historicos queda blindada frente a regresiones en la capa comun.
+
+- Archivo: `src/modules/alumnos/components/AlumnosContainer.tsx`
+  Motivo: conservar en el selector del formulario de edicion el ciclo actual del alumno aunque ya no forme parte del catalogo activo, etiquetandolo como inactivo.
+  Impacto: la UI de alumnos sigue siendo coherente con la regla de historicos validos y evita que el select se quede sin opcion visible al editar registros ligados a ciclos desactivados.
+
+- Archivo: `src/modules/empresas/actions/mutations.ts`
+  Motivo: permitir en servidor la edicion de una empresa que ya tenia asignado un ciclo formativo despues desactivado, siempre que conserve ese mismo ciclo historico.
+  Impacto: editar datos de la empresa deja de fallar con `400` cuando su ciclo se ha desactivado en Configuracion, sin aceptar nuevas asignaciones a ciclos inactivos.
+
+- Archivo: `src/modules/empresas/actions/mutations.test.ts`
+  Motivo: cubrir el caso de actualizacion que mantiene el mismo ciclo ya inactivo en empresas.
+  Impacto: la excepcion funcional para registros historicos queda protegida tambien en este modulo.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: conservar en el selector del formulario de edicion el ciclo actual de la empresa aunque ya no este activo, etiquetandolo como inactivo y limpiandolo al volver a alta nueva.
+  Impacto: la UI de empresas queda alineada con alumnos y evita selects inconsistentes al editar empresas asociadas a ciclos desactivados.
+
+- Archivo: `src/modules/empresas/actions/mutations.ts`
+  Motivo: permitir tambien en servidor la edicion de una empresa que ya tenia asignado un sector despues desactivado, siempre que conserve ese mismo sector historico.
+  Impacto: editar una empresa deja de fallar con `400` por sector inactivo cuando solo se estan cambiando otros campos, sin aceptar reasignaciones a sectores inactivos distintos.
+
+- Archivo: `src/modules/empresas/actions/mutations.test.ts`
+  Motivo: cubrir el caso de actualizacion que mantiene el mismo sector ya inactivo en empresas.
+  Impacto: el comportamiento de historicos queda protegido tambien para el catalogo de sectores.
+
+- Archivo: `src/modules/empresas/components/EmpresasContainer.tsx`
+  Motivo: conservar en el selector del formulario de edicion el sector actual de la empresa aunque ya no este activo, y restaurar el catalogo activo al volver a alta nueva.
+  Impacto: la UI de empresas trata de forma coherente tanto ciclos como sectores historicos y evita que el selector de sector quede vacio al editar registros existentes.
+
+- Archivo: `src/modules/configuracion/components/ConfiguracionPanel.tsx`
+  Motivo: resincronizar los campos de configuracion academica con los valores reales actuales cuando el guardado se bloquea porque dejaria cursos en uso fuera del rango valido.
+  Impacto: tras el alert funcional de bloqueo, los inputs de mes y numero de cursos vuelven a poblarse con la configuracion vigente y no dejan al usuario con un formulario desfasado.
+
+- Archivo: `src/shared/utils/empresaCatalogos.ts`
+  Motivo: propagar tambien el codigo del ciclo formativo al normalizar lecturas de empresas.
+  Impacto: las vistas de empresas pueden mostrar el identificador corto del ciclo incluso cuando ya no forma parte del catalogo activo.
+
+- Archivo: `src/modules/empresas/actions/queries.ts`
+  Motivo: incluir `codigo` en la relacion `cicloFormativoRef` al leer empresas.
+  Impacto: el modulo deja de reconstruir el badge del ciclo a partir del catalogo activo y puede mostrar correctamente ciclos historicos inactivos.
+
+- Archivo: `src/modules/empresas/components/EmpresasTable.tsx`
+  Motivo: usar directamente `cicloFormativoCodigo` en la columna de ciclo de la tabla.
+  Impacto: las empresas con ciclo inactivo vuelven a mostrar `DAM`/`DAW`/etc. en vez del nombre largo, igual que en alumnos.
+
+- Archivo: `src/modules/empresas/actions/queries.test.ts`
+  Motivo: ajustar la cobertura de lecturas de empresas para reflejar que ahora tambien viaja `cicloFormativoCodigo`.
+  Impacto: queda protegida la regresion que hacia depender la etiqueta corta del ciclo de que siguiera activo en el catalogo.
+
+- Archivo: `src/modules/importexport/components/ImportExportPanel.tsx`
+  Motivo: corregir la lectura de excels de importacion para detectar la fila real de cabecera aunque la hoja incluya titulos o instrucciones previas, y reconstruir las filas desde esa previsualizacion en vez de depender de cabeceras `__EMPTY` generadas por `xlsx`.
+  Impacto: la pagina de import/export vuelve a poder importar archivos de alumnos generados desde las propias plantillas del proyecto y deja de fallar falsamente con el mensaje de que no hay filas con datos.
+
+- Archivo: `src/modules/importexport/utils.ts`
+  Motivo: incorporar utilidades comunes para localizar la cabecera efectiva del Excel y transformar la matriz cruda de la hoja en filas tipadas antes del mapeo por columnas.
+  Impacto: el flujo de importacion gana tolerancia frente a filas decorativas al inicio de la hoja y se estabiliza para futuras importaciones con estructura equivalente.
+
+- Archivo: `src/modules/importexport/utils.test.ts`
+  Motivo: cubrir en pruebas el caso real de plantillas con filas previas al encabezado y verificar la reconstruccion correcta de las filas de datos.
+  Impacto: queda blindada la regresion que hacia que import/export interpretase hojas validas como si estuvieran vacias.
+
+- Archivo: `src/modules/importexport/utils.ts`
+  Motivo: anadir tambien a la plantilla Excel de alumnos una lista desplegable para la columna `Curso Ciclo`, alineada con las opciones funcionales actuales permitidas en la aplicacion (`1` y `2`).
+  Impacto: el usuario puede rellenar la plantilla con un selector guiado tambien en ese campo y reduce errores manuales al importar alumnos.
+
 ## 4-4-26 Sbs
 
 - Archivo: `src/modules/catalogos/actions/mutations.ts`

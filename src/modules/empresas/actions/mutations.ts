@@ -51,6 +51,30 @@ async function getCicloFormativoOrThrow(cicloFormativoId: number) {
   return cicloFormativo;
 }
 
+async function getCicloFormativoForUpdateOrThrow(id: number, cicloFormativoId: number) {
+  const empresaActual = await prisma.empresa.findUnique({
+    where: { id },
+    select: {
+      cicloFormativoId: true,
+    },
+  });
+
+  if (empresaActual?.cicloFormativoId === cicloFormativoId) {
+    const cicloActual = await prisma.cicloFormativo.findUnique({
+      where: { id: cicloFormativoId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (cicloActual) {
+      return cicloActual;
+    }
+  }
+
+  return getCicloFormativoOrThrow(cicloFormativoId);
+}
+
 async function getSectorOrThrow(nombre: string) {
   const sector = await prisma.sector.findFirst({
     where: {
@@ -67,6 +91,35 @@ async function getSectorOrThrow(nombre: string) {
   }
 
   return sector;
+}
+
+async function getSectorForUpdateOrThrow(id: number, nombre: string) {
+  const empresaActual = await prisma.empresa.findUnique({
+    where: { id },
+    select: {
+      sectorId: true,
+      sectorRef: {
+        select: {
+          nombre: true,
+        },
+      },
+    },
+  });
+
+  if (empresaActual?.sectorRef?.nombre === nombre && empresaActual.sectorId) {
+    const sectorActual = await prisma.sector.findUnique({
+      where: { id: empresaActual.sectorId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (sectorActual) {
+      return sectorActual;
+    }
+  }
+
+  return getSectorOrThrow(nombre);
 }
 
 async function getLocalidadOrThrow(nombre: string) {
@@ -188,13 +241,13 @@ export async function createEmpresasBatch(data: EmpresaInput[]) {
 export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
   const [sector, localidad, cicloFormativo] = await Promise.all([
     data.sector !== undefined
-      ? getSectorOrThrow(data.sector.trim())
+      ? getSectorForUpdateOrThrow(id, data.sector.trim())
       : Promise.resolve(undefined),
     data.localidad !== undefined
       ? getLocalidadOrThrow(data.localidad.trim())
       : Promise.resolve(undefined),
     typeof data.cicloFormativoId === "number"
-      ? getCicloFormativoOrThrow(data.cicloFormativoId)
+      ? getCicloFormativoForUpdateOrThrow(id, data.cicloFormativoId)
       : data.cicloFormativoId === null
         ? Promise.resolve(null)
         : Promise.resolve(undefined),

@@ -88,9 +88,39 @@ describe("GET /api/formacion", () => {
       search: "ana",
       page: 2,
       perPage: 15,
+      all: false,
     });
     expect(response.status).toBe(200);
     expect(body.data.items).toEqual([{ id: 1, curso: "2025-2026" }]);
+  });
+
+  it("permite pedir todas las formaciones con all=true", async () => {
+    getFormacionesPaginatedMock.mockResolvedValue({
+      items: [{ id: 1 }, { id: 2 }],
+      total: 2,
+      page: 1,
+      perPage: 2,
+      totalPages: 1,
+    });
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams({
+          all: "true",
+        }),
+      },
+    } as any);
+
+    expect(getFormacionesPaginatedMock).toHaveBeenCalledWith({
+      curso: undefined,
+      ciclo: undefined,
+      cursoCiclo: undefined,
+      search: undefined,
+      page: 1,
+      perPage: 10,
+      all: true,
+    });
+    expect(response.status).toBe(200);
   });
 });
 

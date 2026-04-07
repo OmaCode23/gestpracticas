@@ -60,16 +60,20 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: BtnSize;
 }
 
-export function Button({ variant = "primary", size = "md", className = "", children, ...props }: ButtonProps) {
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { variant = "primary", size = "md", className = "", children, ...props },
+  ref
+) {
   return (
     <button
+      ref={ref}
       className={`inline-flex items-center gap-1.5 rounded-lg border-0 font-sans font-semibold cursor-pointer transition-all duration-150 ${BTN_VARIANT[variant]} ${BTN_SIZE[size]} ${className}`}
       {...props}
     >
       {children}
     </button>
   );
-}
+});
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`glass-panel rounded-[20px] border border-white/70 bg-white/84 shadow-card ${className}`}>{children}</div>;

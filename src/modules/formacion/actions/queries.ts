@@ -19,9 +19,11 @@ export async function getFormacionesPaginated(params: {
   search?: string;
   page?: number;
   perPage?: number;
+  all?: boolean;
 }) {
   const page = Math.max(1, params.page ?? 1);
   const perPage = params.perPage ?? PER_PAGE;
+  const all = params.all ?? false;
 
   const where: Prisma.FormacionEmpresaWhereInput = {
     AND: [
@@ -130,8 +132,12 @@ export async function getFormacionesPaginated(params: {
         },
       },
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
+      ...(all
+        ? {}
+        : {
+            skip: (page - 1) * perPage,
+            take: perPage,
+          }),
     }),
 
     prisma.formacionEmpresa.count({ where }),
@@ -153,8 +159,8 @@ export async function getFormacionesPaginated(params: {
     })),
     total,
     page,
-    perPage,
-    totalPages: Math.ceil(total / perPage),
+    perPage: all ? total : perPage,
+    totalPages: all ? 1 : Math.ceil(total / perPage),
   };
 }
 

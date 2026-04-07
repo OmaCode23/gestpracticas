@@ -9,6 +9,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     sector: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       findMany: vi.fn(),
     },
     localidad: {
@@ -17,9 +18,11 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     cicloFormativo: {
       findFirst: vi.fn(),
+      findUnique: vi.fn(),
       findMany: vi.fn(),
     },
     empresa: {
+      findUnique: vi.fn(),
       create: vi.fn(),
       createMany: vi.fn(),
       update: vi.fn(),
@@ -89,6 +92,10 @@ describe("empresas mutations", () => {
   });
 
   it("actualiza ids de catalogo solo cuando llegan los campos correspondientes", async () => {
+    prismaMock.empresa.findUnique.mockResolvedValue({
+      sectorId: 5,
+      sectorRef: { nombre: "Otro" },
+    });
     prismaMock.sector.findFirst.mockResolvedValue({ id: 8 });
     prismaMock.localidad.findFirst.mockResolvedValue({ id: 12 });
     prismaMock.empresa.update.mockResolvedValue({ id: 3, nombre: "Empresa Demo" });
@@ -103,6 +110,61 @@ describe("empresas mutations", () => {
       data: {
         localidadId: 12,
         sectorId: 8,
+      },
+    });
+  });
+
+  it("permite actualizar manteniendo el mismo sector aunque ya este inactivo", async () => {
+    prismaMock.empresa.findUnique.mockResolvedValue({
+      sectorId: 7,
+      sectorRef: { nombre: "Otro" },
+    });
+    prismaMock.sector.findUnique.mockResolvedValue({ id: 7 });
+    prismaMock.empresa.update.mockResolvedValue({ id: 3, nombre: "Empresa Demo" });
+
+    await updateEmpresa(3, {
+      sector: "Otro",
+      nombre: "Empresa Demo",
+    });
+
+    expect(prismaMock.sector.findUnique).toHaveBeenCalledWith({
+      where: { id: 7 },
+      select: {
+        id: true,
+      },
+    });
+    expect(prismaMock.sector.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.empresa.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: {
+        nombre: "Empresa Demo",
+        sectorId: 7,
+      },
+    });
+  });
+
+  it("permite actualizar manteniendo el mismo ciclo aunque ya este inactivo", async () => {
+    prismaMock.empresa.findUnique.mockResolvedValue({ cicloFormativoId: 4 });
+    prismaMock.cicloFormativo.findUnique.mockResolvedValue({ id: 4 });
+    prismaMock.empresa.update.mockResolvedValue({ id: 3, nombre: "Empresa Demo" });
+
+    await updateEmpresa(3, {
+      cicloFormativoId: 4,
+      nombre: "Empresa Demo",
+    });
+
+    expect(prismaMock.cicloFormativo.findUnique).toHaveBeenCalledWith({
+      where: { id: 4 },
+      select: {
+        id: true,
+      },
+    });
+    expect(prismaMock.cicloFormativo.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.empresa.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: {
+        nombre: "Empresa Demo",
+        cicloFormativoId: 4,
       },
     });
   });

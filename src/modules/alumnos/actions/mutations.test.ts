@@ -15,8 +15,10 @@ const { deleteAlumnoCvLoMock, prismaMock, txMock } = vi.hoisted(() => {
     prismaMock: {
       cicloFormativo: {
         findFirst: vi.fn(),
+        findUnique: vi.fn(),
       },
       alumno: {
+        findUnique: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
       },
@@ -74,6 +76,7 @@ describe("alumnos mutations", () => {
 
   it("rechaza crear o actualizar si el ciclo formativo no existe o esta inactivo", async () => {
     prismaMock.cicloFormativo.findFirst.mockResolvedValue(null);
+    prismaMock.alumno.findUnique.mockResolvedValue({ cicloFormativoId: 1 });
 
     await expect(
       createAlumno({
@@ -96,7 +99,35 @@ describe("alumnos mutations", () => {
     ).rejects.toThrow("CICLO_FORMATIVO_INVALIDO");
   });
 
+  it("permite actualizar manteniendo el ciclo actual aunque ya este inactivo", async () => {
+    prismaMock.alumno.findUnique.mockResolvedValue({ cicloFormativoId: 8 });
+    prismaMock.cicloFormativo.findUnique.mockResolvedValue({ id: 8, nombre: "DAW" });
+    prismaMock.alumno.update.mockResolvedValue({ id: 2 });
+
+    await updateAlumno(2, {
+      nombre: "  Luis  ",
+      cicloFormativoId: 8,
+    });
+
+    expect(prismaMock.cicloFormativo.findUnique).toHaveBeenCalledWith({
+      where: { id: 8 },
+      select: {
+        id: true,
+        nombre: true,
+      },
+    });
+    expect(prismaMock.cicloFormativo.findFirst).not.toHaveBeenCalled();
+    expect(prismaMock.alumno.update).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: {
+        nombre: "Luis",
+        cicloFormativoId: 8,
+      },
+    });
+  });
+
   it("actualiza solo los campos enviados y mantiene la normalizacion", async () => {
+    prismaMock.alumno.findUnique.mockResolvedValue({ cicloFormativoId: 4 });
     prismaMock.cicloFormativo.findFirst.mockResolvedValue({ id: 8, nombre: "DAW" });
     prismaMock.alumno.update.mockResolvedValue({ id: 2 });
 

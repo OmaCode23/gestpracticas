@@ -54,6 +54,7 @@ describe("formacion queries", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
   });
 
@@ -88,6 +89,21 @@ describe("formacion queries", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
+  });
+
+  it("omite paginacion cuando se solicita all=true", async () => {
+    prismaMock.formacionEmpresa.findMany.mockResolvedValue([]);
+    prismaMock.formacionEmpresa.count.mockResolvedValue(2);
+
+    await getFormacionesPaginated({ all: true, page: 3, perPage: 50 });
+
+    expect(prismaMock.formacionEmpresa.findMany).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        skip: expect.anything(),
+        take: expect.anything(),
+      })
+    );
   });
 });

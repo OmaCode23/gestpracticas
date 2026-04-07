@@ -82,6 +82,7 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
           select: {
             id: true,
             nombre: true,
+            codigo: true,
           },
         },
       },
@@ -125,6 +126,7 @@ export async function getEmpresaById(id: number) {
         select: {
           id: true,
           nombre: true,
+          codigo: true,
         },
       },
     },

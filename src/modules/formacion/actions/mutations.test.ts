@@ -58,6 +58,7 @@ describe("formacion mutations", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
   });
 
@@ -94,6 +95,7 @@ describe("formacion mutations", () => {
       cicloFormativoId: null,
       cicloFormativoRef: null,
       cicloFormativo: null,
+      cicloFormativoCodigo: null,
     });
   });
 });

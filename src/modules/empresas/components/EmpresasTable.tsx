@@ -62,7 +62,7 @@ export default function EmpresasTable({
       <SectionLabel>Directorio de empresas</SectionLabel>
       <Card>
         <TableFilters>
-          <span className="text-[0.78rem] text-text-light font-medium">Filtrar por:</span>
+          <span className="text-[0.78rem] font-medium text-text-light">Filtrar por:</span>
 
           <FilterSelect value={sector} onChange={onSectorChange}>
             <option value="">Todos los sectores</option>
@@ -73,7 +73,7 @@ export default function EmpresasTable({
             ))}
           </FilterSelect>
 
-          <div className="min-w-[280px] flex-1 max-w-[360px]">
+          <div className="min-w-[280px] max-w-[360px] flex-1">
             <LocalidadCombobox
               localidades={localidades}
               size="filter"
@@ -100,29 +100,26 @@ export default function EmpresasTable({
                 <th>Sector</th>
                 <th>Ciclo</th>
                 <th>Contacto</th>
-                <th>Teléfono</th>
+                <th>Telefono</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {!loading && empresas.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
+                  <td colSpan={8} className="py-6 text-center text-text-light">
                     No se encontraron empresas.
                   </td>
                 </tr>
               ) : loading ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-6 text-text-light">
+                  <td colSpan={8} className="py-6 text-center text-text-light">
                     Cargando empresas...
                   </td>
                 </tr>
               ) : (
                 empresas.map((e) => {
-                  const cicloCode =
-                    ciclosFormativos.find((ciclo) => ciclo.nombre === e.cicloFormativo)?.codigo ??
-                    e.cicloFormativo ??
-                    "—";
+                  const cicloCode = e.cicloFormativoCodigo ?? e.cicloFormativo ?? "-";
 
                   return (
                     <tr key={e.id}>
@@ -134,24 +131,20 @@ export default function EmpresasTable({
                       <td className="text-text-mid">{e.cif}</td>
                       <td>{e.localidad}</td>
                       <td>
-                        <Badge variant={sectorBadge[e.sector] ?? "gray"}>
-                          {e.sector}
-                        </Badge>
+                        <Badge variant={sectorBadge[e.sector] ?? "gray"}>{e.sector}</Badge>
                       </td>
                       <td>
-                        <Badge variant={cicloBadge[cicloCode] ?? "gray"}>
-                          {cicloCode}
-                        </Badge>
+                        <Badge variant={cicloBadge[cicloCode] ?? "gray"}>{cicloCode}</Badge>
                       </td>
-                      <td>{e.contacto ?? "—"}</td>
-                      <td>{e.telefono ?? "—"}</td>
+                      <td>{e.contacto ?? "-"}</td>
+                      <td>{e.telefono ?? "-"}</td>
                       <td>
                         <TdActions>
                           <Button variant="secondary" size="sm" onClick={() => onEdit(e)}>
-                            ✏️
+                            {"\u270F\uFE0F"}
                           </Button>
                           <Button variant="danger" size="sm" onClick={() => onDelete(e.id)}>
-                            🗑️
+                            {"\u{1F5D1}\uFE0F"}
                           </Button>
                         </TdActions>
                       </td>

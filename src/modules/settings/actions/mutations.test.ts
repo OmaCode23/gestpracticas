@@ -86,7 +86,7 @@ describe("settings mutations", () => {
       })
     ).rejects.toMatchObject({
       message:
-        "No se puede guardar la configuración académica porque estos cursos dejarían de ser válidos: 2021-2022, 2022-2023.",
+        "No se puede guardar la configuración académica porque estos cursos en uso dejarían de ser válidos: 2021-2022, 2022-2023.",
       code: "CURSOS_CONFIG_INVALIDA",
       cursosInvalidos: ["2021-2022", "2022-2023"],
     });

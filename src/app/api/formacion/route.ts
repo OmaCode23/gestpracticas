@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
       search: searchParams.get("search") || undefined,
       page: searchParams.get("page") || 1,
       perPage: searchParams.get("perPage") || defaultPerPage,
+      all: searchParams.get("all") || undefined,
     });
 
     if (!parsedFilters.success) {

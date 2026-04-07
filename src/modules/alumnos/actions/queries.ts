@@ -17,9 +17,11 @@ export async function getAlumnosPaginated(params: {
   search?: string;
   page?: number;
   perPage?: number;
+  all?: boolean;
 }) {
   const page = Math.max(1, params.page ?? 1);
   const perPage = params.perPage ?? PER_PAGE;
+  const all = params.all ?? false;
 
   const where: Prisma.AlumnoWhereInput = {
     ...(params.ciclo
@@ -53,8 +55,12 @@ export async function getAlumnosPaginated(params: {
         },
       },
       orderBy: { nombre: "asc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
+      ...(all
+        ? {}
+        : {
+            skip: (page - 1) * perPage,
+            take: perPage,
+          }),
     }),
     prisma.alumno.count({ where }),
   ]);
@@ -69,8 +75,8 @@ export async function getAlumnosPaginated(params: {
     })),
     total,
     page,
-    perPage,
-    totalPages: Math.ceil(total / perPage),
+    perPage: all ? total : perPage,
+    totalPages: all ? 1 : Math.ceil(total / perPage),
   };
 }
 
