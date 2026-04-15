@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 import { saveConfiguracionAcademica } from "@/modules/settings/actions/mutations";
+import { CACHE_TAGS } from "@/shared/cache";
 import { configuracionAcademicaSchema } from "@/modules/settings/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -38,6 +39,7 @@ export async function PUT(req: NextRequest) {
 
     const configuracion = await saveConfiguracionAcademica(parsed.data);
 
+    revalidateTag(CACHE_TAGS.settings);
     revalidatePath("/");
     revalidatePath("/alumnos");
     revalidatePath("/formacion");

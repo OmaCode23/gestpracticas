@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const { getCiclosFormativosMock, createCicloFormativoMock, revalidatePathMock } = vi.hoisted(
+const { getCiclosFormativosMock, createCicloFormativoMock, revalidatePathMock, revalidateTagMock } = vi.hoisted(
   () => ({
     getCiclosFormativosMock: vi.fn(),
     createCicloFormativoMock: vi.fn(),
     revalidatePathMock: vi.fn(),
+    revalidateTagMock: vi.fn(),
   })
 );
 
@@ -19,6 +20,7 @@ vi.mock("@/modules/catalogos/actions/mutations", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 describe("GET /api/catalogos/ciclos-formativos", () => {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import institutoLogo from "@/app/images/logo_instituto.webp";
 
 const NAV_LINKS = [
@@ -17,6 +17,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <nav className="sticky top-0 z-50 flex flex-wrap items-center gap-3 border-b border-white/10 bg-navy px-4 py-4 shadow-[0_18px_50px_rgba(61,24,34,0.22)] backdrop-blur md:px-6 xl:flex-nowrap xl:px-10">
@@ -50,7 +51,9 @@ export default function Navbar() {
             <Link
               key={href}
               href={href}
-              prefetch={href === "/" ? false : undefined}
+              prefetch
+              onMouseEnter={() => router.prefetch(href)}
+              onFocus={() => router.prefetch(href)}
               className={[
                 "rounded-full px-3.5 py-2 text-sm font-medium no-underline transition-all duration-150",
                 isActive

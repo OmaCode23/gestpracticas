@@ -1,6 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/database/prisma";
+import { CACHE_TAGS } from "@/shared/cache";
 
-export async function getEmpresaCatalogos() {
+async function getEmpresaCatalogosUncached() {
   const [sectores, localidades, ciclosFormativos] = await Promise.all([
     prisma.sector.findMany({
       where: { activo: true },
@@ -36,7 +38,11 @@ export async function getEmpresaCatalogos() {
   };
 }
 
-export async function getSectores() {
+const getEmpresaCatalogosCached = unstable_cache(getEmpresaCatalogosUncached, ["empresa-catalogos"], {
+  tags: [CACHE_TAGS.catalogos],
+});
+
+async function getSectoresUncached() {
   return prisma.sector.findMany({
     orderBy: { nombre: "asc" },
     select: {
@@ -54,7 +60,11 @@ export async function getSectores() {
   });
 }
 
-export async function getCiclosFormativos() {
+const getSectoresCached = unstable_cache(getSectoresUncached, ["sectores"], {
+  tags: [CACHE_TAGS.catalogos],
+});
+
+async function getCiclosFormativosUncached() {
   return prisma.cicloFormativo.findMany({
     orderBy: { nombre: "asc" },
     select: {
@@ -74,7 +84,11 @@ export async function getCiclosFormativos() {
   });
 }
 
-export async function getCiclosFormativosActivos() {
+const getCiclosFormativosCached = unstable_cache(getCiclosFormativosUncached, ["ciclos-formativos"], {
+  tags: [CACHE_TAGS.catalogos],
+});
+
+async function getCiclosFormativosActivosUncached() {
   const ciclos = await prisma.cicloFormativo.findMany({
     where: { activo: true },
     orderBy: { nombre: "asc" },
@@ -84,7 +98,15 @@ export async function getCiclosFormativosActivos() {
   return ciclos.map((item) => item.nombre);
 }
 
-export async function getCiclosFormativosActivosOptions() {
+const getCiclosFormativosActivosCached = unstable_cache(
+  getCiclosFormativosActivosUncached,
+  ["ciclos-formativos-activos"],
+  {
+    tags: [CACHE_TAGS.catalogos],
+  }
+);
+
+async function getCiclosFormativosActivosOptionsUncached() {
   return prisma.cicloFormativo.findMany({
     where: { activo: true },
     orderBy: { nombre: "asc" },
@@ -94,4 +116,32 @@ export async function getCiclosFormativosActivosOptions() {
       codigo: true,
     },
   });
+}
+
+const getCiclosFormativosActivosOptionsCached = unstable_cache(
+  getCiclosFormativosActivosOptionsUncached,
+  ["ciclos-formativos-activos-options"],
+  {
+    tags: [CACHE_TAGS.catalogos],
+  }
+);
+
+export async function getEmpresaCatalogos() {
+  return getEmpresaCatalogosCached();
+}
+
+export async function getSectores() {
+  return getSectoresCached();
+}
+
+export async function getCiclosFormativos() {
+  return getCiclosFormativosCached();
+}
+
+export async function getCiclosFormativosActivos() {
+  return getCiclosFormativosActivosCached();
+}
+
+export async function getCiclosFormativosActivosOptions() {
+  return getCiclosFormativosActivosOptionsCached();
 }

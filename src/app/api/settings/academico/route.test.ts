@@ -5,10 +5,12 @@ const {
   getConfiguracionAcademicaMock,
   saveConfiguracionAcademicaMock,
   revalidatePathMock,
+  revalidateTagMock,
 } = vi.hoisted(() => ({
   getConfiguracionAcademicaMock: vi.fn(),
   saveConfiguracionAcademicaMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
@@ -21,6 +23,7 @@ vi.mock("@/modules/settings/actions/mutations", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 describe("GET /api/settings/academico", () => {

@@ -58,6 +58,7 @@ export default function FormacionContainer({
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [selectedFormacion, setSelectedFormacion] = useState<Formacion | null>(null);
   const [notification, setNotification] = useState("");
+  const [loadingPickerData, setLoadingPickerData] = useState(false);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -84,30 +85,35 @@ export default function FormacionContainer({
 
   const cicloOptions = ciclosFormativos;
 
-  // Cargar empresas y alumnos (para selects)
-  async function cargarEmpresas() {
-    const res = await fetch("/api/empresas?all=true", { cache: "no-store" });
-    const json = await res.json();
-    if (json.ok) {
-      setEmpresas(
-        json.data.items.map((e: any) => ({ id: e.id, nombre: e.nombre }))
-      );
-    }
-  }
+  // Los datos del formulario se cargan bajo demanda para aligerar la entrada al modulo.
+  async function cargarDatosFormulario() {
+    try {
+      setLoadingPickerData(true);
 
-  async function cargarAlumnos() {
-    const res = await fetch("/api/alumnos?all=true", { cache: "no-store" });
-    const json = await res.json();
-    if (json.ok) {
-      setAlumnos(
-        json.data.items.map((a: any) => ({
-          id: a.id,
-          nombre: a.nombre,
-          nia: a.nia,
-          nif: a.nif ?? null,
-          nuss: a.nuss ?? null,
-        }))
-      );
+      const [empresasResponse, alumnosResponse] = await Promise.all([
+        fetch("/api/empresas?all=true&fields=picker", { cache: "no-store" }),
+        fetch("/api/alumnos?all=true&fields=picker", { cache: "no-store" }),
+      ]);
+      const [empresasJson, alumnosJson] = await Promise.all([
+        empresasResponse.json(),
+        alumnosResponse.json(),
+      ]);
+
+      if (!empresasJson.ok) {
+        throw new Error(empresasJson.error ?? "No se pudieron cargar las empresas.");
+      }
+
+      if (!alumnosJson.ok) {
+        throw new Error(alumnosJson.error ?? "No se pudieron cargar los alumnos.");
+      }
+
+      setEmpresas(empresasJson.data.items);
+      setAlumnos(alumnosJson.data.items);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron cargar los selectores del formulario.");
+    } finally {
+      setLoadingPickerData(false);
     }
   }
 
@@ -148,9 +154,10 @@ export default function FormacionContainer({
   }
 
   useEffect(() => {
-    cargarEmpresas();
-    cargarAlumnos();
-  }, []);
+    if (!isFormExpanded) return;
+    if (empresas.length > 0 && alumnos.length > 0) return;
+    void cargarDatosFormulario();
+  }, [isFormExpanded, empresas.length, alumnos.length]);
 
   // Filtros inmediatos (selectores y paginación)
   useEffect(() => {
@@ -357,7 +364,7 @@ export default function FormacionContainer({
         {isFormExpanded ? (
           <FormacionForm
             form={form}
-            saving={saving}
+            saving={saving || loadingPickerData}
             editingId={editingId}
             empresas={empresas}
             alumnos={alumnos}

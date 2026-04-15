@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { deleteCicloFormativo, updateCicloFormativo } from "@/modules/catalogos/actions/mutations";
 import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
 import { cicloFormativoUpdateSchema } from "@/modules/catalogos/types/ciclos";
+import { CACHE_TAGS } from "@/shared/cache";
 import type { ApiResponse } from "@/shared/types/api";
 
 function parseId(idParam: string) {
@@ -44,6 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const ciclo = await updateCicloFormativo(id, parsed.data);
+    revalidateTag(CACHE_TAGS.catalogos);
     revalidatePath("/configuracion");
 
     return NextResponse.json<ApiResponse<typeof ciclo>>({
@@ -131,6 +133,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     }
 
     await deleteCicloFormativo(id);
+    revalidateTag(CACHE_TAGS.catalogos);
     revalidatePath("/configuracion");
 
     return NextResponse.json<ApiResponse<null>>({

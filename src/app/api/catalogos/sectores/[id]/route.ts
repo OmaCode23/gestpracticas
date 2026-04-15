@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { deleteSector, updateSector } from "@/modules/catalogos/actions/mutations";
 import { getSectores } from "@/modules/catalogos/actions/queries";
 import { sectorUpdateSchema } from "@/modules/catalogos/types/sectores";
+import { CACHE_TAGS } from "@/shared/cache";
 import type { ApiResponse } from "@/shared/types/api";
 
 function parseId(idParam: string) {
@@ -44,6 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     const sector = await updateSector(id, parsed.data);
+    revalidateTag(CACHE_TAGS.catalogos);
     revalidatePath("/configuracion");
 
     return NextResponse.json<ApiResponse<typeof sector>>({
@@ -101,6 +103,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
     }
 
     await deleteSector(id);
+    revalidateTag(CACHE_TAGS.catalogos);
     revalidatePath("/configuracion");
 
     return NextResponse.json<ApiResponse<null>>({

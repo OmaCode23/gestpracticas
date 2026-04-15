@@ -42,28 +42,26 @@ export async function getAlumnosPaginated(params: {
       : {}),
   };
 
-  const [items, total] = await Promise.all([
-    prisma.alumno.findMany({
-      where,
-      include: {
-        cicloFormativoRef: {
-          select: {
-            id: true,
-            nombre: true,
-            codigo: true,
-          },
+  const items = await prisma.alumno.findMany({
+    where,
+    include: {
+      cicloFormativoRef: {
+        select: {
+          id: true,
+          nombre: true,
+          codigo: true,
         },
       },
-      orderBy: { nombre: "asc" },
-      ...(all
-        ? {}
-        : {
-            skip: (page - 1) * perPage,
-            take: perPage,
-          }),
-    }),
-    prisma.alumno.count({ where }),
-  ]);
+    },
+    orderBy: { nombre: "asc" },
+    ...(all
+      ? {}
+      : {
+          skip: (page - 1) * perPage,
+          take: perPage,
+        }),
+  });
+  const total = all ? items.length : await prisma.alumno.count({ where });
 
   return {
     items: items.map((item) => ({
@@ -78,6 +76,19 @@ export async function getAlumnosPaginated(params: {
     perPage: all ? total : perPage,
     totalPages: all ? 1 : Math.ceil(total / perPage),
   };
+}
+
+export async function getAlumnosPickerOptions() {
+  return prisma.alumno.findMany({
+    select: {
+      id: true,
+      nombre: true,
+      nia: true,
+      nif: true,
+      nuss: true,
+    },
+    orderBy: { nombre: "asc" },
+  });
 }
 
 export async function getAlumnoById(id: number) {

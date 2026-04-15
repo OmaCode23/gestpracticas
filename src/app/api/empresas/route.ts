@@ -9,7 +9,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getEmpresas } from "@/modules/empresas/actions/queries";
+import {
+  getEmpresas,
+  getEmpresasPickerOptions,
+} from "@/modules/empresas/actions/queries";
 import { createEmpresa } from "@/modules/empresas/actions/mutations";
 import { empresaFilterSchema, empresaSchema } from "@/modules/empresas/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
@@ -17,6 +20,31 @@ import type { ApiResponse } from "@/shared/types/api";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const all = searchParams.get("all") === "true";
+    const fields = searchParams.get("fields");
+
+    if (all && fields === "picker") {
+      const items = await getEmpresasPickerOptions();
+
+      return NextResponse.json<
+        ApiResponse<{
+          items: typeof items;
+          total: number;
+          page: number;
+          perPage: number;
+          totalPages: number;
+        }>
+      >({
+        ok: true,
+        data: {
+          items,
+          total: items.length,
+          page: 1,
+          perPage: items.length,
+          totalPages: items.length > 0 ? 1 : 0,
+        },
+      });
+    }
 
     const parsedFilters = empresaFilterSchema.safeParse({
       sector: searchParams.get("sector") || undefined,

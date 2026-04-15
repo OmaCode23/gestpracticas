@@ -1,6 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { getCursosAcademicos } from "@/shared/catalogs/academico";
+import { CACHE_TAGS } from "@/shared/cache";
 import { SETTING_DEFAULTS, SETTING_KEYS } from "../constants";
 
 function parsePositiveInteger(
@@ -39,27 +41,37 @@ export async function getSettingsMap(claves: string[]) {
   }
 }
 
-export async function getConfiguracionAcademica() {
-  const settings = await getSettingsMap([
-    SETTING_KEYS.academicoMesCambioCurso,
-    SETTING_KEYS.academicoNumeroCursosVisibles,
-    SETTING_KEYS.listadosResultadosPorPagina,
-  ]);
+const getConfiguracionAcademicaCached = unstable_cache(
+  async () => {
+    const settings = await getSettingsMap([
+      SETTING_KEYS.academicoMesCambioCurso,
+      SETTING_KEYS.academicoNumeroCursosVisibles,
+      SETTING_KEYS.listadosResultadosPorPagina,
+    ]);
 
-  return {
-    mesCambioCurso: parsePositiveInteger(
-      settings.get(SETTING_KEYS.academicoMesCambioCurso),
-      SETTING_DEFAULTS.academicoMesCambioCurso
-    ),
-    numeroCursosVisibles: parsePositiveInteger(
-      settings.get(SETTING_KEYS.academicoNumeroCursosVisibles),
-      SETTING_DEFAULTS.academicoNumeroCursosVisibles
-    ),
-    resultadosPorPagina: parsePositiveInteger(
-      settings.get(SETTING_KEYS.listadosResultadosPorPagina),
-      SETTING_DEFAULTS.listadosResultadosPorPagina
-    ),
-  };
+    return {
+      mesCambioCurso: parsePositiveInteger(
+        settings.get(SETTING_KEYS.academicoMesCambioCurso),
+        SETTING_DEFAULTS.academicoMesCambioCurso
+      ),
+      numeroCursosVisibles: parsePositiveInteger(
+        settings.get(SETTING_KEYS.academicoNumeroCursosVisibles),
+        SETTING_DEFAULTS.academicoNumeroCursosVisibles
+      ),
+      resultadosPorPagina: parsePositiveInteger(
+        settings.get(SETTING_KEYS.listadosResultadosPorPagina),
+        SETTING_DEFAULTS.listadosResultadosPorPagina
+      ),
+    };
+  },
+  ["configuracion-academica"],
+  {
+    tags: [CACHE_TAGS.settings],
+  }
+);
+
+export async function getConfiguracionAcademica() {
+  return getConfiguracionAcademicaCached();
 }
 
 export async function getCursosAcademicosConfigurados(date = new Date()) {

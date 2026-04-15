@@ -7,7 +7,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-import { getAlumnosPaginated } from "@/modules/alumnos/actions/queries";
+import {
+  getAlumnosPaginated,
+  getAlumnosPickerOptions,
+} from "@/modules/alumnos/actions/queries";
 import { createAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoCrudSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
 import {
@@ -20,7 +23,32 @@ import type { ApiResponse } from "@/shared/types/api";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const defaultPerPage = await getResultadosPorPaginaConfigurados();
+    const all = searchParams.get("all") === "true";
+    const fields = searchParams.get("fields");
+    const defaultPerPage = all ? undefined : await getResultadosPorPaginaConfigurados();
+
+    if (all && fields === "picker") {
+      const items = await getAlumnosPickerOptions();
+
+      return NextResponse.json<
+        ApiResponse<{
+          items: typeof items;
+          total: number;
+          page: number;
+          perPage: number;
+          totalPages: number;
+        }>
+      >({
+        ok: true,
+        data: {
+          items,
+          total: items.length,
+          page: 1,
+          perPage: items.length,
+          totalPages: items.length > 0 ? 1 : 0,
+        },
+      });
+    }
 
     const parsedFilters = alumnoFilterSchema.safeParse({
       ciclo: searchParams.get("ciclo") || undefined,

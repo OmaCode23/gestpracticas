@@ -83,65 +83,62 @@ export async function getFormacionesPaginated(params: {
     ],
   };
 
-  const [items, total] = await Promise.all([
-    prisma.formacionEmpresa.findMany({
-      where,
-      include: {
-        empresa: {
-          select: {
-            id: true,
-            nombre: true,
-            sectorId: true,
-            sectorRef: {
-              select: {
-                nombre: true,
-              },
-            },
-            localidadId: true,
-            localidadRef: {
-              select: {
-                nombre: true,
-              },
-            },
-            cicloFormativoId: true,
-            cicloFormativoRef: {
-              select: {
-                nombre: true,
-              },
+  const items = await prisma.formacionEmpresa.findMany({
+    where,
+    include: {
+      empresa: {
+        select: {
+          id: true,
+          nombre: true,
+          sectorId: true,
+          sectorRef: {
+            select: {
+              nombre: true,
             },
           },
-        },
-        alumno: {
-          select: {
-            id: true,
-            nombre: true,
-            nia: true,
-            nif: true,
-            nuss: true,
-            cicloFormativoId: true,
-            cursoCiclo: true,
-            curso: true,
-            cicloFormativoRef: {
-              select: {
-                id: true,
-                nombre: true,
-                codigo: true,
-              },
+          localidadId: true,
+          localidadRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          cicloFormativoId: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
             },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
-      ...(all
-        ? {}
-        : {
-            skip: (page - 1) * perPage,
-            take: perPage,
-          }),
-    }),
-
-    prisma.formacionEmpresa.count({ where }),
-  ]);
+      alumno: {
+        select: {
+          id: true,
+          nombre: true,
+          nia: true,
+          nif: true,
+          nuss: true,
+          cicloFormativoId: true,
+          cursoCiclo: true,
+          curso: true,
+          cicloFormativoRef: {
+            select: {
+              id: true,
+              nombre: true,
+              codigo: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    ...(all
+      ? {}
+      : {
+          skip: (page - 1) * perPage,
+          take: perPage,
+        }),
+  });
+  const total = all ? items.length : await prisma.formacionEmpresa.count({ where });
 
   return {
     items: items.map((item) => ({

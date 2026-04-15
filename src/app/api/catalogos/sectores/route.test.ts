@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const { getSectoresMock, createSectorMock, revalidatePathMock } = vi.hoisted(() => ({
+const { getSectoresMock, createSectorMock, revalidatePathMock, revalidateTagMock } = vi.hoisted(() => ({
   getSectoresMock: vi.fn(),
   createSectorMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
 }));
 
 vi.mock("@/modules/catalogos/actions/queries", () => ({
@@ -17,6 +18,7 @@ vi.mock("@/modules/catalogos/actions/mutations", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 describe("GET /api/catalogos/sectores", () => {

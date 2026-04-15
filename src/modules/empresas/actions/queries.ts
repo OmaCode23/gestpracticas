@@ -13,9 +13,9 @@ import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 import type { EmpresaFilters, PaginatedEmpresas } from "../types";
 
 export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmpresas> {
-  const defaultPerPage = await getResultadosPorPaginaConfigurados();
   const page = Math.max(1, filters.page ?? 1);
-  const perPage = filters.all ? undefined : filters.limit ?? defaultPerPage;
+  const perPage =
+    filters.all ? undefined : filters.limit ?? (await getResultadosPorPaginaConfigurados());
   const andClauses = [
     ...(filters.sector
       ? [
@@ -62,40 +62,38 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
   ];
   const where = andClauses.length > 0 ? { AND: andClauses } : {};
 
-  const [items, total] = await Promise.all([
-    prisma.empresa.findMany({
-      where,
-      include: {
-        sectorRef: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
-        localidadRef: {
-          select: {
-            id: true,
-            nombre: true,
-          },
-        },
-        cicloFormativoRef: {
-          select: {
-            id: true,
-            nombre: true,
-            codigo: true,
-          },
+  const items = await prisma.empresa.findMany({
+    where,
+    include: {
+      sectorRef: {
+        select: {
+          id: true,
+          nombre: true,
         },
       },
-      orderBy: { createdAt: "desc" },
-      ...(perPage
-        ? {
-            skip: (page - 1) * perPage,
-            take: perPage,
-          }
-        : {}),
-    }),
-    prisma.empresa.count({ where }),
-  ]);
+      localidadRef: {
+        select: {
+          id: true,
+          nombre: true,
+        },
+      },
+      cicloFormativoRef: {
+        select: {
+          id: true,
+          nombre: true,
+          codigo: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    ...(perPage
+      ? {
+          skip: (page - 1) * perPage,
+          take: perPage,
+        }
+      : {}),
+  });
+  const total = perPage ? await prisma.empresa.count({ where }) : items.length;
 
   return {
     items: items.map(normalizeEmpresaCatalogos),
@@ -105,6 +103,16 @@ export async function getEmpresas(filters: EmpresaFilters): Promise<PaginatedEmp
     totalPages: perPage ? Math.ceil(total / perPage) : (total > 0 ? 1 : 0),
   };
 };
+
+export async function getEmpresasPickerOptions() {
+  return prisma.empresa.findMany({
+    select: {
+      id: true,
+      nombre: true,
+    },
+    orderBy: { nombre: "asc" },
+  });
+}
 
 export async function getEmpresaById(id: number) {
   const empresa = await prisma.empresa.findUnique({

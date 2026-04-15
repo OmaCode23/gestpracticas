@@ -26,7 +26,8 @@ import type { ApiResponse } from "@/shared/types/api";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const defaultPerPage = await getResultadosPorPaginaConfigurados();
+    const all = searchParams.get("all") === "true";
+    const defaultPerPage = all ? undefined : await getResultadosPorPaginaConfigurados();
 
     const parsedFilters = formacionFilterSchema.safeParse({
       curso: searchParams.get("curso") || undefined,
