@@ -8,7 +8,12 @@ import AlumnosTable from "./AlumnosTable";
 import type { Alumno } from "@/modules/alumnos/types";
 import SuccessToast from "@/components/ui/SuccessToast";
 import { prepareAlumnoCvFile } from "@/modules/alumnos/utils/cv";
-import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import {
+  DEFAULT_RESULTADOS_POR_PAGINA,
+  getCursosAcademicos,
+} from "@/shared/catalogs/academico";
+import type { ApiResponse } from "@/shared/types/api";
+import { alumnoCrudSchema } from "@/modules/alumnos/types/schema";
 
 const EMPTY = {
   nombre: "",
@@ -48,6 +53,7 @@ export default function AlumnosContainer({
   const [form, setForm] = useState(EMPTY);
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [total, setTotal] = useState(0);
+  const [formCiclos, setFormCiclos] = useState(ciclosFormativos);
 
   const [ciclo, setCiclo] = useState("");
   const [curso, setCurso] = useState("");
@@ -80,6 +86,7 @@ export default function AlumnosContainer({
   const openNewForm = () => {
     setEditingId(null);
     setForm(EMPTY);
+    setFormCiclos(ciclosFormativos);
     setCvState(EMPTY_CV);
     setIsFormExpanded(true);
     requestAnimationFrame(scrollToForm);
@@ -88,9 +95,19 @@ export default function AlumnosContainer({
   const collapseForm = () => {
     setEditingId(null);
     setForm(EMPTY);
+    setFormCiclos(ciclosFormativos);
     setCvState(EMPTY_CV);
     setIsFormExpanded(false);
   };
+
+  useEffect(() => {
+    setFormCiclos((current) => {
+      const currentInactive = current.filter(
+        (ciclo) => !ciclosFormativos.some((activeCiclo) => activeCiclo.id === ciclo.id)
+      );
+      return [...ciclosFormativos, ...currentInactive];
+    });
+  }, [ciclosFormativos]);
 
   const handleCvSelect = async (file: File | null) => {
     if (!file) return;
@@ -214,6 +231,27 @@ export default function AlumnosContainer({
     await load({ pageOverride: 1 });
   };
 
+  const getCursosAcademicosActuales = async () => {
+    const response = await fetch("/api/settings/academico", {
+      cache: "no-store",
+    });
+    const json: ApiResponse<{
+      mesCambioCurso: number;
+      numeroCursosVisibles: number;
+      resultadosPorPagina: number;
+    }> = await response.json();
+
+    if (!json.ok) {
+      throw new Error(json.error);
+    }
+
+    return getCursosAcademicos(
+      json.data.numeroCursosVisibles,
+      new Date(),
+      json.data.mesCambioCurso
+    );
+  };
+
   // Guardar
   const handleGuardar = async () => {
     if (
@@ -228,6 +266,21 @@ export default function AlumnosContainer({
       return alert(
         "Rellena todos los campos obligatorios: nombre, NIA, teléfono, correo, ciclo, curso ciclo y curso."
       );
+    }
+
+    const parsed = alumnoCrudSchema.safeParse(form);
+    if (!parsed.success) {
+      alert(parsed.error.errors[0].message);
+      return;
+    }
+
+    const cursosActuales = await getCursosAcademicosActuales();
+    if (!cursosActuales.includes(form.curso)) {
+      alert(
+        "El curso seleccionado ya no es valido con la configuracion academica actual. Se recargara la pagina."
+      );
+      router.refresh();
+      return;
     }
 
     try {
@@ -278,6 +331,21 @@ export default function AlumnosContainer({
   const handleActualizar = async () => {
     if (!editingId) return;
 
+    const parsed = alumnoCrudSchema.safeParse(form);
+    if (!parsed.success) {
+      alert(parsed.error.errors[0].message);
+      return;
+    }
+
+    const cursosActuales = await getCursosAcademicosActuales();
+    if (!cursosActuales.includes(form.curso)) {
+      alert(
+        "El curso seleccionado ya no es valido con la configuracion academica actual. Se recargara la pagina."
+      );
+      router.refresh();
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -326,11 +394,12 @@ export default function AlumnosContainer({
   };
 
   // Eliminar
-  const handleEliminar = async (id: number) => {
-    if (!confirm("¿Eliminar este alumno?")) return;
+  const handleEliminar = async (alumno: Alumno) => {
+    const confirmationMessage = `¿Eliminar al alumno ${alumno.nombre} (NIA: ${alumno.nia})?`;
+    if (!confirm(confirmationMessage)) return;
 
     try {
-      const res = await fetch(`/api/alumnos/${id}`, {
+      const res = await fetch(`/api/alumnos/${alumno.id}`, {
         method: "DELETE",
       });
 
@@ -353,8 +422,22 @@ export default function AlumnosContainer({
 
   // Editar
   const handleEditar = (alumno: Alumno) => {
+    const cicloActualInactivo =
+      alumno.cicloFormativoId &&
+      alumno.cicloFormativoNombre &&
+      !ciclosFormativos.some((ciclo) => ciclo.id === alumno.cicloFormativoId)
+        ? [
+            {
+              id: alumno.cicloFormativoId,
+              nombre: `${alumno.cicloFormativoNombre} (inactivo)`,
+              codigo: alumno.cicloFormativoCodigo,
+            },
+          ]
+        : [];
+
     setEditingId(alumno.id);
     setIsFormExpanded(true);
+    setFormCiclos([...ciclosFormativos, ...cicloActualInactivo]);
     setForm({
       nombre: alumno.nombre,
       nia: alumno.nia,
@@ -497,7 +580,7 @@ export default function AlumnosContainer({
         {isFormExpanded ? (
           <AlumnoForm
             form={form}
-            ciclos={ciclosFormativos}
+            ciclos={formCiclos}
             cursos={cursos}
             onChange={setFormField}
             onGuardar={handleGuardar}
@@ -538,8 +621,14 @@ export default function AlumnosContainer({
       </div>
 
       {selectedAlumno ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4">
-          <div className="w-full max-w-4xl rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4"
+          onClick={() => setSelectedAlumno(null)}
+        >
+          <div
+            className="w-full max-w-4xl rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border px-6 py-5">
               <div>
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">

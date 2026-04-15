@@ -100,6 +100,7 @@ La aplicación quedará disponible en `http://localhost:3000`.
 npm run dev        # Desarrollo
 npm run build      # Build de producción
 npm run start      # Servidor de producción
+npm run package:demo # Genera paquete demo en dist-demo/
 npm run test       # Tests con Vitest
 npm run lint       # Lint
 npm run db:generate
@@ -140,6 +141,17 @@ npm run db:studio
 - Catálogos estáticos: solo para `seed` inicial y restauraciones explícitas.
 - No se deben sembrar datos silenciosamente al arrancar ni durante lecturas normales de la aplicación.
 
+## Política de protección al editar un curso, ciclo, sector, etc, en la página de Configuración
+
+Un curso, ciclo, sector, etc, en uso, es uno cuyo valor o id aparece referenciado en algún registro de la BD.<br>
+Un ciclo o sector base es uno de los que tiene la aplicación inicialmente, o tras restaurar a los valores por defecto.
+
+- La edición y el borrado se impedirá para un sector o ciclo que ya está en uso.
+- La edición y el borrado se impedirá para un ciclo base (para impedir una situación en la que puedan resultar dos ciclos con el mismo código).
+- Al darle al botón de restaurar a valores por defecto, se reactivan o recrean los sectores o ciclos base, y se eliminan los sectores o ciclos personalizados salvo los que estén en uso. Si un sector base había sido editado dando lugar a uno personalizado, y el personalizado fue usado, tras la restauración quedarán tanto el personalizado como el base (no ocurre con los ciclos).
+- Desactivar un sector o un ciclo hará que no aparezca en formularios que permitan usarlos en un nuevo registro, y sin embargo seguirán siendo válidos en los registros existentes.
+- Se impedirá cambiar la configuración de cursos ("2025-2026", ...), si la nueva configuración ocasiona que se invalide algún registro actual de la BD.
+
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
 ```bash
@@ -148,6 +160,30 @@ npm run db:migrate
 npm run db:seed
 npm run build
 npm run start
+```
+
+## Preparacion de paquete demo para evaluacion
+
+Para generar una carpeta separada con la aplicacion compilada para demo:
+
+```bash
+npm run build
+npm run package:demo
+```
+
+El resultado se genera en `dist-demo/`.
+
+Ese paquete:
+
+- esta pensado para ejecucion y evaluacion, no para continuar el desarrollo;
+- mantiene intacto el codigo fuente del proyecto original;
+- incluye la salida `standalone` de Next.js y los archivos minimos necesarios para arrancar la aplicacion.
+
+
+Para ejecutarlo en el equipo de destino, dentro de `dist-demo/` bastaria con ajustar `.env` y lanzar:
+
+```bash
+node server.js
 ```
 
 ## Procedimiento recomendado cuando se cambie el esquema
@@ -159,9 +195,9 @@ npm run start
 5. Si el cambio afecta a la estrategia de catálogos maestros, revisar que la aplicación siga leyendo desde BD y no desde catálogos estáticos.
 6. Si el cambio toca archivos comunes, documentarlo en `cambios-comunes.md`.
 
-## Codificacion de caracteres
+## Codificación de caracteres
 
-En este proyecto ya se han visto varios casos de texto roto del tipo `GestiÃ³n`, `FormaciÃ³n` o `prÃ¡cticas`.
+En archivos de este proyecto se han visto problemas frecuentes de codificación de caracteres especialmente visibles en los acentos.
 
 La causa mas probable es una mezcla de codificaciones al editar o guardar archivos:
 
@@ -188,3 +224,20 @@ Estandar recomendado para este repo:
 ```bash
 npm run test
 ```
+
+## Pruebas recomendadas a añadir
+
+Las pruebas actuales con `Vitest` son utiles para validar logica, handlers y reglas de negocio sobre el codigo fuente, pero no cubren por si solas el comportamiento de la aplicacion ya compilada ni la interfaz funcionando en el navegador.
+
+Para ir mas alla de ese nivel, se recomienda añadir pruebas end-to-end con una herramienta como `Playwright`.
+
+Objetivos de esas pruebas:
+
+- arrancar la aplicacion en ejecucion real y recorrerla como usuario
+- comprobar formularios, tablas, filtros, toasts y navegacion
+- detectar diferencias entre `npm run dev` y la aplicacion compilada tras `npm run build`
+- validar llamadas `GET`, `POST`, `PUT`, `PATCH` y `DELETE` desde la interfaz real
+- detectar errores de produccion que no aparecen al probar solo handlers o funciones aisladas
+
+
+

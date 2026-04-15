@@ -5,7 +5,7 @@ import { getCursosAcademicos } from "@/shared/catalogs/academico";
 
 function buildInvalidCursosError(cursosInvalidos: string[]) {
   const error = new Error(
-    `No se puede guardar la configuración académica porque estos cursos dejarían de ser válidos: ${cursosInvalidos.join(", ")}.`
+    `No se puede guardar la configuración académica porque estos cursos en uso dejarían de ser válidos: ${cursosInvalidos.join(", ")}.`
   );
   (error as Error & { code?: string; cursosInvalidos?: string[] }).code =
     "CURSOS_CONFIG_INVALIDA";

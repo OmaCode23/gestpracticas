@@ -5,28 +5,53 @@ export async function getEmpresaCatalogos() {
     prisma.sector.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { nombre: true },
+      select: { id: true, nombre: true },
     }),
     prisma.localidad.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { nombre: true },
+      select: { id: true, nombre: true },
     }),
     prisma.cicloFormativo.findMany({
       where: { activo: true },
       orderBy: { nombre: "asc" },
-      select: { id: true, nombre: true },
+      select: { id: true, nombre: true, codigo: true },
     }),
   ]);
 
   return {
-    sectores: sectores.map((item) => item.nombre),
-    localidades: localidades.map((item) => item.nombre),
-    ciclosFormativos: ciclosFormativos.map((item) => ({
+    sectores: sectores.map((item) => ({
       id: item.id,
       nombre: item.nombre,
     })),
+    localidades: localidades.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+    })),
+    ciclosFormativos: ciclosFormativos.map((item) => ({
+      id: item.id,
+      nombre: item.nombre,
+      codigo: item.codigo,
+    })),
   };
+}
+
+export async function getSectores() {
+  return prisma.sector.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      activo: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          empresas: true,
+        },
+      },
+    },
+  });
 }
 
 export async function getCiclosFormativos() {

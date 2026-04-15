@@ -42,6 +42,16 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (error?.message === "CICLO_FORMATIVO_CODIGO_RESERVADO") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "Ese codigo esta reservado para un ciclo formativo base. Usa la restauracion de valores por defecto.",
+        },
+        { status: 400 }
+      );
+    }
+
     if (error?.code === "P2002") {
       const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
       const message = target.includes("codigo")

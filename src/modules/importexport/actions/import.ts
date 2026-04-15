@@ -101,6 +101,30 @@ async function getCiclosFormativosActivosByName() {
   return new Map(ciclos.map((ciclo) => [normalizeKey(ciclo.nombre), ciclo]));
 }
 
+async function getSectoresActivosByName() {
+  const sectores = await prisma.sector.findMany({
+    where: { activo: true },
+    select: {
+      id: true,
+      nombre: true,
+    },
+  });
+
+  return new Map(sectores.map((sector) => [normalizeKey(sector.nombre), sector]));
+}
+
+async function getLocalidadesActivasByName() {
+  const localidades = await prisma.localidad.findMany({
+    where: { activo: true },
+    select: {
+      id: true,
+      nombre: true,
+    },
+  });
+
+  return new Map(localidades.map((localidad) => [normalizeKey(localidad.nombre), localidad]));
+}
+
 function buildDuplicateErrors(rows: Array<{ cif: string }>) {
   const seen = new Map<string, number>();
   const errors: string[] = [];
@@ -189,14 +213,36 @@ export async function importEmpresas(rows: EmpresaImportRow[]): Promise<ImportRe
 
   errors.push(...buildDuplicateErrors(normalizedRows));
 
-  const ciclosByName = await getCiclosFormativosActivosByName();
+  const [ciclosByName, sectoresByName, localidadesByName] = await Promise.all([
+    getCiclosFormativosActivosByName(),
+    getSectoresActivosByName(),
+    getLocalidadesActivasByName(),
+  ]);
 
   normalizedRows.forEach((row, index) => {
     const excelRow = index + 2;
+    const sectorNombre = row.sector?.trim() ?? "";
+    const localidadNombre = row.localidad?.trim() ?? "";
     const cicloFormativoNombre = row.cicloFormativo?.trim() ?? "";
+    const sector = sectorNombre ? sectoresByName.get(normalizeKey(sectorNombre)) : null;
+    const localidad = localidadNombre
+      ? localidadesByName.get(normalizeKey(localidadNombre))
+      : null;
     const cicloFormativo = cicloFormativoNombre
       ? ciclosByName.get(normalizeKey(cicloFormativoNombre))
       : null;
+
+    if (sectorNombre && !sector) {
+      errors.push(
+        `Fila ${excelRow}: el sector "${sectorNombre}" no existe en el catalogo activo.`
+      );
+    }
+
+    if (localidadNombre && !localidad) {
+      errors.push(
+        `Fila ${excelRow}: la localidad "${localidadNombre}" no existe en el catalogo activo.`
+      );
+    }
 
     if (cicloFormativoNombre && !cicloFormativo) {
       errors.push(

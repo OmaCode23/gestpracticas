@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui";
 import SuccessToast from "@/components/ui/SuccessToast";
 import type { Formacion, FormacionInput } from "../types";
+import { formacionCrudSchema } from "../types/schema";
 import FormacionForm from "./FormacionForm";
 import FormacionTable from "./FormacionTable";
-import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import {
+  DEFAULT_RESULTADOS_POR_PAGINA,
+  getCursosAcademicos,
+} from "@/shared/catalogs/academico";
+import type { ApiResponse } from "@/shared/types/api";
 
 const EMPTY_FORM: FormacionInput = {
   empresaId: 0,
@@ -91,7 +96,7 @@ export default function FormacionContainer({
   }
 
   async function cargarAlumnos() {
-    const res = await fetch("/api/alumnos?perPage=9999", { cache: "no-store" });
+    const res = await fetch("/api/alumnos?all=true", { cache: "no-store" });
     const json = await res.json();
     if (json.ok) {
       setAlumnos(
@@ -168,10 +173,46 @@ export default function FormacionContainer({
     await load({ pageOverride: 1 });
   };
 
+  const getCursosAcademicosActuales = async () => {
+    const response = await fetch("/api/settings/academico", {
+      cache: "no-store",
+    });
+    const json: ApiResponse<{
+      mesCambioCurso: number;
+      numeroCursosVisibles: number;
+      resultadosPorPagina: number;
+    }> = await response.json();
+
+    if (!json.ok) {
+      throw new Error(json.error);
+    }
+
+    return getCursosAcademicos(
+      json.data.numeroCursosVisibles,
+      new Date(),
+      json.data.mesCambioCurso
+    );
+  };
+
   // Guardar / Actualizar
   const handleGuardar = async () => {
     if (!form.empresaId || !form.alumnoId || !form.curso || !form.periodo) {
       alert("Rellena todos los campos obligatorios.");
+      return;
+    }
+
+    const parsed = formacionCrudSchema.safeParse(form);
+    if (!parsed.success) {
+      alert(parsed.error.errors[0].message);
+      return;
+    }
+
+    const cursosActuales = await getCursosAcademicosActuales();
+    if (!cursosActuales.includes(form.curso)) {
+      alert(
+        "El curso seleccionado ya no es valido con la configuracion academica actual. Se recargara la pagina."
+      );
+      router.refresh();
       return;
     }
 
@@ -233,11 +274,14 @@ export default function FormacionContainer({
   };
 
   // Eliminar
-  const handleEliminar = async (id: number) => {
-    if (!confirm("¿Eliminar esta formación?")) return;
+  const handleEliminar = async (formacion: Formacion) => {
+    const alumnoNombre = formacion.alumno?.nombre ?? "este alumno";
+    const empresaNombre = formacion.empresa?.nombre ?? "esta empresa";
+    const confirmationMessage = `¿Eliminar la formación del alumno ${alumnoNombre} en la empresa ${empresaNombre}?`;
+    if (!confirm(confirmationMessage)) return;
 
     try {
-      const res = await fetch(`/api/formacion/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/formacion/${formacion.id}`, { method: "DELETE" });
       const json = await res.json();
 
       if (!json.ok) {
@@ -348,8 +392,14 @@ export default function FormacionContainer({
       </div>
 
       {selectedFormacion ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4">
-          <div className="max-h-[85vh] w-full max-w-6xl overflow-y-auto rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#2b1c20]/45 p-4"
+          onClick={() => setSelectedFormacion(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-6xl overflow-y-auto rounded-[24px] border border-white/70 bg-white shadow-[0_28px_90px_rgba(43,28,32,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-border px-6 py-5">
               <div>
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">

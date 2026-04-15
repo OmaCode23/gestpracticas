@@ -5,6 +5,8 @@ import { saveConfiguracionAcademica } from "@/modules/settings/actions/mutations
 import { configuracionAcademicaSchema } from "@/modules/settings/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const configuracion = await getConfiguracionAcademica();

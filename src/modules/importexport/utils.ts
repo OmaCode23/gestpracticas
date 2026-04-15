@@ -9,15 +9,16 @@ import {
   getCursosAcademicos,
 } from "@/shared/catalogs/academico";
 import type { CardConfig, ImportErrorResponse, SheetRow } from "./types";
-import { SECTORES } from "@/shared/catalogs/empresa";
-import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
 
 type WorkbookCatalogs = {
   ciclosFormativos: string[];
   cursos: string[];
+  cursosCiclo: string[];
   sectores: string[];
   localidades: string[];
 };
+
+const CURSO_CICLO_TEMPLATE_OPTIONS = ["1", "2"];
 
 function getRowValue(row: SheetRow, column: string) {
   if (column in row) {
@@ -173,6 +174,59 @@ export function getMissingHeaders(headers: string[], config: CardConfig) {
   );
 }
 
+/**
+ * Localiza la fila que realmente contiene la cabecera de datos, tolerando
+ * filas de titulo o instrucciones antes de las columnas del Excel.
+ */
+export function findHeaderRowIndex(previewRows: Array<Array<string | number>>, config: CardConfig) {
+  const requiredHeaders = new Set(
+    config.requiredColumns.map((column) => normalizeHeader(column))
+  );
+
+  let bestMatchIndex = 0;
+  let bestMatchCount = -1;
+
+  previewRows.forEach((row, index) => {
+    const normalizedRow = new Set(
+      row
+        .map((cell) => normalizeHeader(String(cell ?? "").trim()))
+        .filter(Boolean)
+    );
+
+    const matches = [...requiredHeaders].filter((header) => normalizedRow.has(header)).length;
+
+    if (matches > bestMatchCount) {
+      bestMatchCount = matches;
+      bestMatchIndex = index;
+    }
+  });
+
+  return bestMatchIndex;
+}
+
+/**
+ * Reconstruye objetos fila a partir de la matriz cruda del Excel usando la
+ * fila de cabecera detectada. Asi evitamos depender de como `xlsx` infiere
+ * nombres de columna cuando hay filas auxiliares o celdas combinadas.
+ */
+export function buildRawRowsFromPreview(
+  previewRows: Array<Array<string | number>>,
+  headerRowIndex: number
+) {
+  const headers = (previewRows[headerRowIndex] ?? []).map((cell) => String(cell ?? "").trim());
+
+  return previewRows
+    .slice(headerRowIndex + 1)
+    .map((row) =>
+      headers.reduce<Record<string, unknown>>((acc, header, index) => {
+        if (!header) return acc;
+        acc[header] = row[index] ?? "";
+        return acc;
+      }, {})
+    )
+    .filter((row) => Object.keys(row).length > 0);
+}
+
 async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
   const [catalogosResponse, settingsResponse] = await Promise.all([
     fetch("/api/catalogos/empresas", { cache: "no-store" }),
@@ -186,6 +240,16 @@ async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
     ? (catalogosJson.data.ciclosFormativos as Array<{ nombre: string }>).map(
         (item) => item.nombre
       )
+    : [];
+  const sectores = catalogosJson?.ok
+    ? (
+        (catalogosJson.data.sectores as Array<{ id: number; nombre: string }> | undefined) ?? []
+      ).map((item) => item.nombre)
+    : [];
+  const localidades = catalogosJson?.ok
+    ? (
+        (catalogosJson.data.localidades as Array<{ id: number; nombre: string }> | undefined) ?? []
+      ).map((item) => item.nombre)
     : [];
   const cursos = settingsJson?.ok
     ? getCursosAcademicos(
@@ -202,8 +266,9 @@ async function loadWorkbookCatalogs(): Promise<WorkbookCatalogs> {
   return {
     ciclosFormativos,
     cursos,
-    sectores: SECTORES,
-    localidades: LOCALIDADES,
+    cursosCiclo: CURSO_CICLO_TEMPLATE_OPTIONS,
+    sectores,
+    localidades,
   };
 }
 
@@ -388,9 +453,14 @@ function collectFormacionCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatal
  * Indica si la plantilla exportada debe incluir una hoja extra con catalogos de apoyo.
  */
 function hasCatalogColumns(columns: string[]) {
-  return ["Localidad", "Sector", "Ciclo Formativo", "Ciclo", "Curso"].some((column) =>
-    columns.includes(column)
-  );
+  return [
+    "Localidad",
+    "Sector",
+    "Ciclo Formativo",
+    "Ciclo",
+    "Curso",
+    "Curso Ciclo",
+  ].some((column) => columns.includes(column));
 }
 
 /**
@@ -402,6 +472,7 @@ function buildCatalogRows(catalogs: WorkbookCatalogs) {
     catalogs.sectores.length,
     catalogs.localidades.length,
     catalogs.cursos.length,
+    catalogs.cursosCiclo.length,
     1
   );
 
@@ -410,6 +481,7 @@ function buildCatalogRows(catalogs: WorkbookCatalogs) {
     Sectores: catalogs.sectores[index] ?? "",
     "Localidades o Municipios": catalogs.localidades[index] ?? "",
     "Cursos Academicos": catalogs.cursos[index] ?? "",
+    "Cursos Ciclo": catalogs.cursosCiclo[index] ?? "",
   }));
 }
 
@@ -525,6 +597,7 @@ function applyEmpresaTemplateValidations(
   const sectorIndex = columns.indexOf("Sector");
   const cicloEmpresaIndex = columns.indexOf("Ciclo Formativo");
   const cicloAlumnoIndex = columns.indexOf("Ciclo");
+  const cursoCicloIndex = columns.indexOf("Curso Ciclo");
   const cursoIndex = columns.indexOf("Curso");
 
   const applyValidation = (
@@ -588,6 +661,15 @@ function applyEmpresaTemplateValidations(
       `Catalogos!$D$2:$D$${Math.max(catalogs.cursos.length, 1) + 1}`,
       "Curso no valido",
       "Selecciona un curso academico de la lista desplegable."
+    );
+  }
+
+  if (cursoCicloIndex >= 0) {
+    applyValidation(
+      cursoCicloIndex,
+      `Catalogos!$E$2:$E$${Math.max(catalogs.cursosCiclo.length, 1) + 1}`,
+      "Curso ciclo no valido",
+      "Selecciona un curso de ciclo de la lista desplegable."
     );
   }
 }
@@ -656,6 +738,7 @@ export async function downloadWorkbook(
       "Sectores",
       "Localidades o Municipios",
       "Cursos Academicos",
+      "Cursos Ciclo",
     ];
     catalogWorksheet.addRow(catalogHeaders);
     styleWorkbookHeaderRow(catalogWorksheet.getRow(1));
@@ -665,12 +748,14 @@ export async function downloadWorkbook(
         row.Sectores,
         row["Localidades o Municipios"],
         row["Cursos Academicos"],
+        row["Cursos Ciclo"],
       ]);
     });
     catalogWorksheet.getColumn(1).width = 34;
     catalogWorksheet.getColumn(2).width = 24;
     catalogWorksheet.getColumn(3).width = 34;
     catalogWorksheet.getColumn(4).width = 22;
+    catalogWorksheet.getColumn(5).width = 16;
 
     if (options.template) {
       prepareTemplateEntryArea(worksheet, columns, headerRowIndex + 1, 300);

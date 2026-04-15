@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CARDS } from "./config";
 import {
+  buildRawRowsFromPreview,
   buildSheetRows,
   collectExcelValidationErrors,
   findDuplicateValues,
+  findHeaderRowIndex,
   formatDateStamp,
   getMissingHeaders,
   mapAlumnoRows,
@@ -21,6 +23,14 @@ describe("importexport utils", () => {
             ? {
                 ok: true,
                 data: {
+                  sectores: [
+                    { id: 1, nombre: "Otro" },
+                    { id: 2, nombre: "Tecnologia" },
+                  ],
+                  localidades: [
+                    { id: 3, nombre: "Alacant/Alicante" },
+                    { id: 4, nombre: "Elx/Elche" },
+                  ],
                   ciclosFormativos: [
                     { id: 1, nombre: "DAM" },
                     { id: 2, nombre: "DAW" },
@@ -51,6 +61,35 @@ describe("importexport utils", () => {
     expect(getMissingHeaders(headers, alumnosConfig)).toEqual(
       expect.arrayContaining(["Ciclo", "Curso"])
     );
+  });
+
+  it("detecta la fila de cabecera real aunque haya titulos previos", () => {
+    const alumnosConfig = CARDS.find((card) => card.entidad === "alumnos")!;
+    const previewRows = [
+      ["Plantilla de Alumnos", "", "", ""],
+      ["Rellena las columnas y conserva la cabecera para importar", "", "", ""],
+      ["NIA", "NIF", "NUSS", "Nombre", "Teléfono", "Correo", "Ciclo", "Curso Ciclo", "Curso"],
+      ["58845322", "45565789G", "123456987987", "Berk Eli", "654321987", "asdasd@asdas.com", "Turismo", 2, "2024-2025"],
+    ];
+
+    expect(findHeaderRowIndex(previewRows, alumnosConfig)).toBe(2);
+  });
+
+  it("reconstruye filas desde la previsualizacion usando la cabecera detectada", () => {
+    const previewRows = [
+      ["Plantilla de Alumnos", "", ""],
+      ["Rellena las columnas y conserva la cabecera para importar", "", ""],
+      ["NIA", "Nombre", "Curso"],
+      [58845322, "Berk Eli", "2024-2025"],
+    ];
+
+    expect(buildRawRowsFromPreview(previewRows, 2)).toEqual([
+      {
+        NIA: 58845322,
+        Nombre: "Berk Eli",
+        Curso: "2024-2025",
+      },
+    ]);
   });
 
   it("reconstruye filas desde cabeceras flexibles y elimina filas completamente vacias", () => {

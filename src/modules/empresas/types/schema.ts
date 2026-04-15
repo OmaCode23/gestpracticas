@@ -7,8 +7,6 @@
  */
 
 import { z } from "zod";
-import { SECTORES } from "@/shared/catalogs/empresa";
-import { LOCALIDADES } from "@/shared/catalogs/ubicacion";
 
 const CIF_NIF_REGEX =
   /^([ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]|[XYZ]\d{7}[A-Z]|\d{8}[A-Z])$/;
@@ -56,19 +54,11 @@ export const empresaSchema = z.object({
   localidad: z
     .string()
     .trim()
-    .min(1, "La localidad es obligatoria.")
-    .refine(
-      (value) => LOCALIDADES.includes(value),
-      "La localidad debe existir en el catalogo de ubicaciones."
-    ),
+    .min(1, "La localidad es obligatoria."),
   sector: z
     .string()
     .trim()
-    .min(1, "El sector es obligatorio.")
-    .refine(
-      (value) => SECTORES.includes(value),
-      "El sector debe existir en el catalogo de empresa."
-    ),
+    .min(1, "El sector es obligatorio."),
   cicloFormativoId: optionalCicloFormativoId,
   telefono: z
     .string()

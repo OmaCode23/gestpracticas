@@ -28,12 +28,10 @@ model Empresa {
   nombre            String
   cif               String           @unique
   direccion         String?
-  localidad         String
-  localidadId       Int?
-  localidadRef      Localidad?       @relation(fields: [localidadId], references: [id], onDelete: SetNull)
-  sector            String
-  sectorId          Int?
-  sectorRef         Sector?          @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  localidadId       Int
+  localidadRef      Localidad        @relation(fields: [localidadId], references: [id], onDelete: Restrict)
+  sectorId          Int
+  sectorRef         Sector           @relation(fields: [sectorId], references: [id], onDelete: Restrict)
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
   telefono          String?

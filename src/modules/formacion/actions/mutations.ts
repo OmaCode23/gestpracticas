@@ -6,6 +6,7 @@
  */
 
 import { prisma } from "@/database/prisma";
+import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 import type { FormacionInput, FormacionUpdateInput } from "../types";
 
 function normalizeOptionalString(value?: string) {
@@ -30,8 +31,24 @@ export async function createFormacion(data: FormacionInput) {
         select: {
           id: true,
           nombre: true,
-          sector: true,
-          localidad: true,
+          sectorId: true,
+          sectorRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          localidadId: true,
+          localidadRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          cicloFormativoId: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
       alumno: {
@@ -58,10 +75,10 @@ export async function createFormacion(data: FormacionInput) {
 
   return {
     ...formacion,
+    empresa: normalizeEmpresaCatalogos(formacion.empresa),
     alumno: formacion.alumno
       ? {
           ...formacion.alumno,
-          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };
@@ -90,8 +107,24 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
         select: {
           id: true,
           nombre: true,
-          sector: true,
-          localidad: true,
+          sectorId: true,
+          sectorRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          localidadId: true,
+          localidadRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          cicloFormativoId: true,
+          cicloFormativoRef: {
+            select: {
+              nombre: true,
+            },
+          },
         },
       },
       alumno: {
@@ -118,10 +151,10 @@ export async function updateFormacion(id: number, data: FormacionUpdateInput) {
 
   return {
     ...formacion,
+    empresa: normalizeEmpresaCatalogos(formacion.empresa),
     alumno: formacion.alumno
       ? {
           ...formacion.alumno,
-          ciclo: formacion.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };

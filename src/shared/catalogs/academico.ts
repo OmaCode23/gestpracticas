@@ -73,31 +73,6 @@ export const CICLOS_FORMATIVOS_BASE: CicloFormativoBase[] = [
   { nombre: "Logística y Transporte", codigo: "LT" },
 ];
 
-export const CICLOS_FORMATIVOS = CICLOS_FORMATIVOS_BASE.map(
-  (ciclo) => ciclo.nombre
-);
-
-export const CICLO_LABEL: Record<string, string> = {
-  ...Object.fromEntries(
-    CICLOS_FORMATIVOS_BASE.flatMap(({ nombre, codigo }) => [
-      [codigo, codigo],
-      [nombre, codigo],
-    ])
-  ),
-  "Gestion Administrativa": "GA",
-  "Administracion y Finanzas": "AF",
-  "Sistemas Microinformaticos y Redes": "SMR",
-  "Administracion de Sistemas Informaticos en Red": "ASIR",
-  "Logistica y Transporte": "LT",
-  "Desarrollo de Aplicaciones Multiplataforma Semi": "DAM-SEMI",
-  "Comercio Internacional Semi": "CI-SEMI",
-};
-
-export function getCicloLabel(value?: string | null) {
-  if (!value) return "-";
-  return CICLO_LABEL[value] ?? value;
-}
-
 export const CICLO_BADGE: Record<string, BadgeVariant> = {
   GA: "blue",
   AF: "green",

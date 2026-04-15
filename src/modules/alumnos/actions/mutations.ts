@@ -44,6 +44,31 @@ async function getCicloFormativoOrThrow(cicloFormativoId: number) {
   return cicloFormativo;
 }
 
+async function getCicloFormativoForUpdateOrThrow(id: number, cicloFormativoId: number) {
+  const alumnoActual = await prisma.alumno.findUnique({
+    where: { id },
+    select: {
+      cicloFormativoId: true,
+    },
+  });
+
+  if (alumnoActual?.cicloFormativoId === cicloFormativoId) {
+    const cicloActual = await prisma.cicloFormativo.findUnique({
+      where: { id: cicloFormativoId },
+      select: {
+        id: true,
+        nombre: true,
+      },
+    });
+
+    if (cicloActual) {
+      return cicloActual;
+    }
+  }
+
+  return getCicloFormativoOrThrow(cicloFormativoId);
+}
+
 export async function createAlumno(data: AlumnoCrudInput) {
   const cicloFormativo = await getCicloFormativoOrThrow(data.cicloFormativoId);
 
@@ -65,7 +90,7 @@ export async function createAlumno(data: AlumnoCrudInput) {
 export async function updateAlumno(id: number, data: AlumnoCrudUpdateInput) {
   const cicloFormativo =
     data.cicloFormativoId !== undefined
-      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
+      ? await getCicloFormativoForUpdateOrThrow(id, data.cicloFormativoId)
       : null;
 
   return prisma.alumno.update({

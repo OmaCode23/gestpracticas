@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getEmpresaCatalogos } from "@/modules/catalogos/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const data = await getEmpresaCatalogos();

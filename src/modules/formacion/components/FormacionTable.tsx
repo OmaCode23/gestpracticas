@@ -32,7 +32,7 @@ interface FormacionTableProps {
   onPageChange: (page: number) => void;
   onView: (f: Formacion) => void;
   onEdit: (f: Formacion) => void;
-  onDelete: (id: number) => void;
+  onDelete: (f: Formacion) => void;
 }
 
 export default function FormacionTable({
@@ -211,7 +211,7 @@ export default function FormacionTable({
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => onDelete(f.id)}
+                            onClick={() => onDelete(f)}
                           >
                             {"\u{1F5D1}\uFE0F"}
                           </Button>

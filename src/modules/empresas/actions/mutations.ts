@@ -26,8 +26,6 @@ export function normalizeEmpresaData(data: EmpresaInput) {
     nombre: data.nombre.trim(),
     cif: data.cif.trim().toUpperCase(),
     direccion: normalizeOptionalString(data.direccion),
-    localidad: data.localidad.trim(),
-    sector: data.sector.trim(),
     telefono: normalizeOptionalString(data.telefono),
     email: normalizeOptionalEmail(data.email),
     contacto: normalizeOptionalString(data.contacto),
@@ -53,51 +51,187 @@ async function getCicloFormativoOrThrow(cicloFormativoId: number) {
   return cicloFormativo;
 }
 
+async function getCicloFormativoForUpdateOrThrow(id: number, cicloFormativoId: number) {
+  const empresaActual = await prisma.empresa.findUnique({
+    where: { id },
+    select: {
+      cicloFormativoId: true,
+    },
+  });
+
+  if (empresaActual?.cicloFormativoId === cicloFormativoId) {
+    const cicloActual = await prisma.cicloFormativo.findUnique({
+      where: { id: cicloFormativoId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (cicloActual) {
+      return cicloActual;
+    }
+  }
+
+  return getCicloFormativoOrThrow(cicloFormativoId);
+}
+
+async function getSectorOrThrow(nombre: string) {
+  const sector = await prisma.sector.findFirst({
+    where: {
+      nombre,
+      activo: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!sector) {
+    throw new Error("SECTOR_INVALIDO");
+  }
+
+  return sector;
+}
+
+async function getSectorForUpdateOrThrow(id: number, nombre: string) {
+  const empresaActual = await prisma.empresa.findUnique({
+    where: { id },
+    select: {
+      sectorId: true,
+      sectorRef: {
+        select: {
+          nombre: true,
+        },
+      },
+    },
+  });
+
+  if (empresaActual?.sectorRef?.nombre === nombre && empresaActual.sectorId) {
+    const sectorActual = await prisma.sector.findUnique({
+      where: { id: empresaActual.sectorId },
+      select: {
+        id: true,
+      },
+    });
+
+    if (sectorActual) {
+      return sectorActual;
+    }
+  }
+
+  return getSectorOrThrow(nombre);
+}
+
+async function getLocalidadOrThrow(nombre: string) {
+  const localidad = await prisma.localidad.findFirst({
+    where: {
+      nombre,
+      activo: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!localidad) {
+    throw new Error("LOCALIDAD_INVALIDA");
+  }
+
+  return localidad;
+}
+
 export async function createEmpresa(data: EmpresaInput) {
-  const cicloFormativo =
+  const [sector, localidad, cicloFormativo] = await Promise.all([
+    getSectorOrThrow(data.sector.trim()),
+    getLocalidadOrThrow(data.localidad.trim()),
     typeof data.cicloFormativoId === "number"
-      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
-      : null;
+      ? getCicloFormativoOrThrow(data.cicloFormativoId)
+      : Promise.resolve(null),
+  ]);
 
   return prisma.empresa.create({
     data: {
       ...normalizeEmpresaData(data),
+      sectorId: sector.id,
+      localidadId: localidad.id,
       cicloFormativoId: cicloFormativo?.id ?? null,
     },
   });
 }
 
 export async function createEmpresasBatch(data: EmpresaInput[]) {
-  const requestedIds = Array.from(
+  const normalizedData = data.map((item) => ({
+    ...item,
+    sector: item.sector.trim(),
+    localidad: item.localidad.trim(),
+  }));
+
+  const requestedCicloIds = Array.from(
     new Set(
-      data
+      normalizedData
         .map((item) =>
           typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null
         )
         .filter((value): value is number => value !== null)
     )
   );
+  const requestedSectores = Array.from(
+    new Set(normalizedData.map((item) => item.sector).filter(Boolean))
+  );
+  const requestedLocalidades = Array.from(
+    new Set(normalizedData.map((item) => item.localidad).filter(Boolean))
+  );
 
   const ciclosFormativos =
-    requestedIds.length > 0
+    requestedCicloIds.length > 0
       ? await prisma.cicloFormativo.findMany({
           where: {
-            id: { in: requestedIds },
+            id: { in: requestedCicloIds },
             activo: true,
           },
           select: { id: true },
         })
       : [];
+  const sectores =
+    requestedSectores.length > 0
+      ? await prisma.sector.findMany({
+          where: {
+            nombre: { in: requestedSectores },
+            activo: true,
+          },
+          select: { id: true, nombre: true },
+        })
+      : [];
+  const localidades =
+    requestedLocalidades.length > 0
+      ? await prisma.localidad.findMany({
+          where: {
+            nombre: { in: requestedLocalidades },
+            activo: true,
+          },
+          select: { id: true, nombre: true },
+        })
+      : [];
 
   const ciclosActivos = new Set(ciclosFormativos.map((item) => item.id));
+  const sectoresActivos = new Map(sectores.map((item) => [item.nombre, item.id]));
+  const localidadesActivas = new Map(localidades.map((item) => [item.nombre, item.id]));
 
-  if (requestedIds.some((id) => !ciclosActivos.has(id))) {
+  if (requestedCicloIds.some((id) => !ciclosActivos.has(id))) {
     throw new Error("CICLO_FORMATIVO_INVALIDO");
+  }
+  if (requestedSectores.some((nombre) => !sectoresActivos.has(nombre))) {
+    throw new Error("SECTOR_INVALIDO");
+  }
+  if (requestedLocalidades.some((nombre) => !localidadesActivas.has(nombre))) {
+    throw new Error("LOCALIDAD_INVALIDA");
   }
 
   return prisma.empresa.createMany({
-    data: data.map((item) => ({
+    data: normalizedData.map((item) => ({
       ...normalizeEmpresaData(item),
+      sectorId: sectoresActivos.get(item.sector)!,
+      localidadId: localidadesActivas.get(item.localidad)!,
       cicloFormativoId:
         typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null,
     })),
@@ -105,12 +239,19 @@ export async function createEmpresasBatch(data: EmpresaInput[]) {
 }
 
 export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
-  const cicloFormativo =
+  const [sector, localidad, cicloFormativo] = await Promise.all([
+    data.sector !== undefined
+      ? getSectorForUpdateOrThrow(id, data.sector.trim())
+      : Promise.resolve(undefined),
+    data.localidad !== undefined
+      ? getLocalidadOrThrow(data.localidad.trim())
+      : Promise.resolve(undefined),
     typeof data.cicloFormativoId === "number"
-      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
+      ? getCicloFormativoForUpdateOrThrow(id, data.cicloFormativoId)
       : data.cicloFormativoId === null
-        ? null
-        : undefined;
+        ? Promise.resolve(null)
+        : Promise.resolve(undefined),
+  ]);
 
   return prisma.empresa.update({
     where: { id },
@@ -120,8 +261,8 @@ export async function updateEmpresa(id: number, data: EmpresaUpdateInput) {
       ...(data.direccion !== undefined
         ? { direccion: normalizeOptionalString(data.direccion) }
         : {}),
-      ...(data.localidad !== undefined ? { localidad: data.localidad.trim() } : {}),
-      ...(data.sector !== undefined ? { sector: data.sector.trim() } : {}),
+      ...(localidad !== undefined ? { localidadId: localidad?.id ?? null } : {}),
+      ...(sector !== undefined ? { sectorId: sector?.id ?? null } : {}),
       ...(cicloFormativo !== undefined
         ? { cicloFormativoId: cicloFormativo?.id ?? null }
         : {}),

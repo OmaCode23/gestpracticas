@@ -18,8 +18,10 @@ import type {
 } from "@/modules/importexport/types";
 import {
   buildSheetRows,
+  buildRawRowsFromPreview,
   collectExcelValidationErrors,
   downloadWorkbook,
+  findHeaderRowIndex,
   formatDateStamp,
   getErrorDetails,
   getErrorMessage,
@@ -283,11 +285,12 @@ export default function ImportExportPanel({
         defval: "",
         blankrows: false,
       });
-      const headerRow = (previewRows[0] ?? []).map((cell) => String(cell ?? "").trim());
+      const headerRowIndex = findHeaderRowIndex(previewRows, config);
+      const headerRow = (previewRows[headerRowIndex] ?? []).map((cell) =>
+        String(cell ?? "").trim()
+      );
 
-      const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
-        defval: "",
-      });
+      const rawRows = buildRawRowsFromPreview(previewRows, headerRowIndex);
       const rows = buildSheetRows(rawRows, config);
       const excelErrors = await collectExcelValidationErrors({
         config,

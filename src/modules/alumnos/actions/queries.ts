@@ -17,9 +17,11 @@ export async function getAlumnosPaginated(params: {
   search?: string;
   page?: number;
   perPage?: number;
+  all?: boolean;
 }) {
   const page = Math.max(1, params.page ?? 1);
   const perPage = params.perPage ?? PER_PAGE;
+  const all = params.all ?? false;
 
   const where: Prisma.AlumnoWhereInput = {
     ...(params.ciclo
@@ -53,8 +55,12 @@ export async function getAlumnosPaginated(params: {
         },
       },
       orderBy: { nombre: "asc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
+      ...(all
+        ? {}
+        : {
+            skip: (page - 1) * perPage,
+            take: perPage,
+          }),
     }),
     prisma.alumno.count({ where }),
   ]);
@@ -62,7 +68,6 @@ export async function getAlumnosPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
-      ciclo: item.cicloFormativoRef?.nombre ?? "",
       cicloFormativoId: item.cicloFormativoRef?.id ?? item.cicloFormativoId ?? null,
       cicloFormativoNombre: item.cicloFormativoRef?.nombre ?? null,
       cicloFormativoCodigo: item.cicloFormativoRef?.codigo ?? null,
@@ -70,8 +75,8 @@ export async function getAlumnosPaginated(params: {
     })),
     total,
     page,
-    perPage,
-    totalPages: Math.ceil(total / perPage),
+    perPage: all ? total : perPage,
+    totalPages: all ? 1 : Math.ceil(total / perPage),
   };
 }
 
@@ -93,7 +98,6 @@ export async function getAlumnoById(id: number) {
 
   return {
     ...alumno,
-    ciclo: alumno.cicloFormativoRef?.nombre ?? "",
     cicloFormativoId: alumno.cicloFormativoRef?.id ?? alumno.cicloFormativoId ?? null,
     cicloFormativoNombre: alumno.cicloFormativoRef?.nombre ?? null,
     cicloFormativoCodigo: alumno.cicloFormativoRef?.codigo ?? null,

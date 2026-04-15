@@ -8,6 +8,7 @@
 import { prisma } from "@/database/prisma";
 import { Prisma } from "@prisma/client";
 import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 
 const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
@@ -18,9 +19,11 @@ export async function getFormacionesPaginated(params: {
   search?: string;
   page?: number;
   perPage?: number;
+  all?: boolean;
 }) {
   const page = Math.max(1, params.page ?? 1);
   const perPage = params.perPage ?? PER_PAGE;
+  const all = params.all ?? false;
 
   const where: Prisma.FormacionEmpresaWhereInput = {
     AND: [
@@ -88,8 +91,18 @@ export async function getFormacionesPaginated(params: {
           select: {
             id: true,
             nombre: true,
-            sector: true,
-            localidad: true,
+            sectorId: true,
+            sectorRef: {
+              select: {
+                nombre: true,
+              },
+            },
+            localidadId: true,
+            localidadRef: {
+              select: {
+                nombre: true,
+              },
+            },
             cicloFormativoId: true,
             cicloFormativoRef: {
               select: {
@@ -119,8 +132,12 @@ export async function getFormacionesPaginated(params: {
         },
       },
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * perPage,
-      take: perPage,
+      ...(all
+        ? {}
+        : {
+            skip: (page - 1) * perPage,
+            take: perPage,
+          }),
     }),
 
     prisma.formacionEmpresa.count({ where }),
@@ -129,10 +146,7 @@ export async function getFormacionesPaginated(params: {
   return {
     items: items.map((item) => ({
       ...item,
-      empresa: {
-        ...item.empresa,
-        cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
-      },
+      empresa: normalizeEmpresaCatalogos(item.empresa),
       alumno: item.alumno
         ? {
             ...item.alumno,
@@ -140,14 +154,13 @@ export async function getFormacionesPaginated(params: {
               item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
             cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
             cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
-            ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
           }
         : null,
     })),
     total,
     page,
-    perPage,
-    totalPages: Math.ceil(total / perPage),
+    perPage: all ? total : perPage,
+    totalPages: all ? 1 : Math.ceil(total / perPage),
   };
 }
 
@@ -159,8 +172,18 @@ export async function getFormacionById(id: number) {
         select: {
           id: true,
           nombre: true,
-          sector: true,
-          localidad: true,
+          sectorId: true,
+          sectorRef: {
+            select: {
+              nombre: true,
+            },
+          },
+          localidadId: true,
+          localidadRef: {
+            select: {
+              nombre: true,
+            },
+          },
           cicloFormativoId: true,
           cicloFormativoRef: {
             select: {
@@ -195,10 +218,7 @@ export async function getFormacionById(id: number) {
 
   return {
     ...item,
-    empresa: {
-      ...item.empresa,
-      cicloFormativo: item.empresa.cicloFormativoRef?.nombre ?? null,
-    },
+    empresa: normalizeEmpresaCatalogos(item.empresa),
     alumno: item.alumno
       ? {
           ...item.alumno,
@@ -206,7 +226,6 @@ export async function getFormacionById(id: number) {
             item.alumno.cicloFormativoRef?.id ?? item.alumno.cicloFormativoId ?? null,
           cicloFormativoNombre: item.alumno.cicloFormativoRef?.nombre ?? null,
           cicloFormativoCodigo: item.alumno.cicloFormativoRef?.codigo ?? null,
-          ciclo: item.alumno.cicloFormativoRef?.nombre ?? "",
         }
       : null,
   };

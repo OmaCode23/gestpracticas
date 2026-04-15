@@ -13,6 +13,12 @@ const { prismaMock, createEmpresasBatchMock, createImportExportLogMock } = vi.ho
     empresa: {
       findMany: vi.fn(),
     },
+    sector: {
+      findMany: vi.fn(),
+    },
+    localidad: {
+      findMany: vi.fn(),
+    },
     cicloFormativo: {
       findMany: vi.fn(),
     },
@@ -47,6 +53,14 @@ vi.mock("@/modules/settings/actions/queries", () => ({
 describe("import actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.sector.findMany.mockResolvedValue([
+      { id: 1, nombre: "Otro" },
+      { id: 2, nombre: "Tecnologia" },
+    ]);
+    prismaMock.localidad.findMany.mockResolvedValue([
+      { id: 3, nombre: "Alacant/Alicante" },
+      { id: 4, nombre: "Elx/Elche" },
+    ]);
     prismaMock.cicloFormativo.findMany.mockResolvedValue([
       { id: 1, nombre: "DAM" },
       { id: 2, nombre: "DAW" },
@@ -134,6 +148,33 @@ describe("import actions", () => {
         estado: "Fallido",
       })
     );
+  });
+
+  it("bloquea la importacion de empresas si el sector o la localidad no existen en el catalogo activo", async () => {
+    const rows: EmpresaImportRow[] = [
+      {
+        cif: "B12345678",
+        nombre: "Empresa Demo",
+        localidad: "Localidad Inventada",
+        sector: "Sector Inventado",
+        cicloFormativo: "",
+      },
+    ];
+
+    prismaMock.empresa.findMany.mockResolvedValue([]);
+
+    const result = await importEmpresas(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          'Fila 2: el sector "Sector Inventado" no existe en el catalogo activo.',
+          'Fila 2: la localidad "Localidad Inventada" no existe en el catalogo activo.',
+        ])
+      );
+    }
+    expect(createEmpresasBatchMock).not.toHaveBeenCalled();
   });
 
   it("importa alumnos normalizando email y campos de salida", async () => {
