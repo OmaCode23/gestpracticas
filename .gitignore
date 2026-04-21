@@ -1,6 +1,7 @@
 node_modules/
 .next/
 dist-demo/
+dist-prod/
 out/
 .env
 .env.local
@@ -9,7 +10,7 @@ prisma/dev.db
 .DS_Store
 *.log
 scripts/*
-!scripts/package-demo.ps1
+!scripts/package-prod.ps1
 TODO.md
 cambios-propios.md
 pruebas-manuales.md

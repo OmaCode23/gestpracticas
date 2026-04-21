@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "package:demo": "powershell -ExecutionPolicy Bypass -File ./scripts/package-demo.ps1",
+    "package:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/package-prod.ps1",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "next lint",

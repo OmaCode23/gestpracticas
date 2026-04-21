@@ -1,12 +1,13 @@
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$outputDir = Join-Path $projectRoot "dist-demo"
+$outputDir = Join-Path $projectRoot "dist-prod"
 $standaloneDir = Join-Path $projectRoot ".next\standalone"
 $staticDir = Join-Path $projectRoot ".next\static"
 $publicDir = Join-Path $projectRoot "public"
-$readmeSourcePath = Join-Path $projectRoot "README-demo.txt"
-$backupSourcePath = Join-Path $projectRoot "gestpracticas_demo.backup"
+$readmeSourcePath = Join-Path $projectRoot "README-produccion.txt"
+$backupSourcePath = Join-Path $projectRoot "gestpracticas_prod.backup"
+$legacyBackupSourcePath = Join-Path $projectRoot "gestpracticas_demo.backup"
 
 if (-not (Test-Path $standaloneDir)) {
   throw "No se ha encontrado .next\\standalone. Ejecuta primero 'npm run build'."
@@ -37,7 +38,7 @@ if (Test-Path (Join-Path $projectRoot ".env")) {
   $envLines = Get-Content -LiteralPath $sourceEnvPath
   $updatedEnvLines = $envLines | ForEach-Object {
     if ($_ -match '^\s*DATABASE_URL\s*=') {
-      $_ -replace '(/)(gestpracticas)("?)$', '${1}gestpracticas_demo${3}'
+      $_ -replace '(/)(gestpracticas)("?)$', '${1}gestpracticas_prod${3}'
     } else {
       $_
     }
@@ -47,13 +48,15 @@ if (Test-Path (Join-Path $projectRoot ".env")) {
 }
 
 if (-not (Test-Path $readmeSourcePath)) {
-  throw "No se ha encontrado README-demo.txt en la raiz del proyecto."
+  throw "No se ha encontrado README-produccion.txt en la raiz del proyecto."
 }
 
-Copy-Item -LiteralPath $readmeSourcePath -Destination (Join-Path $outputDir "README-demo.txt") -Force
+Copy-Item -LiteralPath $readmeSourcePath -Destination (Join-Path $outputDir "README-produccion.txt") -Force
 
 if (Test-Path $backupSourcePath) {
-  Copy-Item -LiteralPath $backupSourcePath -Destination (Join-Path $outputDir "gestpracticas_demo.backup") -Force
+  Copy-Item -LiteralPath $backupSourcePath -Destination (Join-Path $outputDir "gestpracticas_prod.backup") -Force
+} elseif (Test-Path $legacyBackupSourcePath) {
+  Copy-Item -LiteralPath $legacyBackupSourcePath -Destination (Join-Path $outputDir "gestpracticas_demo.backup") -Force
 }
 
-Write-Host "Paquete demo generado en: $outputDir"
+Write-Host "Paquete de produccion generado en: $outputDir"

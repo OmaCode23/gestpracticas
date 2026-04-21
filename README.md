@@ -100,7 +100,7 @@ La aplicación quedará disponible en `http://localhost:3000`.
 npm run dev        # Desarrollo
 npm run build      # Build de producción
 npm run start      # Servidor de producción
-npm run package:demo # Genera paquete demo en dist-demo/
+npm run package:prod # Genera paquete de produccion en dist-prod/
 npm run test       # Tests con Vitest
 npm run lint       # Lint
 npm run db:generate
@@ -170,25 +170,30 @@ npm run build
 npm run start
 ```
 
-## Preparacion de paquete demo para evaluacion
+## Preparacion de paquete de produccion
 
-Para generar una carpeta separada con la aplicacion compilada para demo:
+Para generar una carpeta separada con la aplicacion compilada para ejecucion:
 
 ```bash
 npm run build
-npm run package:demo
+npm run package:prod
 ```
 
-El resultado se genera en `dist-demo/`.
+El resultado se genera en `dist-prod/`.
 
 Ese paquete:
 
-- esta pensado para ejecucion y evaluacion, no para continuar el desarrollo;
+- esta pensado para ejecucion y despliegue, no para continuar el desarrollo;
 - mantiene intacto el codigo fuente del proyecto original;
 - incluye la salida `standalone` de Next.js y los archivos minimos necesarios para arrancar la aplicacion.
+- copia el `.env` que exista en la raiz del proyecto en el momento de generar el paquete;
+- copia `package.json`;
+- copia `README-produccion.txt`;
+- copia tambien un backup de PostgreSQL si en la raiz existe `gestpracticas_prod.backup` o, por compatibilidad, `gestpracticas_demo.backup`;
+- si existe carpeta `public/`, tambien la incluye.
 
 
-Para ejecutarlo en el equipo de destino, dentro de `dist-demo/` bastaria con ajustar `.env` y lanzar:
+Para ejecutarlo en el equipo de destino, dentro de `dist-prod/` bastaria con ajustar `.env` y lanzar:
 
 ```bash
 node server.js
@@ -246,4 +251,3 @@ Objetivos de esas pruebas:
 - detectar diferencias entre `npm run dev` y la aplicacion compilada tras `npm run build`
 - validar llamadas `GET`, `POST`, `PUT`, `PATCH` y `DELETE` desde la interfaz real
 - detectar errores de produccion que no aparecen al probar solo handlers o funciones aisladas
-
