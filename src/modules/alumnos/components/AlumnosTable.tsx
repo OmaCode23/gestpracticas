@@ -4,7 +4,6 @@ import {
   Card,
   TableFilters,
   Button,
-  TdActions,
   Badge,
   SectionLabel,
 } from "@/components/ui";
@@ -117,26 +116,26 @@ export default function AlumnosTable({
         </TableFilters>
 
         <div className="overflow-x-auto">
-          <table>
+          <table className="table-fixed min-w-[860px] [&_th]:px-3 [&_td]:px-3">
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>NIA</th>
-                <th>Ciclo</th>
-                <th>
+                <th className="w-[80px]">NIA</th>
+                <th className="w-[88px] text-center">Ciclo</th>
+                <th className="w-[64px] text-center">
                   Curso
                   <br />
                   Ciclo
                 </th>
-                <th>
+                <th className="w-[100px]">
                   Curso
                   <br />
                   Académico
                 </th>
-                <th>Teléfono</th>
+                <th className="w-[116px]">Teléfono</th>
                 <th>Correo</th>
-                <th>CV</th>
-                <th>Acciones</th>
+                <th className="w-[60px]">CV</th>
+                <th className="w-[140px]">Acciones</th>
               </tr>
             </thead>
 
@@ -154,15 +153,15 @@ export default function AlumnosTable({
 
                   return (
                     <tr key={a.id}>
-                      <td>
-                        <strong className="block max-w-[220px] truncate" title={a.nombre}>
+                      <td className="truncate">
+                        <strong title={a.nombre}>
                           {a.nombre}
                         </strong>
                       </td>
 
                       <td className="text-text-mid">{a.nia}</td>
 
-                      <td>
+                      <td className="text-center">
                         <Badge
                           variant={
                             a.cicloFormativoCodigo
@@ -174,16 +173,14 @@ export default function AlumnosTable({
                         </Badge>
                       </td>
 
-                      <td>{formatCursoCiclo(a.cursoCiclo)}</td>
+                      <td className="text-center">{formatCursoCiclo(a.cursoCiclo)}</td>
 
-                      <td className="whitespace-nowrap">{a.curso}</td>
+                      <td>{a.curso}</td>
 
                       <td>{a.telefono}</td>
 
-                      <td className="text-blue-600 text-[0.82rem]">
-                        <span className="block max-w-[220px] truncate" title={a.email ?? "-"}>
-                          {a.email}
-                        </span>
+                      <td className="truncate text-blue-600 text-[0.82rem]">
+                        <span title={a.email ?? "-"}>{a.email}</span>
                       </td>
 
                       <td className="text-[0.8rem] text-text-mid">
@@ -191,33 +188,34 @@ export default function AlumnosTable({
                       </td>
 
                       <td>
-                        <TdActions>
+                        <div className="flex gap-1">
                           <Button
                             variant="secondary"
                             size="sm"
+                            className="!px-2 !py-0.5 !text-[0.84rem]"
                             onClick={() => onVer(a)}
                             title="Ver detalle"
                             aria-label="Ver detalle"
                           >
                             {"\u{1F441}\uFE0F"}
                           </Button>
-
                           <Button
                             variant="secondary"
                             size="sm"
+                            className="!px-2 !py-0.5 !text-[0.84rem]"
                             onClick={() => onEditar(a)}
                           >
                             {"\u270F\uFE0F"}
                           </Button>
-
                           <Button
                             variant="danger"
                             size="sm"
+                            className="!px-2 !py-0.5 !text-[0.84rem]"
                             onClick={() => onEliminar(a)}
                           >
                             {"\u{1F5D1}\uFE0F"}
                           </Button>
-                        </TdActions>
+                        </div>
                       </td>
                     </tr>
                   );

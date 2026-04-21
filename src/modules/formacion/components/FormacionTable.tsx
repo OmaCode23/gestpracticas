@@ -4,7 +4,6 @@ import {
   SectionLabel,
   Card,
   TableFilters,
-  TdActions,
   Button,
   Badge,
 } from "@/components/ui";
@@ -99,26 +98,26 @@ export default function FormacionTable({
         </TableFilters>
 
         <div className="overflow-x-auto">
-          <table className="[&_th]:px-3 [&_td]:px-3">
+          <table className="table-fixed min-w-[860px] [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2">
             <thead>
               <tr>
                 <th>Alumno</th>
-                <th>NIA</th>
-                <th>Ciclo</th>
-                <th>
+                <th className="w-[80px]">NIA</th>
+                <th className="w-[88px] text-center">Ciclo</th>
+                <th className="w-[64px] text-center">
                   Curso
                   <br />
                   Ciclo
                 </th>
-                <th>
+                <th className="w-[90px]">
                   Curso
                   <br />
                   Académico
                 </th>
                 <th>Empresa</th>
                 <th>Tutor laboral</th>
-                <th>Periodo</th>
-                <th>Acciones</th>
+                <th className="w-[100px]">Periodo</th>
+                <th className="w-[100px]">Acciones</th>
               </tr>
             </thead>
 
@@ -144,18 +143,15 @@ export default function FormacionTable({
 
                   return (
                     <tr key={f.id}>
-                      <td>
-                        <strong
-                          className="block max-w-[220px] truncate"
-                          title={f.alumno?.nombre}
-                        >
+                      <td className="truncate">
+                        <strong title={f.alumno?.nombre}>
                           {f.alumno?.nombre ?? "-"}
                         </strong>
                       </td>
 
                       <td className="text-text-mid">{f.alumno?.nia ?? "-"}</td>
 
-                      <td>
+                      <td className="text-center">
                         <Badge
                           variant={
                             f.alumno?.cicloFormativoCodigo
@@ -167,21 +163,18 @@ export default function FormacionTable({
                         </Badge>
                       </td>
 
-                      <td>{f.alumno?.cursoCiclo ? formatCursoCiclo(f.alumno.cursoCiclo) : "-"}</td>
+                      <td className="text-center">{f.alumno?.cursoCiclo ? formatCursoCiclo(f.alumno.cursoCiclo) : "-"}</td>
 
-                      <td className="whitespace-nowrap">{f.curso}</td>
+                      <td>{f.curso}</td>
 
-                      <td>
-                        <strong className="block max-w-[220px] truncate" title={f.empresa?.nombre}>
+                      <td className="truncate">
+                        <strong title={f.empresa?.nombre}>
                           {f.empresa?.nombre ?? "-"}
                         </strong>
                       </td>
 
-                      <td>
-                        <span
-                          className="block max-w-[220px] truncate"
-                          title={f.emailTutorLaboral ?? "-"}
-                        >
+                      <td className="truncate">
+                        <span title={f.emailTutorLaboral ?? "-"}>
                           {f.emailTutorLaboral ?? "-"}
                         </span>
                       </td>
@@ -189,33 +182,36 @@ export default function FormacionTable({
                       <td>{f.periodo}</td>
 
                       <td>
-                        <TdActions>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex gap-1">
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="!px-2 !py-0.5 !text-[0.84rem]"
+                              onClick={() => onEdit(f)}
+                            >
+                              {"\u270F\uFE0F"}
+                            </Button>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              className="!px-2 !py-0.5 !text-[0.84rem]"
+                              onClick={() => onDelete(f)}
+                            >
+                              {"\u{1F5D1}\uFE0F"}
+                            </Button>
+                          </div>
                           <Button
                             variant="secondary"
                             size="sm"
+                            className="!px-2 !py-0.5 !text-[0.84rem] self-start"
                             onClick={() => onView(f)}
                             title="Ver detalle"
                             aria-label="Ver detalle"
                           >
                             {"\u{1F441}\uFE0F"}
                           </Button>
-
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => onEdit(f)}
-                          >
-                            {"\u270F\uFE0F"}
-                          </Button>
-
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => onDelete(f)}
-                          >
-                            {"\u{1F5D1}\uFE0F"}
-                          </Button>
-                        </TdActions>
+                        </div>
                       </td>
                     </tr>
                   );
