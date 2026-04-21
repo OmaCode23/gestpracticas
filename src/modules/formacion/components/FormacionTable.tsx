@@ -23,6 +23,7 @@ interface FormacionTableProps {
   cursoCiclo: string;
   search: string;
   cursos: string[];
+  modoHistorico: boolean;
   ciclos: { id: number; nombre: string; codigo: string | null }[];
   onCursoChange: (value: string) => void;
   onCicloChange: (value: string) => void;
@@ -45,6 +46,7 @@ export default function FormacionTable({
   cursoCiclo,
   search,
   cursos,
+  modoHistorico,
   ciclos,
   onCursoChange,
   onCicloChange,
@@ -67,12 +69,14 @@ export default function FormacionTable({
             Filtrar por:
           </span>
 
-          <FilterSelect value={curso} onChange={onCursoChange}>
-            <option value="">Todos los cursos</option>
-            {cursos.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </FilterSelect>
+          {modoHistorico ? (
+            <FilterSelect value={curso} onChange={onCursoChange}>
+              <option value="">Todos los cursos</option>
+              {cursos.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </FilterSelect>
+          ) : null}
 
           <FilterSelect value={ciclo} onChange={onCicloChange}>
             <option value="">Todos los ciclos</option>

@@ -16,6 +16,7 @@ interface AlumnosTableProps {
   alumnos: Alumno[];
   ciclos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  modoHistorico: boolean;
   total: number;
   perPage: number;
   ciclo: string;
@@ -38,6 +39,7 @@ export default function AlumnosTable({
   alumnos,
   ciclos,
   cursos,
+  modoHistorico,
   total,
   perPage,
   ciclo,
@@ -67,6 +69,15 @@ export default function AlumnosTable({
             Filtrar por:
           </span>
 
+          {modoHistorico ? (
+            <FilterSelect value={curso} onChange={onChangeCurso}>
+              <option value="">Todos los cursos</option>
+              {cursos.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </FilterSelect>
+          ) : null}
+
           <FilterSelect
             value={ciclo}
             onChange={onChangeCiclo}
@@ -76,16 +87,6 @@ export default function AlumnosTable({
               <option key={c.id} value={c.nombre}>
                 {c.codigo ?? c.nombre}
               </option>
-            ))}
-          </FilterSelect>
-
-          <FilterSelect
-            value={curso}
-            onChange={onChangeCurso}
-          >
-            <option value="">Todos los cursos</option>
-            {cursos.map((c) => (
-              <option key={c}>{c}</option>
             ))}
           </FilterSelect>
 

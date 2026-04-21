@@ -36,6 +36,7 @@ describe("GET /api/settings/academico", () => {
     getConfiguracionAcademicaMock.mockResolvedValue({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 10,
     });
 
@@ -48,6 +49,7 @@ describe("GET /api/settings/academico", () => {
       data: {
         mesCambioCurso: 9,
         numeroCursosVisibles: 3,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       },
     });
@@ -77,6 +79,7 @@ describe("PUT /api/settings/academico", () => {
       json: vi.fn().mockResolvedValue({
         mesCambioCurso: 13,
         numeroCursosVisibles: 3,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       }),
     } as any);
@@ -98,6 +101,7 @@ describe("PUT /api/settings/academico", () => {
       json: vi.fn().mockResolvedValue({
         mesCambioCurso: 9,
         numeroCursosVisibles: 2,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       }),
     } as any);
@@ -114,6 +118,7 @@ describe("PUT /api/settings/academico", () => {
     saveConfiguracionAcademicaMock.mockResolvedValue({
       mesCambioCurso: 9,
       numeroCursosVisibles: 4,
+      modoHistorico: true,
       resultadosPorPagina: 20,
     });
 
@@ -121,6 +126,7 @@ describe("PUT /api/settings/academico", () => {
       json: vi.fn().mockResolvedValue({
         mesCambioCurso: 9,
         numeroCursosVisibles: 4,
+        modoHistorico: true,
         resultadosPorPagina: 20,
       }),
     } as any);
@@ -132,6 +138,7 @@ describe("PUT /api/settings/academico", () => {
       data: {
         mesCambioCurso: 9,
         numeroCursosVisibles: 4,
+        modoHistorico: true,
         resultadosPorPagina: 20,
       },
     });
@@ -145,6 +152,7 @@ describe("PUT /api/settings/academico", () => {
     saveConfiguracionAcademicaMock.mockResolvedValue({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 20,
     });
 
@@ -152,6 +160,7 @@ describe("PUT /api/settings/academico", () => {
       json: vi.fn().mockResolvedValue({
         mesCambioCurso: 9,
         numeroCursosVisibles: 3,
+        modoHistorico: false,
         resultadosPorPagina: 20,
       }),
     } as any);
@@ -161,6 +170,7 @@ describe("PUT /api/settings/academico", () => {
     expect(saveConfiguracionAcademicaMock).toHaveBeenCalledWith({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 20,
     });
     expect(body).toEqual({
@@ -168,6 +178,7 @@ describe("PUT /api/settings/academico", () => {
       data: {
         mesCambioCurso: 9,
         numeroCursosVisibles: 3,
+        modoHistorico: false,
         resultadosPorPagina: 20,
       },
     });
@@ -177,6 +188,7 @@ describe("PUT /api/settings/academico", () => {
     saveConfiguracionAcademicaMock.mockResolvedValue({
       mesCambioCurso: 8,
       numeroCursosVisibles: 4,
+      modoHistorico: false,
       resultadosPorPagina: 10,
     });
 
@@ -184,6 +196,7 @@ describe("PUT /api/settings/academico", () => {
       json: vi.fn().mockResolvedValue({
         mesCambioCurso: 8,
         numeroCursosVisibles: 4,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       }),
     } as any);
@@ -193,6 +206,7 @@ describe("PUT /api/settings/academico", () => {
     expect(saveConfiguracionAcademicaMock).toHaveBeenCalledWith({
       mesCambioCurso: 8,
       numeroCursosVisibles: 4,
+      modoHistorico: false,
       resultadosPorPagina: 10,
     });
     expect(body).toEqual({
@@ -200,6 +214,7 @@ describe("PUT /api/settings/academico", () => {
       data: {
         mesCambioCurso: 8,
         numeroCursosVisibles: 4,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       },
     });

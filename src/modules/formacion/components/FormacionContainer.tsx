@@ -27,10 +27,12 @@ const EMPTY_FORM: FormacionInput = {
 export default function FormacionContainer({
   ciclosFormativos,
   cursos,
+  modoHistorico,
   resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
 }: {
   ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  modoHistorico: boolean;
   resultadosPorPagina?: number;
 }) {
   const router = useRouter();
@@ -157,6 +159,13 @@ export default function FormacionContainer({
     load();
   }, [curso, ciclo, cursoCiclo, page]);
 
+  useEffect(() => {
+    if (!modoHistorico && curso) {
+      setCurso("");
+      setPage(1);
+    }
+  }, [modoHistorico, curso]);
+
   // Search con debounce de 300ms
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -180,6 +189,7 @@ export default function FormacionContainer({
     const json: ApiResponse<{
       mesCambioCurso: number;
       numeroCursosVisibles: number;
+      modoHistorico: boolean;
       resultadosPorPagina: number;
     }> = await response.json();
 
@@ -329,6 +339,7 @@ export default function FormacionContainer({
           cursoCiclo={cursoCiclo}
           search={search}
           cursos={cursos}
+          modoHistorico={modoHistorico}
           ciclos={cicloOptions}
           onCursoChange={(v) => {
             setCurso(v);

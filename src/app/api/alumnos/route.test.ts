@@ -4,6 +4,7 @@ import { GET, POST } from "./route";
 const {
   getAlumnosPaginatedMock,
   createAlumnoMock,
+  getConfiguracionAcademicaMock,
   getCursosAcademicosConfiguradosMock,
   getResultadosPorPaginaConfiguradosMock,
   importAlumnosMock,
@@ -11,6 +12,7 @@ const {
 } = vi.hoisted(() => ({
   getAlumnosPaginatedMock: vi.fn(),
   createAlumnoMock: vi.fn(),
+  getConfiguracionAcademicaMock: vi.fn(),
   getCursosAcademicosConfiguradosMock: vi.fn(),
   getResultadosPorPaginaConfiguradosMock: vi.fn(),
   importAlumnosMock: vi.fn(),
@@ -26,6 +28,7 @@ vi.mock("@/modules/alumnos/actions/mutations", () => ({
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
+  getConfiguracionAcademica: getConfiguracionAcademicaMock,
   getCursosAcademicosConfigurados: getCursosAcademicosConfiguradosMock,
   getResultadosPorPaginaConfigurados: getResultadosPorPaginaConfiguradosMock,
 }));
@@ -42,6 +45,12 @@ describe("GET /api/alumnos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getResultadosPorPaginaConfiguradosMock.mockResolvedValue(10);
+    getConfiguracionAcademicaMock.mockResolvedValue({
+      mesCambioCurso: 9,
+      numeroCursosVisibles: 3,
+      modoHistorico: true,
+      resultadosPorPagina: 10,
+    });
   });
 
   it("rechaza filtros invalidos", async () => {
@@ -132,6 +141,44 @@ describe("GET /api/alumnos", () => {
       all: true,
     });
     expect(response.status).toBe(200);
+  });
+
+  it("fuerza el curso actual cuando modoHistorico esta desactivado", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-02-10T10:00:00.000Z"));
+    getConfiguracionAcademicaMock.mockResolvedValue({
+      mesCambioCurso: 9,
+      numeroCursosVisibles: 3,
+      modoHistorico: false,
+      resultadosPorPagina: 10,
+    });
+    getAlumnosPaginatedMock.mockResolvedValue({
+      items: [{ id: 1, nombre: "Ana", curso: "2025-2026" }],
+      total: 1,
+      page: 1,
+      perPage: 10,
+      totalPages: 1,
+    });
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams({
+          curso: "2024-2025",
+          search: "ana",
+        }),
+      },
+    } as any);
+
+    expect(getAlumnosPaginatedMock).toHaveBeenCalledWith({
+      ciclo: undefined,
+      curso: "2025-2026",
+      search: "ana",
+      page: 1,
+      perPage: 10,
+      all: false,
+    });
+    expect(response.status).toBe(200);
+    vi.useRealTimers();
   });
 });
 

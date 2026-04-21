@@ -152,6 +152,14 @@ Un ciclo o sector base es uno de los que tiene la aplicación inicialmente, o tr
 - Desactivar un sector o un ciclo hará que no aparezca en formularios que permitan usarlos en un nuevo registro, y sin embargo seguirán siendo válidos en los registros existentes.
 - Se impedirá cambiar la configuración de cursos ("2025-2026", ...), si la nueva configuración ocasiona que se invalide algún registro actual de la BD.
 
+## Modo histórico
+
+Por defecto, los listados de las páginas de `alumnos` y `formacion` solo muestran los registros del curso académico actual.
+
+Si en la página de `Configuración` se activa el modo histórico, esos listados pasan a mostrar todos los registros de todos los cursos.
+
+Al activar el modo histórico, además se añade en ambos listados un filtro que permite filtrar por curso académico.
+
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
 ```bash
@@ -238,6 +246,4 @@ Objetivos de esas pruebas:
 - detectar diferencias entre `npm run dev` y la aplicacion compilada tras `npm run build`
 - validar llamadas `GET`, `POST`, `PUT`, `PATCH` y `DELETE` desde la interfaz real
 - detectar errores de produccion que no aparecen al probar solo handlers o funciones aisladas
-
-
 

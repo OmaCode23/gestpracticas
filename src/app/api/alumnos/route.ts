@@ -11,16 +11,21 @@ import { getAlumnosPaginated } from "@/modules/alumnos/actions/queries";
 import { createAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoCrudSchema, alumnoFilterSchema } from "@/modules/alumnos/types/schema";
 import {
+  getConfiguracionAcademica,
   getCursosAcademicosConfigurados,
   getResultadosPorPaginaConfigurados,
 } from "@/modules/settings/actions/queries";
 import { importAlumnos, type AlumnoImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
+import { getCursoActual } from "@/shared/catalogs/academico";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const defaultPerPage = await getResultadosPorPaginaConfigurados();
+    const [defaultPerPage, configuracionAcademica] = await Promise.all([
+      getResultadosPorPaginaConfigurados(),
+      getConfiguracionAcademica(),
+    ]);
 
     const parsedFilters = alumnoFilterSchema.safeParse({
       ciclo: searchParams.get("ciclo") || undefined,
@@ -38,7 +43,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const result = await getAlumnosPaginated(parsedFilters.data);
+    const effectiveFilters = {
+      ...parsedFilters.data,
+      curso: configuracionAcademica.modoHistorico
+        ? parsedFilters.data.curso
+        : getCursoActual(new Date(), configuracionAcademica.mesCambioCurso),
+    };
+
+    const result = await getAlumnosPaginated(effectiveFilters);
 
     return NextResponse.json<ApiResponse<typeof result>>({
       ok: true,

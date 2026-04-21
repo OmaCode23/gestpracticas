@@ -12,6 +12,15 @@ function parsePositiveInteger(
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function parseBoolean(
+  value: string | null | undefined,
+  fallback: boolean
+) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+}
+
 export async function getSettingsMap(claves: string[]) {
   try {
     const settings = await prisma.setting.findMany({
@@ -43,6 +52,7 @@ export async function getConfiguracionAcademica() {
   const settings = await getSettingsMap([
     SETTING_KEYS.academicoMesCambioCurso,
     SETTING_KEYS.academicoNumeroCursosVisibles,
+    SETTING_KEYS.academicoModoHistorico,
     SETTING_KEYS.listadosResultadosPorPagina,
   ]);
 
@@ -54,6 +64,10 @@ export async function getConfiguracionAcademica() {
     numeroCursosVisibles: parsePositiveInteger(
       settings.get(SETTING_KEYS.academicoNumeroCursosVisibles),
       SETTING_DEFAULTS.academicoNumeroCursosVisibles
+    ),
+    modoHistorico: parseBoolean(
+      settings.get(SETTING_KEYS.academicoModoHistorico),
+      SETTING_DEFAULTS.academicoModoHistorico
     ),
     resultadosPorPagina: parsePositiveInteger(
       settings.get(SETTING_KEYS.listadosResultadosPorPagina),

@@ -64,6 +64,7 @@ describe("settings queries", () => {
     expect(result).toEqual({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 10,
     });
   });
@@ -72,6 +73,7 @@ describe("settings queries", () => {
     prismaMock.setting.findMany.mockResolvedValue([
       { clave: "academico.mesCambioCurso", valor: "7" },
       { clave: "academico.numeroCursosVisibles", valor: "0" },
+      { clave: "academico.modoHistorico", valor: "true" },
       { clave: "listados.resultadosPorPagina", valor: "25" },
     ]);
 
@@ -82,6 +84,7 @@ describe("settings queries", () => {
     expect(configuracion).toEqual({
       mesCambioCurso: 7,
       numeroCursosVisibles: 3,
+      modoHistorico: true,
       resultadosPorPagina: 25,
     });
     expect(cursos).toEqual(["2026-2027", "2025-2026", "2024-2025"]);

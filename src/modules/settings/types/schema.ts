@@ -17,6 +17,10 @@ export const configuracionAcademicaSchema = z.object({
     .int("El numero de cursos visibles debe ser un numero entero.")
     .min(1, "El numero de cursos visibles debe estar entre 1 y 10.")
     .max(10, "El numero de cursos visibles debe estar entre 1 y 10."),
+  modoHistorico: z.boolean({
+    required_error: "El modo historico es obligatorio.",
+    invalid_type_error: "El modo historico debe ser booleano.",
+  }),
   resultadosPorPagina: z.coerce
     .number({
       required_error: "El numero de resultados por pagina es obligatorio.",

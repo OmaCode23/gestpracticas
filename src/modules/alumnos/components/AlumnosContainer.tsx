@@ -39,10 +39,12 @@ const EMPTY_CV = {
 export default function AlumnosContainer({
   ciclosFormativos,
   cursos,
+  modoHistorico,
   resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
 }: {
   ciclosFormativos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  modoHistorico: boolean;
   resultadosPorPagina?: number;
 }) {
   const router = useRouter();
@@ -215,6 +217,13 @@ export default function AlumnosContainer({
     load();
   }, [ciclo, curso, page]);
 
+  useEffect(() => {
+    if (!modoHistorico && curso) {
+      setCurso("");
+      setPage(1);
+    }
+  }, [modoHistorico, curso]);
+
   // Search con debounce de 300ms
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
@@ -238,6 +247,7 @@ export default function AlumnosContainer({
     const json: ApiResponse<{
       mesCambioCurso: number;
       numeroCursosVisibles: number;
+      modoHistorico: boolean;
       resultadosPorPagina: number;
     }> = await response.json();
 
@@ -548,6 +558,7 @@ export default function AlumnosContainer({
           alumnos={alumnos}
           ciclos={ciclosFormativos}
           cursos={cursos}
+          modoHistorico={modoHistorico}
           total={total}
           perPage={resultadosPorPagina}
           ciclo={ciclo}

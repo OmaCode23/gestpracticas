@@ -42,15 +42,17 @@ describe("settings mutations", () => {
     const result = await saveConfiguracionAcademica({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 20,
     });
 
     expect(result).toEqual({
       mesCambioCurso: 9,
       numeroCursosVisibles: 3,
+      modoHistorico: false,
       resultadosPorPagina: 20,
     });
-    expect(prismaMock.setting.upsert).toHaveBeenCalledTimes(3);
+    expect(prismaMock.setting.upsert).toHaveBeenCalledTimes(4);
     expect(prismaMock.setting.upsert).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
@@ -68,6 +70,13 @@ describe("settings mutations", () => {
     expect(prismaMock.setting.upsert).toHaveBeenNthCalledWith(
       3,
       expect.objectContaining({
+        where: { clave: SETTING_KEYS.academicoModoHistorico },
+        update: { valor: "false" },
+      })
+    );
+    expect(prismaMock.setting.upsert).toHaveBeenNthCalledWith(
+      4,
+      expect.objectContaining({
         where: { clave: SETTING_KEYS.listadosResultadosPorPagina },
         update: { valor: "20" },
       })
@@ -82,6 +91,7 @@ describe("settings mutations", () => {
       saveConfiguracionAcademica({
         mesCambioCurso: 9,
         numeroCursosVisibles: 2,
+        modoHistorico: false,
         resultadosPorPagina: 10,
       })
     ).rejects.toMatchObject({

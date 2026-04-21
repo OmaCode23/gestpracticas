@@ -48,6 +48,7 @@ type SectorItem = {
 type ConfiguracionAcademica = {
   mesCambioCurso: number;
   numeroCursosVisibles: number;
+  modoHistorico: boolean;
   resultadosPorPagina: number;
 };
 
@@ -75,6 +76,19 @@ const MONTH_OPTIONS = [
   { value: 11, label: "Noviembre" },
   { value: 12, label: "Diciembre" },
 ];
+
+const MODO_CURSO_RADIOS = [
+  {
+    value: "actual",
+    label: "Ver solo el curso actual",
+    checked: (modoHistorico: boolean) => !modoHistorico,
+  },
+  {
+    value: "historico",
+    label: "Modo histórico",
+    checked: (modoHistorico: boolean) => modoHistorico,
+  },
+] as const;
 
 const BASE_CICLO_CODES = new Set(CICLOS_FORMATIVOS_BASE.map((item) => item.codigo));
 
@@ -590,6 +604,7 @@ export default function ConfiguracionPanel({
     const defaults = {
       mesCambioCurso: DEFAULT_MES_CAMBIO_CURSO,
       numeroCursosVisibles: DEFAULT_NUMERO_CURSOS_VISIBLES,
+      modoHistorico: false,
       resultadosPorPagina: configuracionAcademica.resultadosPorPagina,
     };
 
@@ -624,6 +639,7 @@ export default function ConfiguracionPanel({
     const defaults = {
       mesCambioCurso: configuracionAcademica.mesCambioCurso,
       numeroCursosVisibles: configuracionAcademica.numeroCursosVisibles,
+      modoHistorico: configuracionAcademica.modoHistorico,
       resultadosPorPagina: DEFAULT_RESULTADOS_POR_PAGINA,
     };
 
@@ -1128,6 +1144,35 @@ export default function ConfiguracionPanel({
           </CardHeader>
 
           <div className="grid gap-5 p-6 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
+                Cursos Académicos visibles para Alumnos y Formaciones
+              </span>
+
+              <div className="rounded-[12px] border border-border bg-white">
+                {MODO_CURSO_RADIOS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="flex cursor-pointer items-center gap-3 px-4 py-3 text-[0.92rem] text-navy transition-colors hover:bg-surface2 not-last:border-b not-last:border-border"
+                  >
+                    <input
+                      type="radio"
+                      name="modo-cursos"
+                      className="h-4 w-4 accent-[#2457f5]"
+                      checked={option.checked(configuracionAcademica.modoHistorico)}
+                      onChange={() =>
+                        setConfiguracionAcademica((prev) => ({
+                          ...prev,
+                          modoHistorico: option.value === "historico",
+                        }))
+                      }
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <label className="space-y-2">
               <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
                 Mes de cambio de curso

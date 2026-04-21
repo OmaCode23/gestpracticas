@@ -63,6 +63,14 @@ export async function saveConfiguracionAcademica(
       },
     }),
     prisma.setting.upsert({
+      where: { clave: SETTING_KEYS.academicoModoHistorico },
+      update: { valor: String(input.modoHistorico) },
+      create: {
+        clave: SETTING_KEYS.academicoModoHistorico,
+        valor: String(input.modoHistorico),
+      },
+    }),
+    prisma.setting.upsert({
       where: { clave: SETTING_KEYS.listadosResultadosPorPagina },
       update: { valor: String(input.resultadosPorPagina) },
       create: {

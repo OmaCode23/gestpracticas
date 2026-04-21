@@ -14,6 +14,7 @@ import {
   formacionFilterSchema,
 } from "@/modules/formacion/types/schema";
 import {
+  getConfiguracionAcademica,
   getCursosAcademicosConfigurados,
   getResultadosPorPaginaConfigurados,
 } from "@/modules/settings/actions/queries";
@@ -22,11 +23,15 @@ import {
   type FormacionImportRow,
 } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
+import { getCursoActual } from "@/shared/catalogs/academico";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const defaultPerPage = await getResultadosPorPaginaConfigurados();
+    const [defaultPerPage, configuracionAcademica] = await Promise.all([
+      getResultadosPorPaginaConfigurados(),
+      getConfiguracionAcademica(),
+    ]);
 
     const parsedFilters = formacionFilterSchema.safeParse({
       curso: searchParams.get("curso") || undefined,
@@ -45,7 +50,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const result = await getFormacionesPaginated(parsedFilters.data);
+    const effectiveFilters = {
+      ...parsedFilters.data,
+      curso: configuracionAcademica.modoHistorico
+        ? parsedFilters.data.curso
+        : getCursoActual(new Date(), configuracionAcademica.mesCambioCurso),
+    };
+
+    const result = await getFormacionesPaginated(effectiveFilters);
 
     return NextResponse.json<ApiResponse<typeof result>>({
       ok: true,

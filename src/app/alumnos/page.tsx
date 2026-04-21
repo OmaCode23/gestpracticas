@@ -32,6 +32,7 @@ export default async function Page() {
       <AlumnosContainer
         ciclosFormativos={ciclosFormativos}
         cursos={cursos}
+        modoHistorico={configuracionAcademica.modoHistorico}
         resultadosPorPagina={configuracionAcademica.resultadosPorPagina}
       />
     </div>
