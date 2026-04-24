@@ -118,10 +118,10 @@ describe("export actions", () => {
     ]);
   });
 
-  it("mapea formaciones incluyendo nombres relacionados y opcionales vacios", async () => {
+  it("mapea formaciones usando CIF y NIA para la plantilla exportable", async () => {
     prismaMock.formacionEmpresa.findMany.mockResolvedValue([
       {
-        empresa: { nombre: "Empresa Demo" },
+        empresa: { cif: "B12345678" },
         alumno: null,
         periodo: "Marzo - Junio",
         descripcion: null,
@@ -133,8 +133,8 @@ describe("export actions", () => {
 
     await expect(getFormacionExport()).resolves.toEqual([
       {
-        Empresa: "Empresa Demo",
-        Alumno: "",
+        CIF: "B12345678",
+        NIA: "",
         "Período": "Marzo - Junio",
         "Descripción": "",
         "Tutor Laboral": "",
@@ -178,10 +178,10 @@ describe("export actions", () => {
     expect(prismaMock.formacionEmpresa.findMany).toHaveBeenCalledWith({
       include: {
         empresa: {
-          select: { nombre: true },
+          select: { cif: true },
         },
         alumno: {
-          select: { nombre: true },
+          select: { nia: true },
         },
       },
       orderBy: { createdAt: "desc" },

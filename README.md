@@ -162,6 +162,32 @@ npm run build
 npm run start
 ```
 
+## Docker
+
+El proyecto mantiene un unico flujo Docker pensado para ejecucion/despliegue.
+
+El contenedor de aplicacion:
+
+- aplica `prisma migrate deploy`;
+- ejecuta `npm run db:seed` con el seed actual del proyecto;
+- arranca la build `standalone` de Next.js.
+
+Uso basico:
+
+```bash
+Copy-Item .env.example .env
+docker compose build
+docker compose up -d
+```
+
+Tambien puedes usar:
+
+```bash
+npm run docker:build
+npm run docker:up
+npm run docker:down
+```
+
 ## Preparacion de paquete demo para evaluacion
 
 Para generar una carpeta separada con la aplicacion compilada para demo:

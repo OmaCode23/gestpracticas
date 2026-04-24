@@ -79,18 +79,18 @@ export async function getFormacionExport() {
   const formaciones = await prisma.formacionEmpresa.findMany({
     include: {
       empresa: {
-        select: { nombre: true },
+        select: { cif: true },
       },
       alumno: {
-        select: { nombre: true },
+        select: { nia: true },
       },
     },
     orderBy: { createdAt: "desc" },
   });
 
   return formaciones.map((formacion) => ({
-    [FORMACION_FIELDS[0].label]: formacion.empresa.nombre,
-    [FORMACION_FIELDS[1].label]: formacion.alumno?.nombre ?? "",
+    [FORMACION_FIELDS[0].label]: formacion.empresa.cif,
+    [FORMACION_FIELDS[1].label]: formacion.alumno?.nia ?? "",
     [FORMACION_FIELDS[2].label]: formacion.periodo ?? "",
     [FORMACION_FIELDS[3].label]: formacion.descripcion ?? "",
     [FORMACION_FIELDS[4].label]: formacion.tutorLaboral ?? "",

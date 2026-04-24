@@ -27,15 +27,18 @@ export default function RoutePrefetcher() {
       }
     };
 
-    const idleCallback =
-      typeof window !== "undefined" && "requestIdleCallback" in window
+    const hasRequestIdleCallback =
+      typeof window !== "undefined" && "requestIdleCallback" in window;
+
+    const idleCallback: number =
+      hasRequestIdleCallback
         ? window.requestIdleCallback(prefetchAll, { timeout: 1200 })
         : window.setTimeout(prefetchAll, 250);
 
     return () => {
       cancelled = true;
 
-      if (typeof idleCallback === "number") {
+      if (!hasRequestIdleCallback) {
         window.clearTimeout(idleCallback);
         return;
       }
