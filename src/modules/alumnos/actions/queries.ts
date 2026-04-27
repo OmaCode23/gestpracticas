@@ -6,8 +6,8 @@
  */
 
 import { prisma } from "@/database/prisma";
-import { Prisma } from "@prisma/client";
 import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import { buildAlumnoWhere } from "./filters";
 
 const PER_PAGE = DEFAULT_RESULTADOS_POR_PAGINA;
 
@@ -23,24 +23,7 @@ export async function getAlumnosPaginated(params: {
   const perPage = params.perPage ?? PER_PAGE;
   const all = params.all ?? false;
 
-  const where: Prisma.AlumnoWhereInput = {
-    ...(params.ciclo
-      ? {
-          cicloFormativoRef: {
-            is: { nombre: params.ciclo },
-          },
-        }
-      : {}),
-    ...(params.curso ? { curso: params.curso } : {}),
-    ...(params.search
-      ? {
-          OR: [
-            { nombre: { contains: params.search, mode: "insensitive" } },
-            { nia: { contains: params.search, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  };
+  const where = buildAlumnoWhere(params);
 
   const items = await prisma.alumno.findMany({
     where,

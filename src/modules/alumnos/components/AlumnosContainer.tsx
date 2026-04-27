@@ -466,11 +466,35 @@ export default function AlumnosContainer({
     scrollToTable();
   };
 
+  const handleToggleForm = () => {
+    if (isFormExpanded) {
+      collapseForm();
+      return;
+    }
+
+    openNewForm();
+  };
+
+  const buildCvBulkParams = () => {
+    const params = new URLSearchParams();
+    if (ciclo) params.set("ciclo", ciclo);
+    if (curso) params.set("curso", curso);
+    if (search.trim()) params.set("search", search.trim());
+    return params;
+  };
+
+  const buildCvBulkUrl = () => {
+    const query = buildCvBulkParams().toString();
+    return query ? `/api/alumnos/cv?${query}` : "/api/alumnos/cv";
+  };
+
+  const hasCvBulkFilters = Boolean(ciclo || curso || search.trim());
+
   const handleDownloadAllCv = async () => {
     try {
       setBulkCvBusy("download");
 
-      const response = await fetch("/api/alumnos/cv", {
+      const response = await fetch(buildCvBulkUrl(), {
         cache: "no-store",
       });
 
@@ -489,7 +513,11 @@ export default function AlumnosContainer({
       link.click();
       window.URL.revokeObjectURL(url);
 
-      setNotification("Descarga de CVs iniciada correctamente.");
+      setNotification(
+        hasCvBulkFilters
+          ? "Descarga de CVs filtrados iniciada correctamente."
+          : "Descarga de CVs iniciada correctamente."
+      );
     } catch (error) {
       console.error(error);
       alert(error instanceof Error ? error.message : "No se pudieron descargar los CVs.");
@@ -499,14 +527,18 @@ export default function AlumnosContainer({
   };
 
   const handleDeleteAllCv = async () => {
-    if (!confirm("Se eliminarán todos los CV adjuntos de los alumnos. ¿Quieres continuar?")) {
+    const confirmationMessage = hasCvBulkFilters
+      ? "Se eliminarán los CV adjuntos de los alumnos que cumplen los filtros actuales. ¿Quieres continuar?"
+      : "Se eliminarán todos los CV adjuntos de los alumnos. ¿Quieres continuar?";
+
+    if (!confirm(confirmationMessage)) {
       return;
     }
 
     try {
       setBulkCvBusy("delete");
 
-      const response = await fetch("/api/alumnos/cv", {
+      const response = await fetch(buildCvBulkUrl(), {
         method: "DELETE",
       });
       const json = await response.json();
@@ -520,7 +552,9 @@ export default function AlumnosContainer({
 
       setNotification(
         json.data.deletedCount > 0
-          ? `Se eliminaron ${json.data.deletedCount} CV(s) correctamente.`
+          ? hasCvBulkFilters
+            ? `Se eliminaron ${json.data.deletedCount} CV(s) del filtro correctamente.`
+            : `Se eliminaron ${json.data.deletedCount} CV(s) correctamente.`
           : "No había CV adjuntos para eliminar."
       );
     } catch (error) {
@@ -542,6 +576,46 @@ export default function AlumnosContainer({
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
+
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant={isFormExpanded ? "secondary" : "primary"}
+          onClick={handleToggleForm}
+        >
+          {isFormExpanded ? "Ocultar formulario" : "+ Agregar nuevo alumno"}
+        </Button>
+      </div>
+
+      <div
+        ref={formSectionRef}
+        className={[
+          "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
+          isFormExpanded
+            ? "mb-7 max-h-[1600px] translate-y-0 opacity-100"
+            : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
+        ].join(" ")}
+      >
+        {isFormExpanded ? (
+          <AlumnoForm
+            form={form}
+            ciclos={formCiclos}
+            cursos={cursos}
+            onChange={setFormField}
+            onGuardar={handleGuardar}
+            onActualizar={handleActualizar}
+            onCancelarEdicion={handleCancelarEdicion}
+            onToggleCollapse={handleCancelarEdicion}
+            isEditing={editingId !== null}
+            onLimpiar={() => {
+              setForm(EMPTY);
+              setCvState(EMPTY_CV);
+            }}
+            cv={cvState}
+            onCvSelect={handleCvSelect}
+            onCvRemove={handleCvRemove}
+          />
+        ) : null}
+      </div>
 
       <div ref={tableSectionRef}>
         <AlumnosTable
@@ -574,50 +648,6 @@ export default function AlumnosContainer({
           onDeleteAllCv={handleDeleteAllCv}
           bulkCvBusy={bulkCvBusy}
         />
-      </div>
-
-      <div ref={formSectionRef} className="mt-10">
-        {isFormExpanded ? (
-          <AlumnoForm
-            form={form}
-            ciclos={formCiclos}
-            cursos={cursos}
-            onChange={setFormField}
-            onGuardar={handleGuardar}
-            onActualizar={handleActualizar}
-            onCancelarEdicion={handleCancelarEdicion}
-            onToggleCollapse={handleCancelarEdicion}
-            isEditing={editingId !== null}
-            onLimpiar={() => {
-              setForm(EMPTY);
-              setCvState(EMPTY_CV);
-            }}
-            cv={cvState}
-            onCvSelect={handleCvSelect}
-            onCvRemove={handleCvRemove}
-          />
-        ) : (
-          <div className="mb-7">
-            <div className="glass-panel flex w-full items-center justify-between rounded-[20px] border border-white/70 bg-white/84 px-5 py-4 shadow-card">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  type="button"
-                  onClick={openNewForm}
-                  aria-label="Expandir formulario"
-                  title="Expandir formulario"
-                  className="px-2.5 text-[0.95rem]"
-                >
-                  {"\u25B8"}
-                </Button>
-                <Button variant="primary" onClick={openNewForm}>
-                  Nueva alta
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {selectedAlumno ? (

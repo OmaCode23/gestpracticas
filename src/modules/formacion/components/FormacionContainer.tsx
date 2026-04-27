@@ -320,9 +320,52 @@ export default function FormacionContainer({
     scrollToTable();
   };
 
+  const handleToggleForm = () => {
+    if (isFormExpanded) {
+      collapseForm();
+      return;
+    }
+
+    openNewForm();
+  };
+
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
+
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant={isFormExpanded ? "secondary" : "primary"}
+          onClick={handleToggleForm}
+        >
+          {isFormExpanded ? "Ocultar formulario" : "+ Agregar nueva formación"}
+        </Button>
+      </div>
+
+      <div
+        ref={formSectionRef}
+        className={[
+          "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
+          isFormExpanded
+            ? "mb-7 max-h-[1400px] translate-y-0 opacity-100"
+            : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
+        ].join(" ")}
+      >
+        {isFormExpanded ? (
+          <FormacionForm
+            form={form}
+            saving={saving || loadingPickerData}
+            editingId={editingId}
+            empresas={empresas}
+            alumnos={alumnos}
+            cursos={cursos}
+            onChange={(key, value) => setForm((prev) => ({ ...prev, [key]: value }))}
+            onClear={handleLimpiar}
+            onSave={handleGuardar}
+            onToggleCollapse={handleCollapseForm}
+          />
+        ) : null}
+      </div>
 
       <div ref={tableSectionRef}>
         <FormacionTable
@@ -358,44 +401,6 @@ export default function FormacionContainer({
           onEdit={handleEditar}
           onDelete={handleEliminar}
         />
-      </div>
-
-      <div ref={formSectionRef} className="mt-10">
-        {isFormExpanded ? (
-          <FormacionForm
-            form={form}
-            saving={saving || loadingPickerData}
-            editingId={editingId}
-            empresas={empresas}
-            alumnos={alumnos}
-            cursos={cursos}
-            onChange={(key, value) => setForm((prev) => ({ ...prev, [key]: value }))}
-            onClear={handleLimpiar}
-            onSave={handleGuardar}
-            onToggleCollapse={handleCollapseForm}
-          />
-        ) : (
-          <div className="mb-7">
-            <div className="glass-panel flex w-full items-center justify-between rounded-[20px] border border-white/70 bg-white/84 px-5 py-4 shadow-card">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  type="button"
-                  onClick={openNewForm}
-                  aria-label="Expandir formulario"
-                  title="Expandir formulario"
-                  className="px-2.5 text-[0.95rem]"
-                >
-                  {"\u25B8"}
-                </Button>
-                <Button variant="primary" onClick={openNewForm}>
-                  Nueva alta
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {selectedFormacion ? (
