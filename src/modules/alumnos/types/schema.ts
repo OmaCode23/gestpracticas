@@ -138,3 +138,9 @@ export const alumnoFilterSchema = z.object({
   perPage: z.coerce.number().int().positive().max(100).default(10),
   all: z.coerce.boolean().optional().default(false),
 });
+
+export const alumnoCvBulkFilterSchema = alumnoFilterSchema.pick({
+  ciclo: true,
+  curso: true,
+  search: true,
+});

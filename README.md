@@ -160,6 +160,8 @@ Si en la página de `Configuración` se activa el modo histórico, esos listados
 
 Al activar el modo histórico, además se añade en ambos listados un filtro que permite filtrar por curso académico.
 
+El "filtrado" que muestra solo el curso actual o todos los cursos, solo aplica en las tablas de las páginas de alumnos y de formaciones, no en los formularios u otras páginas.
+
 ## Procedimiento recomendado al desplegar o preparar un entorno nuevo
 
 ```bash
@@ -168,6 +170,32 @@ npm run db:migrate
 npm run db:seed
 npm run build
 npm run start
+```
+
+## Docker
+
+El proyecto mantiene un unico flujo Docker pensado para ejecucion/despliegue.
+
+El contenedor de aplicacion:
+
+- aplica `prisma migrate deploy`;
+- ejecuta `npm run db:seed` con el seed actual del proyecto;
+- arranca la build `standalone` de Next.js.
+
+Uso basico:
+
+```bash
+Copy-Item .env.example .env
+docker compose build
+docker compose up -d
+```
+
+Tambien puedes usar:
+
+```bash
+npm run docker:build
+npm run docker:up
+npm run docker:down
 ```
 
 ## Preparacion de paquete de produccion

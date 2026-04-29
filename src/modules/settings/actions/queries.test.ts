@@ -32,6 +32,10 @@ vi.mock("@prisma/client", () => ({
   Prisma: prismaNamespaceMock,
 }));
 
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: (...args: any[]) => any) => fn,
+}));
+
 describe("settings queries", () => {
   beforeEach(() => {
     vi.clearAllMocks();

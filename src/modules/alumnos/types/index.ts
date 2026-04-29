@@ -7,6 +7,7 @@ import {
   alumnoSchema,
   alumnoUpdateSchema,
   alumnoFilterSchema,
+  alumnoCvBulkFilterSchema,
   alumnoCrudSchema,
   alumnoCrudUpdateSchema,
 } from "./schema";
@@ -21,6 +22,7 @@ export type AlumnoCrudUpdateInput = z.infer<typeof alumnoCrudUpdateSchema>;
 
 // Filtros para GET /api/alumnos
 export type AlumnoFilters = z.infer<typeof alumnoFilterSchema>;
+export type AlumnoCvBulkFilters = z.infer<typeof alumnoCvBulkFilterSchema>;
 
 // Datos que devuelve la API (incluye id y fechas)
 export interface Alumno {

@@ -58,6 +58,7 @@ export default function AlumnosTable({
   bulkCvBusy,
 }: AlumnosTableProps) {
   const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
+  const hasActiveFilters = Boolean(ciclo || curso || search.trim());
 
   return (
     <>
@@ -103,7 +104,11 @@ export default function AlumnosTable({
               onClick={onDownloadAllCv}
               disabled={bulkCvBusy !== null}
             >
-              {bulkCvBusy === "download" ? "Descargando CVs..." : "Descargar todos los CVs"}
+              {bulkCvBusy === "download"
+                ? "Descargando CVs..."
+                : hasActiveFilters
+                  ? "Descargar CVs filtrados"
+                  : "Descargar todos los CVs"}
             </Button>
             <Button
               variant="danger"
@@ -111,7 +116,11 @@ export default function AlumnosTable({
               onClick={onDeleteAllCv}
               disabled={bulkCvBusy !== null}
             >
-              {bulkCvBusy === "delete" ? "Eliminando CVs..." : "Eliminar todos los CVs"}
+              {bulkCvBusy === "delete"
+                ? "Eliminando CVs..."
+                : hasActiveFilters
+                  ? "Eliminar CVs filtrados"
+                  : "Eliminar todos los CVs"}
             </Button>
           </div>
         </TableFilters>

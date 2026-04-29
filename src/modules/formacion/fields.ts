@@ -1,8 +1,8 @@
 import type { ImportFieldDef } from "@/modules/importexport/types";
 
 export const FORMACION_FIELDS: ImportFieldDef[] = [
-  { key: "empresa", label: "Empresa", required: true, formLabel: "Empresa" },
-  { key: "alumno", label: "Alumno", required: true, formLabel: "Alumno" },
+  { key: "cif", label: "CIF", required: true, formLabel: "CIF Empresa" },
+  { key: "nia", label: "NIA", required: true, formLabel: "NIA Alumno" },
   {
     key: "periodo",
     label: "Período",

@@ -1,4 +1,5 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { buildAlumnoWhere, type AlumnoFilterParams } from "./filters";
 
 export const ALUMNO_CV_MAX_BYTES = 500 * 1024;
 export const ALUMNO_CV_ACCEPTED_MIME_TYPES = ["application/pdf"] as const;
@@ -17,6 +18,16 @@ type AlumnoCvRecord = {
   cvMimeType: string;
   cvTamano: number;
 };
+
+function buildAlumnoCvWhere(filters?: AlumnoFilterParams): Prisma.AlumnoWhereInput {
+  return {
+    ...buildAlumnoWhere(filters),
+    cvOid: { not: null },
+    cvNombre: { not: null },
+    cvMimeType: { not: null },
+    cvTamano: { not: null },
+  };
+}
 
 function ensureSupportedMimeType(mimeType: string) {
   if (!ALUMNO_CV_ACCEPTED_MIME_TYPES.includes(mimeType as (typeof ALUMNO_CV_ACCEPTED_MIME_TYPES)[number])) {
@@ -267,14 +278,12 @@ function buildStoredZip(files: Array<{ fileName: string; data: Buffer }>) {
   return Buffer.concat([localDirectory, centralDirectory, endRecord]);
 }
 
-export async function readAllAlumnosCv(tx: PrismaTransactionClient) {
+export async function readAllAlumnosCv(
+  tx: PrismaTransactionClient,
+  filters?: AlumnoFilterParams
+) {
   const alumnos = await tx.alumno.findMany({
-    where: {
-      cvOid: { not: null },
-      cvNombre: { not: null },
-      cvMimeType: { not: null },
-      cvTamano: { not: null },
-    },
+    where: buildAlumnoCvWhere(filters),
     orderBy: { nombre: "asc" },
     select: {
       id: true,
@@ -326,9 +335,13 @@ export async function readAllAlumnosCv(tx: PrismaTransactionClient) {
   };
 }
 
-export async function clearAllAlumnosCv(tx: PrismaTransactionClient) {
+export async function clearAllAlumnosCv(
+  tx: PrismaTransactionClient,
+  filters?: AlumnoFilterParams
+) {
   const alumnos = await tx.alumno.findMany({
     where: {
+      ...buildAlumnoWhere(filters),
       cvOid: { not: null },
     },
     select: {

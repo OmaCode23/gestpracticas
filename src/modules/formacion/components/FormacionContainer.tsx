@@ -60,6 +60,7 @@ export default function FormacionContainer({
   const [isFormExpanded, setIsFormExpanded] = useState(false);
   const [selectedFormacion, setSelectedFormacion] = useState<Formacion | null>(null);
   const [notification, setNotification] = useState("");
+  const [loadingPickerData, setLoadingPickerData] = useState(false);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -86,30 +87,35 @@ export default function FormacionContainer({
 
   const cicloOptions = ciclosFormativos;
 
-  // Cargar empresas y alumnos (para selects)
-  async function cargarEmpresas() {
-    const res = await fetch("/api/empresas?all=true", { cache: "no-store" });
-    const json = await res.json();
-    if (json.ok) {
-      setEmpresas(
-        json.data.items.map((e: any) => ({ id: e.id, nombre: e.nombre }))
-      );
-    }
-  }
+  // Los datos del formulario se cargan bajo demanda para aligerar la entrada al modulo.
+  async function cargarDatosFormulario() {
+    try {
+      setLoadingPickerData(true);
 
-  async function cargarAlumnos() {
-    const res = await fetch("/api/alumnos?all=true", { cache: "no-store" });
-    const json = await res.json();
-    if (json.ok) {
-      setAlumnos(
-        json.data.items.map((a: any) => ({
-          id: a.id,
-          nombre: a.nombre,
-          nia: a.nia,
-          nif: a.nif ?? null,
-          nuss: a.nuss ?? null,
-        }))
-      );
+      const [empresasResponse, alumnosResponse] = await Promise.all([
+        fetch("/api/empresas?all=true&fields=picker", { cache: "no-store" }),
+        fetch("/api/alumnos?all=true&fields=picker", { cache: "no-store" }),
+      ]);
+      const [empresasJson, alumnosJson] = await Promise.all([
+        empresasResponse.json(),
+        alumnosResponse.json(),
+      ]);
+
+      if (!empresasJson.ok) {
+        throw new Error(empresasJson.error ?? "No se pudieron cargar las empresas.");
+      }
+
+      if (!alumnosJson.ok) {
+        throw new Error(alumnosJson.error ?? "No se pudieron cargar los alumnos.");
+      }
+
+      setEmpresas(empresasJson.data.items);
+      setAlumnos(alumnosJson.data.items);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron cargar los selectores del formulario.");
+    } finally {
+      setLoadingPickerData(false);
     }
   }
 
@@ -150,9 +156,10 @@ export default function FormacionContainer({
   }
 
   useEffect(() => {
-    cargarEmpresas();
-    cargarAlumnos();
-  }, []);
+    if (!isFormExpanded) return;
+    if (empresas.length > 0 && alumnos.length > 0) return;
+    void cargarDatosFormulario();
+  }, [isFormExpanded, empresas.length, alumnos.length]);
 
   // Filtros inmediatos (selectores y paginación)
   useEffect(() => {
@@ -323,9 +330,52 @@ export default function FormacionContainer({
     scrollToTable();
   };
 
+  const handleToggleForm = () => {
+    if (isFormExpanded) {
+      collapseForm();
+      return;
+    }
+
+    openNewForm();
+  };
+
   return (
     <>
       <SuccessToast message={notification} onClose={() => setNotification("")} />
+
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant={isFormExpanded ? "secondary" : "primary"}
+          onClick={handleToggleForm}
+        >
+          {isFormExpanded ? "Ocultar formulario" : "+ Agregar nueva formación"}
+        </Button>
+      </div>
+
+      <div
+        ref={formSectionRef}
+        className={[
+          "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
+          isFormExpanded
+            ? "mb-7 max-h-[1400px] translate-y-0 opacity-100"
+            : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
+        ].join(" ")}
+      >
+        {isFormExpanded ? (
+          <FormacionForm
+            form={form}
+            saving={saving || loadingPickerData}
+            editingId={editingId}
+            empresas={empresas}
+            alumnos={alumnos}
+            cursos={cursos}
+            onChange={(key, value) => setForm((prev) => ({ ...prev, [key]: value }))}
+            onClear={handleLimpiar}
+            onSave={handleGuardar}
+            onToggleCollapse={handleCollapseForm}
+          />
+        ) : null}
+      </div>
 
       <div ref={tableSectionRef}>
         <FormacionTable
@@ -362,44 +412,6 @@ export default function FormacionContainer({
           onEdit={handleEditar}
           onDelete={handleEliminar}
         />
-      </div>
-
-      <div ref={formSectionRef} className="mt-10">
-        {isFormExpanded ? (
-          <FormacionForm
-            form={form}
-            saving={saving}
-            editingId={editingId}
-            empresas={empresas}
-            alumnos={alumnos}
-            cursos={cursos}
-            onChange={(key, value) => setForm((prev) => ({ ...prev, [key]: value }))}
-            onClear={handleLimpiar}
-            onSave={handleGuardar}
-            onToggleCollapse={handleCollapseForm}
-          />
-        ) : (
-          <div className="mb-7">
-            <div className="glass-panel flex w-full items-center justify-between rounded-[20px] border border-white/70 bg-white/84 px-5 py-4 shadow-card">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  type="button"
-                  onClick={openNewForm}
-                  aria-label="Expandir formulario"
-                  title="Expandir formulario"
-                  className="px-2.5 text-[0.95rem]"
-                >
-                  {"\u25B8"}
-                </Button>
-                <Button variant="primary" onClick={openNewForm}>
-                  Nueva alta
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {selectedFormacion ? (

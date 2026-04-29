@@ -1,14 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, PUT, dynamic } from "./route";
+import { CACHE_TAGS } from "@/shared/cache";
 
 const {
   getConfiguracionAcademicaMock,
   saveConfiguracionAcademicaMock,
   revalidatePathMock,
+  revalidateTagMock,
 } = vi.hoisted(() => ({
   getConfiguracionAcademicaMock: vi.fn(),
   saveConfiguracionAcademicaMock: vi.fn(),
   revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
@@ -21,6 +24,7 @@ vi.mock("@/modules/settings/actions/mutations", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 describe("GET /api/settings/academico", () => {
@@ -142,6 +146,7 @@ describe("PUT /api/settings/academico", () => {
         resultadosPorPagina: 20,
       },
     });
+    expect(revalidateTagMock).toHaveBeenCalledWith(CACHE_TAGS.settings);
     expect(revalidatePathMock).toHaveBeenCalledWith("/");
     expect(revalidatePathMock).toHaveBeenCalledWith("/alumnos");
     expect(revalidatePathMock).toHaveBeenCalledWith("/formacion");

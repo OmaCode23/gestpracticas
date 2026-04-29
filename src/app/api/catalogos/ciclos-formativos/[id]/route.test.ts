@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PATCH } from "./route";
 
-const { getCiclosFormativosMock, updateCicloFormativoMock, deleteCicloFormativoMock, revalidatePathMock } =
+const { getCiclosFormativosMock, updateCicloFormativoMock, deleteCicloFormativoMock, revalidatePathMock, revalidateTagMock } =
   vi.hoisted(() => ({
     getCiclosFormativosMock: vi.fn(),
     updateCicloFormativoMock: vi.fn(),
     deleteCicloFormativoMock: vi.fn(),
     revalidatePathMock: vi.fn(),
+    revalidateTagMock: vi.fn(),
   }));
 
 vi.mock("@/modules/catalogos/actions/queries", () => ({
@@ -20,6 +21,7 @@ vi.mock("@/modules/catalogos/actions/mutations", () => ({
 
 vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
+  revalidateTag: revalidateTagMock,
 }));
 
 describe("PATCH /api/catalogos/ciclos-formativos/[id]", () => {

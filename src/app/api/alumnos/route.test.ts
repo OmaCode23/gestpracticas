@@ -3,6 +3,7 @@ import { GET, POST } from "./route";
 
 const {
   getAlumnosPaginatedMock,
+  getAlumnosPickerOptionsMock,
   createAlumnoMock,
   getConfiguracionAcademicaMock,
   getCursosAcademicosConfiguradosMock,
@@ -11,6 +12,7 @@ const {
   revalidatePathMock,
 } = vi.hoisted(() => ({
   getAlumnosPaginatedMock: vi.fn(),
+  getAlumnosPickerOptionsMock: vi.fn(),
   createAlumnoMock: vi.fn(),
   getConfiguracionAcademicaMock: vi.fn(),
   getCursosAcademicosConfiguradosMock: vi.fn(),
@@ -21,6 +23,7 @@ const {
 
 vi.mock("@/modules/alumnos/actions/queries", () => ({
   getAlumnosPaginated: getAlumnosPaginatedMock,
+  getAlumnosPickerOptions: getAlumnosPickerOptionsMock,
 }));
 
 vi.mock("@/modules/alumnos/actions/mutations", () => ({
@@ -141,6 +144,43 @@ describe("GET /api/alumnos", () => {
       all: true,
     });
     expect(response.status).toBe(200);
+  });
+
+  it("devuelve opciones picker sin aplicar modoHistorico ni paginacion configurada", async () => {
+    getAlumnosPickerOptionsMock.mockResolvedValue([
+      { id: 1, nombre: "Ana", nia: "A-1", nif: null, nuss: null },
+      { id: 2, nombre: "Luis", nia: "A-2", nif: "12345678Z", nuss: null },
+    ]);
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams({
+          all: "true",
+          fields: "picker",
+          curso: "2024-2025",
+        }),
+      },
+    } as any);
+    const body = await response.json();
+
+    expect(getAlumnosPickerOptionsMock).toHaveBeenCalledTimes(1);
+    expect(getAlumnosPaginatedMock).not.toHaveBeenCalled();
+    expect(getConfiguracionAcademicaMock).not.toHaveBeenCalled();
+    expect(getResultadosPorPaginaConfiguradosMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      ok: true,
+      data: {
+        items: [
+          { id: 1, nombre: "Ana", nia: "A-1", nif: null, nuss: null },
+          { id: 2, nombre: "Luis", nia: "A-2", nif: "12345678Z", nuss: null },
+        ],
+        total: 2,
+        page: 1,
+        perPage: 2,
+        totalPages: 1,
+      },
+    });
   });
 
   it("fuerza el curso actual cuando modoHistorico esta desactivado", async () => {

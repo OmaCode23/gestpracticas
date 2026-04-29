@@ -28,8 +28,9 @@ import { getCursoActual } from "@/shared/catalogs/academico";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
+    const all = searchParams.get("all") === "true";
     const [defaultPerPage, configuracionAcademica] = await Promise.all([
-      getResultadosPorPaginaConfigurados(),
+      all ? Promise.resolve(undefined) : getResultadosPorPaginaConfigurados(),
       getConfiguracionAcademica(),
     ]);
 

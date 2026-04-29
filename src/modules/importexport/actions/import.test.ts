@@ -396,11 +396,11 @@ describe("import actions", () => {
     );
   });
 
-  it("importa formaciones resolviendo empresa y alumno por nombre", async () => {
+  it("importa formaciones resolviendo empresa y alumno por CIF y NIA", async () => {
     const rows: FormacionImportRow[] = [
       {
-        empresa: "  empresa demo s.l. ",
-        alumno: "  Lucia Perez ",
+        cif: "  B12345678 ",
+        nia: "  NIA-01 ",
         periodo: "Marzo - Junio",
         descripcion: " Seguimiento FCT ",
         tutorLaboral: " Ana Tutor ",
@@ -409,8 +409,8 @@ describe("import actions", () => {
       },
     ];
 
-    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, nombre: "Empresa Demo S.L." }]);
-    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nombre: "Lucia Perez" }]);
+    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, cif: "B12345678" }]);
+    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nia: "NIA-01" }]);
     prismaMock.formacionEmpresa.createMany.mockResolvedValue({ count: 1 });
 
     const result = await importFormaciones(rows);
@@ -442,28 +442,25 @@ describe("import actions", () => {
     );
   });
 
-  it("bloquea la importacion de formaciones si el nombre de empresa es ambiguo", async () => {
+  it("bloquea la importacion de formaciones si el CIF de empresa no existe", async () => {
     const rows: FormacionImportRow[] = [
       {
-        empresa: "Empresa Demo",
-        alumno: "Lucia Perez",
+        cif: "B00000000",
+        nia: "NIA-01",
         periodo: "Marzo - Junio",
         curso: "2025-2026",
       },
     ];
 
-    prismaMock.empresa.findMany.mockResolvedValue([
-      { id: 10, nombre: "Empresa Demo" },
-      { id: 11, nombre: "Empresa Demo" },
-    ]);
-    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nombre: "Lucia Perez" }]);
+    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, cif: "B12345678" }]);
+    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nia: "NIA-01" }]);
 
     const result = await importFormaciones(rows);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContain(
-        'Fila 2: hay varias empresas llamadas "Empresa Demo". Usa nombres unicos antes de importar.'
+        'Fila 2: no existe ninguna empresa con el CIF "B00000000".'
       );
     }
     expect(prismaMock.formacionEmpresa.createMany).not.toHaveBeenCalled();
@@ -475,17 +472,17 @@ describe("import actions", () => {
     );
   });
 
-  it("bloquea la importacion de formaciones si el alumno no existe", async () => {
+  it("bloquea la importacion de formaciones si el NIA del alumno no existe", async () => {
     const rows: FormacionImportRow[] = [
       {
-        empresa: "Empresa Demo",
-        alumno: "Alumno Fantasma",
+        cif: "B12345678",
+        nia: "NIA-404",
         periodo: "Marzo - Junio",
         curso: "2025-2026",
       },
     ];
 
-    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, nombre: "Empresa Demo" }]);
+    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, cif: "B12345678" }]);
     prismaMock.alumno.findMany.mockResolvedValue([]);
 
     const result = await importFormaciones(rows);
@@ -493,7 +490,7 @@ describe("import actions", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.errors).toContain(
-        'Fila 2: no existe ningun alumno con el nombre "Alumno Fantasma".'
+        'Fila 2: no existe ningun alumno con el NIA "NIA-404".'
       );
     }
     expect(prismaMock.formacionEmpresa.createMany).not.toHaveBeenCalled();
@@ -538,8 +535,8 @@ describe("import actions", () => {
   it("guarda todas las incidencias de validacion por fila en formacion empresa", async () => {
     const rows: FormacionImportRow[] = [
       {
-        empresa: "Empresa Demo",
-        alumno: "Lucia Perez",
+        cif: "B12345678",
+        nia: "NIA-01",
         periodo: "",
         descripcion: "x".repeat(501),
         tutorLaboral: "Tutor 123",
@@ -547,8 +544,8 @@ describe("import actions", () => {
       },
     ];
 
-    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, nombre: "Empresa Demo" }]);
-    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nombre: "Lucia Perez" }]);
+    prismaMock.empresa.findMany.mockResolvedValue([{ id: 10, cif: "B12345678" }]);
+    prismaMock.alumno.findMany.mockResolvedValue([{ id: 7, nia: "NIA-01" }]);
 
     const result = await importFormaciones(rows);
 

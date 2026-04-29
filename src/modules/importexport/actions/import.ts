@@ -35,8 +35,8 @@ export type AlumnoImportRow = {
 };
 
 export type FormacionImportRow = {
-  empresa: string;
-  alumno: string;
+  cif: string;
+  nia: string;
   periodo: string;
   descripcion?: string;
   tutorLaboral?: string;
@@ -457,49 +457,51 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
 
   const [empresas, alumnos, cursosValidos] = await Promise.all([
     prisma.empresa.findMany({
-      select: { id: true, nombre: true },
+      select: { id: true, cif: true },
     }),
     prisma.alumno.findMany({
-      select: { id: true, nombre: true },
+      select: { id: true, nia: true },
     }),
     getCursosAcademicosConfigurados(),
   ]);
   const cursosValidosSet = new Set(cursosValidos);
 
-  const empresasByName = new Map<string, number[]>();
+  const empresasByCif = new Map<string, number[]>();
   empresas.forEach((empresa) => {
-    const key = normalizeKey(empresa.nombre);
-    empresasByName.set(key, [...(empresasByName.get(key) ?? []), empresa.id]);
+    const key = empresa.cif.trim().toUpperCase();
+    empresasByCif.set(key, [...(empresasByCif.get(key) ?? []), empresa.id]);
   });
 
-  const alumnosByName = new Map<string, number[]>();
+  const alumnosByNia = new Map<string, number[]>();
   alumnos.forEach((alumno) => {
-    const key = normalizeKey(alumno.nombre);
-    alumnosByName.set(key, [...(alumnosByName.get(key) ?? []), alumno.id]);
+    const key = alumno.nia.trim().toUpperCase();
+    alumnosByNia.set(key, [...(alumnosByNia.get(key) ?? []), alumno.id]);
   });
 
   const normalizedRows = rows.flatMap((row, index) => {
     const excelRow = index + 2;
-    const empresaMatches = empresasByName.get(normalizeKey(row.empresa ?? "")) ?? [];
-    const alumnoMatches = alumnosByName.get(normalizeKey(row.alumno ?? "")) ?? [];
+    const cif = row.cif?.trim().toUpperCase() ?? "";
+    const nia = row.nia?.trim().toUpperCase() ?? "";
+    const empresaMatches = empresasByCif.get(cif) ?? [];
+    const alumnoMatches = alumnosByNia.get(nia) ?? [];
 
     if (empresaMatches.length === 0) {
-      errors.push(`Fila ${excelRow}: no existe ninguna empresa con el nombre "${row.empresa}".`);
+      errors.push(`Fila ${excelRow}: no existe ninguna empresa con el CIF "${row.cif}".`);
       return [];
     }
 
     if (empresaMatches.length > 1) {
-      errors.push(`Fila ${excelRow}: hay varias empresas llamadas "${row.empresa}". Usa nombres unicos antes de importar.`);
+      errors.push(`Fila ${excelRow}: hay varias empresas con el CIF "${row.cif}". Revisa los datos antes de importar.`);
       return [];
     }
 
     if (alumnoMatches.length === 0) {
-      errors.push(`Fila ${excelRow}: no existe ningun alumno con el nombre "${row.alumno}".`);
+      errors.push(`Fila ${excelRow}: no existe ningun alumno con el NIA "${row.nia}".`);
       return [];
     }
 
     if (alumnoMatches.length > 1) {
-      errors.push(`Fila ${excelRow}: hay varios alumnos llamados "${row.alumno}". Usa nombres unicos antes de importar.`);
+      errors.push(`Fila ${excelRow}: hay varios alumnos con el NIA "${row.nia}". Revisa los datos antes de importar.`);
       return [];
     }
 

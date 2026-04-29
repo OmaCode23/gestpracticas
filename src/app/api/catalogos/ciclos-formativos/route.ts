@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { createCicloFormativo } from "@/modules/catalogos/actions/mutations";
 import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
 import { cicloFormativoSchema } from "@/modules/catalogos/types/ciclos";
+import { CACHE_TAGS } from "@/shared/cache";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET() {
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ciclo = await createCicloFormativo(parsed.data);
+    revalidateTag(CACHE_TAGS.catalogos);
     revalidatePath("/configuracion");
 
     return NextResponse.json<ApiResponse<typeof ciclo>>(
