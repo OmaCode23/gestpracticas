@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureApiUser } from "@/modules/auth/api";
 import {
   createImportExportLog,
   getImportExportLogs,
@@ -12,6 +13,11 @@ import type { ApiResponse } from "@/shared/types/api";
  */
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const { searchParams } = req.nextUrl;
     const defaultPerPage = await getResultadosPorPaginaConfigurados();
 
@@ -62,6 +68,11 @@ type CreateLogBody = {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const body = (await req.json()) as CreateLogBody;
 
     if (!body.entidad || !body.accion || body.registros === undefined || !body.estado) {

@@ -15,6 +15,7 @@ export function EntidadCard({
   onExport,
   onPlantilla,
   onImport,
+  canImport,
 }: {
   config: CardConfig;
   statusMsg: string;
@@ -23,6 +24,7 @@ export function EntidadCard({
   onExport: () => void;
   onPlantilla: () => void;
   onImport: (file: File) => void;
+  canImport: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const isBusy = busyAction !== null;
@@ -62,9 +64,13 @@ export function EntidadCard({
           iconoBg="bg-green-100"
           iconoColor="text-green-600"
           titulo={`Importar ${config.titulo.toLowerCase()} desde Excel`}
-          desc={config.importDescripcion ?? "Sube tu archivo .xlsx o .xls"}
+          desc={
+            canImport
+              ? config.importDescripcion ?? "Sube tu archivo .xlsx o .xls"
+              : "Solo disponible para administradores"
+          }
           onClick={() => fileRef.current?.click()}
-          disabled={!config.enabled || isBusy}
+          disabled={!config.enabled || isBusy || !canImport}
         />
         <input
           ref={fileRef}

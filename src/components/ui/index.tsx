@@ -145,10 +145,11 @@ export function PageHeader({ breadcrumb, breadcrumbHighlight, title, subtitle }:
   );
 }
 
-export function Alert({ variant = "info", children }: { variant?: "info" | "success"; children: React.ReactNode }) {
+export function Alert({ variant = "info", children }: { variant?: "info" | "success" | "warning"; children: React.ReactNode }) {
   const CLS = {
     info: "border border-[#e6c1cb] bg-[#fbecf1] text-[#8f1f3e]",
     success: "border border-green-200 bg-green-50 text-green-700",
+    warning: "border border-amber-200 bg-amber-50 text-amber-700",
   };
 
   return <div className={`mb-5 flex items-center gap-2.5 rounded-[9px] px-4 py-3 text-[0.84rem] ${CLS[variant]}`}>{children}</div>;

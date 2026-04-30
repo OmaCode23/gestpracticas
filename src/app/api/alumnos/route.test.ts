@@ -21,6 +21,11 @@ const {
   revalidatePathMock: vi.fn(),
 }));
 
+const { ensureApiUserMock, ensureApiAdminMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+  ensureApiAdminMock: vi.fn(),
+}));
+
 vi.mock("@/modules/alumnos/actions/queries", () => ({
   getAlumnosPaginated: getAlumnosPaginatedMock,
   getAlumnosPickerOptions: getAlumnosPickerOptionsMock,
@@ -44,9 +49,16 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+  ensureApiAdmin: ensureApiAdminMock,
+}));
+
 describe("GET /api/alumnos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+    ensureApiAdminMock.mockResolvedValue(null);
     getResultadosPorPaginaConfiguradosMock.mockResolvedValue(10);
     getConfiguracionAcademicaMock.mockResolvedValue({
       mesCambioCurso: 9,
@@ -225,7 +237,30 @@ describe("GET /api/alumnos", () => {
 describe("POST /api/alumnos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+    ensureApiAdminMock.mockResolvedValue(null);
     getCursosAcademicosConfiguradosMock.mockResolvedValue(["2025-2026", "2026-2027"]);
+  });
+
+  it("devuelve 403 si la importacion la intenta un usuario no administrador", async () => {
+    ensureApiAdminMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await POST({
+      json: vi.fn().mockResolvedValue({
+        rows: [{ nia: "A-1" }],
+      }),
+    } as any);
+
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(importAlumnosMock).not.toHaveBeenCalled();
   });
 
   it("rechaza cuerpos invalidos", async () => {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/database/prisma";
+import { ensureApiUser } from "@/modules/auth/api";
 import { clearAllAlumnosCv, readAllAlumnosCv } from "@/modules/alumnos/actions/cv";
 import { alumnoCvBulkFilterSchema } from "@/modules/alumnos/types/schema";
 import type { ApiResponse } from "@/shared/types/api";
@@ -21,6 +22,11 @@ function parseCvFilters(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const parsedFilters = parseCvFilters(req);
 
     if (!parsedFilters.success) {
@@ -60,6 +66,11 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const parsedFilters = parseCvFilters(req);
 
     if (!parsedFilters.success) {

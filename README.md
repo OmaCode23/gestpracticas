@@ -22,6 +22,10 @@ Sistema de gestión de prácticas de empresa para institutos.
 - `catalogos`
 - `settings`
 
+## Documentacion funcional relevante
+
+- `sistema-login.md`: decisiones de arquitectura del login, modos de autenticacion, bootstrap del administrador y matriz de permisos por rol.
+
 ## Estructura
 
 ```text

@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getAlumnoById } from "@/modules/alumnos/actions/queries";
 import { updateAlumno, deleteAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoCrudUpdateSchema } from "@/modules/alumnos/types/schema";
@@ -20,6 +21,11 @@ function parseId(idParam: string) {
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
   if (!id) {
     return NextResponse.json<ApiResponse<never>>(
@@ -43,6 +49,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
   if (!id) {
     return NextResponse.json<ApiResponse<never>>(
@@ -120,6 +131,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
   if (!id) {
     return NextResponse.json<ApiResponse<never>>(

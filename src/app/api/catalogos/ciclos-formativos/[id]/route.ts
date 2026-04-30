@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { ensureApiAdmin } from "@/modules/auth/api";
 import { deleteCicloFormativo, updateCicloFormativo } from "@/modules/catalogos/actions/mutations";
 import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
 import { cicloFormativoUpdateSchema } from "@/modules/catalogos/types/ciclos";
@@ -17,6 +18,11 @@ async function getCicloById(id: number) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiAdmin();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
   if (!id) {
     return NextResponse.json<ApiResponse<never>>(
@@ -115,6 +121,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiAdmin();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
   if (!id) {
     return NextResponse.json<ApiResponse<never>>(

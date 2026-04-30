@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/database/prisma";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getAlumnoById } from "@/modules/alumnos/actions/queries";
 import {
   ALUMNO_CV_MAX_BYTES,
@@ -16,6 +17,11 @@ function parseId(idParam: string) {
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
 
   if (!id) {
@@ -89,6 +95,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
 
   if (!id) {
@@ -127,6 +138,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
+  const authResponse = await ensureApiUser();
+  if (authResponse) {
+    return authResponse;
+  }
+
   const id = parseId(params.id);
 
   if (!id) {

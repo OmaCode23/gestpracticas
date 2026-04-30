@@ -21,6 +21,7 @@
     "db:migrate": "node scripts/with-db-env.mjs prisma migrate dev",
     "db:migrate:deploy": "node scripts/with-db-env.mjs prisma migrate deploy",
     "db:seed": "node scripts/with-db-env.mjs node --experimental-strip-types prisma/seed.ts",
+    "db:bootstrap-admin": "node scripts/with-db-env.mjs node --experimental-strip-types prisma/bootstrap-admin.ts",
     "db:push": "node scripts/with-db-env.mjs prisma db push",
     "db:studio": "node scripts/with-db-env.mjs prisma studio"
   },

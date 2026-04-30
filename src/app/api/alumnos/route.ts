@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
 import {
   getAlumnosPaginated,
   getAlumnosPickerOptions,
@@ -24,6 +25,11 @@ import { getCursoActual } from "@/shared/catalogs/academico";
 
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const { searchParams } = req.nextUrl;
     const all = searchParams.get("all") === "true";
     const fields = searchParams.get("fields");
@@ -99,6 +105,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (Array.isArray(body.rows)) {
+      const authResponse = await ensureApiAdmin();
+      if (authResponse) {
+        return authResponse;
+      }
+
       const result = await importAlumnos(body.rows as AlumnoImportRow[]);
 
       if (!result.ok) {
@@ -116,6 +127,11 @@ export async function POST(req: NextRequest) {
         ok: true,
         data: result,
       });
+    }
+
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
     }
 
     const parsed = alumnoCrudSchema.safeParse(body);

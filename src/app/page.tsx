@@ -5,11 +5,13 @@ import institutoLogoCompleto from "@/app/images/logo_instituto_completo.webp";
 import StatCard from "@/components/ui/StatCard";
 import { SectionLabel } from "@/components/ui";
 import { prisma } from "@/database/prisma";
+import { requireUserSession } from "@/modules/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   noStore();
+  await requireUserSession("/");
 
   const [empresas, alumnos, formaciones] = await Promise.all([
     prisma.empresa.count(),

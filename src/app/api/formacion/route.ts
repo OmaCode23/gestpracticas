@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
 import { getFormacionesPaginated } from "@/modules/formacion/actions/queries";
 import { createFormacion } from "@/modules/formacion/actions/mutations";
 import {
@@ -27,6 +28,11 @@ import { getCursoActual } from "@/shared/catalogs/academico";
 
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const { searchParams } = req.nextUrl;
     const all = searchParams.get("all") === "true";
     const [defaultPerPage, configuracionAcademica] = await Promise.all([
@@ -78,6 +84,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     if (Array.isArray(body.rows)) {
+      const authResponse = await ensureApiAdmin();
+      if (authResponse) {
+        return authResponse;
+      }
+
       const result = await importFormaciones(body.rows as FormacionImportRow[]);
 
       if (!result.ok) {
@@ -95,6 +106,11 @@ export async function POST(req: NextRequest) {
         ok: true,
         data: result,
       });
+    }
+
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
     }
 
     const parsed = formacionCrudSchema.safeParse(body);

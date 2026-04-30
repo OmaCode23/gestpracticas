@@ -14,6 +14,11 @@ const {
   revalidateTagMock: vi.fn(),
 }));
 
+const { ensureApiUserMock, ensureApiAdminMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+  ensureApiAdminMock: vi.fn(),
+}));
+
 vi.mock("@/modules/settings/actions/queries", () => ({
   getConfiguracionAcademica: getConfiguracionAcademicaMock,
 }));
@@ -27,9 +32,16 @@ vi.mock("next/cache", () => ({
   revalidateTag: revalidateTagMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+  ensureApiAdmin: ensureApiAdminMock,
+}));
+
 describe("GET /api/settings/academico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+    ensureApiAdminMock.mockResolvedValue(null);
   });
 
   it("fuerza modo dinamico para evitar regresiones del build de produccion", () => {
@@ -71,11 +83,52 @@ describe("GET /api/settings/academico", () => {
       error: "Error al obtener la configuracion academica.",
     });
   });
+
+  it("devuelve 401 si la ruta requiere autenticacion y falta sesion", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autenticado." }, { status: 401 })
+    );
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autenticado.",
+    });
+    expect(getConfiguracionAcademicaMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("PUT /api/settings/academico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+    ensureApiAdminMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si la capa de auth exige rol admin", async () => {
+    ensureApiAdminMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await PUT({
+      json: vi.fn().mockResolvedValue({
+        mesCambioCurso: 9,
+        numeroCursosVisibles: 3,
+        modoHistorico: false,
+        resultadosPorPagina: 10,
+      }),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(saveConfiguracionAcademicaMock).not.toHaveBeenCalled();
   });
 
   it("rechaza cuerpos invalidos", async () => {

@@ -7,6 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { ensureApiUser } from "@/modules/auth/api";
 import {
   getAlumnosExport,
   getEmpresasExport,
@@ -20,6 +21,11 @@ export async function GET(
   { params }: { params: { tipo: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const exportConfig = {
       empresas: { entidad: "Empresas", getData: getEmpresasExport },
       alumnos: { entidad: "Alumnos", getData: getAlumnosExport },

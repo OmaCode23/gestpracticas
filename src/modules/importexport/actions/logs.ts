@@ -1,4 +1,5 @@
 import { prisma } from "@/database/prisma";
+import { getOptionalSession } from "@/modules/auth/session";
 import { getResultadosPorPaginaConfigurados } from "@/modules/settings/actions/queries";
 
 type LogAction = "Importacion" | "Exportacion";
@@ -28,6 +29,21 @@ async function getOrCreateDefaultUser() {
   });
 }
 
+async function getCurrentAuditUser() {
+  try {
+    const session = await getOptionalSession();
+    if (session?.user) {
+      return prisma.usuario.findUnique({
+        where: { id: session.user.id },
+      });
+    }
+  } catch {
+    // Algunas pruebas o ejecuciones fuera de request pueden no disponer de cookies.
+  }
+
+  return getOrCreateDefaultUser();
+}
+
 /**
  * Crea una entrada en el historial de importaciones/exportaciones.
  */
@@ -39,7 +55,11 @@ export async function createImportExportLog(input: {
   usuarioNombre?: string;
   detalle?: string;
 }) {
-  const usuario = await getOrCreateDefaultUser();
+  const usuario = await getCurrentAuditUser();
+
+  if (!usuario) {
+    throw new Error("No se pudo resolver el usuario para el log de auditoria.");
+  }
 
   return prisma.importExportLog.create({
     data: {

@@ -44,8 +44,10 @@ const ENTITY_LOG_LABEL: Record<Entidad, string> = {
  */
 export default function ImportExportPanel({
   resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
+  canImport = false,
 }: {
   resultadosPorPagina?: number;
+  canImport?: boolean;
 }) {
   const [status, setStatus] = useState<Record<Entidad, string>>({
     alumnos: "",
@@ -355,6 +357,12 @@ export default function ImportExportPanel({
         importar para evitar errores de validacion.
       </Alert>
 
+      {!canImport ? (
+        <Alert variant="warning">
+          La importacion masiva desde Excel esta reservada a usuarios con rol de administrador.
+        </Alert>
+      ) : null}
+
       <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
         {CARDS.map((config) => (
           <EntidadCard
@@ -366,6 +374,7 @@ export default function ImportExportPanel({
             onExport={() => handleExport(config)}
             onPlantilla={() => handlePlantilla(config)}
             onImport={(file) => handleImport(config, file)}
+            canImport={canImport}
           />
         ))}
       </div>

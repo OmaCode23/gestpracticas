@@ -7,6 +7,10 @@ const { getEmpresasMock, createEmpresaMock, revalidatePathMock } = vi.hoisted(()
   revalidatePathMock: vi.fn(),
 }));
 
+const { ensureApiUserMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+}));
+
 vi.mock("@/modules/empresas/actions/queries", () => ({
   getEmpresas: getEmpresasMock,
 }));
@@ -19,9 +23,35 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+}));
+
 describe("GET /api/empresas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 401 si la capa de auth rechaza la peticion", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autenticado." }, { status: 401 })
+    );
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams(),
+      },
+    } as any);
+
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autenticado.",
+    });
+    expect(getEmpresasMock).not.toHaveBeenCalled();
   });
 
   it("rechaza filtros invalidos", async () => {
@@ -90,6 +120,7 @@ describe("GET /api/empresas", () => {
 describe("POST /api/empresas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
   });
 
   it("rechaza cuerpos invalidos", async () => {

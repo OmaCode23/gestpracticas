@@ -4,6 +4,7 @@ import "../app/globals.css";
 import Navbar from "@/components/layout/Navbar";
 import NavigationFeedback from "@/components/layout/NavigationFeedback";
 import RoutePrefetcher from "@/components/layout/RoutePrefetcher";
+import { getAuthMode } from "@/modules/auth/config";
 
 export const metadata: Metadata = {
   title: "GestPracticas - IES El Grao",
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const authMode = getAuthMode();
+
   return (
     <html lang="es">
       <body>
@@ -18,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <NavigationFeedback />
         </Suspense>
-        <Navbar />
+        <Navbar authMode={authMode} />
         <main className="mx-auto max-w-[1200px] px-4 py-6 md:px-6 md:py-8 xl:px-10 xl:py-9">{children}</main>
       </body>
     </html>

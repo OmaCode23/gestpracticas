@@ -6,6 +6,10 @@ const { importEmpresasMock, revalidatePathMock } = vi.hoisted(() => ({
   revalidatePathMock: vi.fn(),
 }));
 
+const { ensureApiAdminMock } = vi.hoisted(() => ({
+  ensureApiAdminMock: vi.fn(),
+}));
+
 vi.mock("@/modules/importexport/actions/import", () => ({
   importEmpresas: importEmpresasMock,
 }));
@@ -14,9 +18,34 @@ vi.mock("next/cache", () => ({
   revalidatePath: revalidatePathMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiAdmin: ensureApiAdminMock,
+}));
+
 describe("POST /api/importar/empresas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiAdminMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si la importacion la intenta un usuario no administrador", async () => {
+    ensureApiAdminMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const request = {
+      json: vi.fn().mockResolvedValue({ rows: [{ cif: "B12345678" }] }),
+    } as any;
+
+    const response = await POST(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(importEmpresasMock).not.toHaveBeenCalled();
   });
 
   it("rechaza body sin array de filas", async () => {

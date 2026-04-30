@@ -8,6 +8,10 @@ const { getImportExportLogsMock, createImportExportLogMock, getResultadosPorPagi
     getResultadosPorPaginaConfiguradosMock: vi.fn(),
   }));
 
+const { ensureApiUserMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+}));
+
 vi.mock("@/modules/importexport/actions/logs", () => ({
   createImportExportLog: createImportExportLogMock,
   getImportExportLogs: getImportExportLogsMock,
@@ -17,10 +21,35 @@ vi.mock("@/modules/settings/actions/queries", () => ({
   getResultadosPorPaginaConfigurados: getResultadosPorPaginaConfiguradosMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+}));
+
 describe("GET /api/importexport/logs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getResultadosPorPaginaConfiguradosMock.mockResolvedValue(12);
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 401 si no hay sesion", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autenticado." }, { status: 401 })
+    );
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams(),
+      },
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autenticado.",
+    });
+    expect(getImportExportLogsMock).not.toHaveBeenCalled();
   });
 
   it("usa el fallback de settings cuando no se informa limit", async () => {
@@ -71,6 +100,7 @@ describe("GET /api/importexport/logs", () => {
 describe("POST /api/importexport/logs", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
   });
 
   it("rechaza logs sin datos obligatorios", async () => {

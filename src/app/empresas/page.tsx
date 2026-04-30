@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { PageHeader } from "@/components/ui";
+import { requireUserSession } from "@/modules/auth/session";
 import EmpresasContainer from "@/modules/empresas/components/EmpresasContainer";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 
@@ -9,6 +10,7 @@ import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
  */
 export default async function EmpresasPage() {
   noStore();
+  await requireUserSession("/empresas");
 
   const configuracionAcademica = await getConfiguracionAcademica();
 

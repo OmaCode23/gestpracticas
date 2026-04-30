@@ -10,6 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getEmpresaById } from "@/modules/empresas/actions/queries";
 import { updateEmpresa, deleteEmpresa } from "@/modules/empresas/actions/mutations";
 import { empresaSchema } from "@/modules/empresas/types/schema";
@@ -30,6 +31,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {
@@ -67,6 +73,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {
@@ -144,6 +155,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {

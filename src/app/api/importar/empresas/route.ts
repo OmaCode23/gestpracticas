@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiAdmin } from "@/modules/auth/api";
 import { importEmpresas, type EmpresaImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -13,6 +14,11 @@ type ImportBody = {
  */
 export async function POST(req: NextRequest) {
   try {
+    const authResponse = await ensureApiAdmin();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const body = (await req.json()) as ImportBody;
 
     if (!Array.isArray(body.rows)) {

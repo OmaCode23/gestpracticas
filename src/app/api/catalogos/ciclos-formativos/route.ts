@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
 import { createCicloFormativo } from "@/modules/catalogos/actions/mutations";
 import { getCiclosFormativos } from "@/modules/catalogos/actions/queries";
 import { cicloFormativoSchema } from "@/modules/catalogos/types/ciclos";
@@ -8,6 +9,11 @@ import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET() {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const data = await getCiclosFormativos();
 
     return NextResponse.json<ApiResponse<typeof data>>({
@@ -25,6 +31,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResponse = await ensureApiAdmin();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const body = await req.json();
     const parsed = cicloFormativoSchema.safeParse(body);
 

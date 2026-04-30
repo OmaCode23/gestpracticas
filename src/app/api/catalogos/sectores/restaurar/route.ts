@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { ensureApiAdmin } from "@/modules/auth/api";
 import { restoreSectoresBase } from "@/modules/catalogos/actions/mutations";
 import { CACHE_TAGS } from "@/shared/cache";
 import type { ApiResponse } from "@/shared/types/api";
 
 export async function POST() {
   try {
+    const authResponse = await ensureApiAdmin();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const result = await restoreSectoresBase();
 
     revalidateTag(CACHE_TAGS.catalogos);

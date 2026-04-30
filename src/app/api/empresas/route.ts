@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiUser } from "@/modules/auth/api";
 import {
   getEmpresas,
   getEmpresasPickerOptions,
@@ -19,6 +20,11 @@ import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const { searchParams } = req.nextUrl;
     const all = searchParams.get("all") === "true";
     const fields = searchParams.get("fields");
@@ -80,6 +86,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const body = await req.json();
 
     const parsed = empresaSchema.safeParse(body);
