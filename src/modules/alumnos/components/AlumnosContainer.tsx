@@ -591,7 +591,7 @@ export default function AlumnosContainer({
         className={[
           "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
           isFormExpanded
-            ? "mb-7 max-h-[1600px] translate-y-0 opacity-100"
+            ? "mb-7 max-h-[1700px] translate-y-0 opacity-100"
             : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
         ].join(" ")}
       >

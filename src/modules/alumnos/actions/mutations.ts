@@ -71,12 +71,12 @@ async function getCicloFormativoForUpdateOrThrow(id: number, cicloFormativoId: n
 
 export async function createAlumno(data: AlumnoCrudInput) {
   const cicloFormativo = await getCicloFormativoOrThrow(data.cicloFormativoId);
-
+  const cleanedNif = normalizeOptionalString(data.nif?.toUpperCase());
   return prisma.alumno.create({
     data: {
       nombre: data.nombre.trim(),
       nia: data.nia.trim(),
-      nif: normalizeOptionalString(data.nif?.toUpperCase()),
+      nif: cleanedNif,
       nuss: normalizeOptionalString(data.nuss),
       telefono: normalizeRequiredString(data.telefono),
       email: normalizeRequiredEmail(data.email),
