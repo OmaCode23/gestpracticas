@@ -1,49 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import institutoLogo from "@/app/images/logo_instituto.webp";
+import AuthSessionControl from "@/components/layout/AuthSessionControl";
 import type { AuthMode } from "@/modules/auth/config";
 import { canManageUsers } from "@/modules/auth/permissions";
-
-type SessionUser = {
-  id: number;
-  nombre: string;
-  email: string;
-  iniciales: string | null;
-  rol: "ADMIN" | "PROFESOR" | "ALUMNO";
-  activo: boolean;
-  mustChangePass: boolean;
-};
-
-type SessionPayload =
-  | {
-      ok: true;
-      data: { authMode: AuthMode; session: { user: SessionUser; expiresAt: string } | null };
-    }
-  | { ok: false; error: string };
+import { useAuthSession } from "@/components/layout/useAuthSession";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
-  { href: "/formacion", label: "Formación Empresa" },
+  { href: "/formacion", label: "Formacion Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },
 ] as const;
-
-function getRoleLabel(role: SessionUser["rol"]) {
-  switch (role) {
-    case "ADMIN":
-      return "Administrador";
-    case "ALUMNO":
-      return "Alumno";
-    default:
-      return "Profesor";
-  }
-}
 
 type Props = {
   authMode: AuthMode;
@@ -51,95 +24,10 @@ type Props = {
 
 export default function Navbar({ authMode }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
-  const menuRef = useRef<HTMLDivElement | null>(null);
-  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
-  const [loadingSession, setLoadingSession] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadSession() {
-      try {
-        const response = await fetch("/api/auth/session", {
-          cache: "no-store",
-        });
-        const payload = (await response.json()) as SessionPayload;
-
-        if (!active) {
-          return;
-        }
-
-        if (response.ok && payload.ok) {
-          setSessionUser(payload.data.session?.user ?? null);
-        } else {
-          setSessionUser(null);
-        }
-      } catch (error) {
-        console.error("[Navbar] No se pudo recuperar la sesión", error);
-        if (active) {
-          setSessionUser(null);
-        }
-      } finally {
-        if (active) {
-          setLoadingSession(false);
-        }
-      }
-    }
-
-    void loadSession();
-
-    return () => {
-      active = false;
-    };
-  }, [pathname]);
-
-  useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setMenuOpen(false);
-      }
-    }
-
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, []);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    setMenuOpen(false);
-
-    try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        cache: "no-store",
-      });
-    } catch (error) {
-      console.error("[Navbar] No se pudo cerrar la sesión", error);
-    } finally {
-      setSessionUser(null);
-      setLoggingOut(false);
-      router.replace("/login");
-      router.refresh();
-    }
-  }
-
+  const session = useAuthSession("Navbar");
+  const { sessionUser } = session;
   const showUsersAdmin = !!sessionUser?.rol && canManageUsers(sessionUser.rol);
   const visibleLinks = sessionUser ? NAV_LINKS : [];
-  const initials = sessionUser?.iniciales || sessionUser?.nombre.slice(0, 2).toUpperCase() || "--";
   const isConfigActive = pathname === "/configuracion" || pathname.startsWith("/configuracion/");
   const isUsersActive = pathname === "/configuracion/usuarios";
 
@@ -202,15 +90,15 @@ export default function Navbar({ authMode }: Props) {
                 : "",
             ].join(" ")}
           >
-            Administración de usuarios
+            Administracion de usuarios
           </Link>
         ) : null}
 
         {sessionUser ? (
           <Link
             href="/configuracion"
-            aria-label="Configuración"
-            title="Configuración"
+            aria-label="Configuracion"
+            title="Configuracion"
             className={[
               "inline-flex items-center justify-center text-white transition hover:scale-105",
               isConfigActive ? "text-[#f6e6cb]" : "hover:text-white",
@@ -232,67 +120,7 @@ export default function Navbar({ authMode }: Props) {
           </Link>
         ) : null}
 
-        <div className="rounded-2xl border border-white/14 bg-white/10 px-2 py-1.5 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-sm">
-          {loadingSession ? (
-            <div className="flex items-center gap-2.5 text-[0.86rem] text-white">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/70 text-[0.8rem] font-bold text-navy shadow-sm">
-                ..
-              </div>
-              <span className="hidden font-semibold tracking-[0.01em] text-white md:inline">
-                Cargando
-              </span>
-            </div>
-          ) : sessionUser ? (
-            <div ref={menuRef} className="relative flex items-center text-[0.86rem] text-white">
-              <button
-                type="button"
-                onClick={() => setMenuOpen((current) => !current)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[0.8rem] font-bold text-navy shadow-sm transition hover:brightness-105"
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-                aria-label="Abrir menú de usuario"
-              >
-                {initials}
-              </button>
-
-              {menuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.75rem)] min-w-[240px] rounded-[18px] border border-white/20 bg-white p-2 text-navy shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
-                  <div className="border-b border-slate-100 px-3 py-2">
-                    <p className="truncate text-[0.84rem] font-semibold">{sessionUser.nombre}</p>
-                    <p className="truncate text-[0.76rem] text-slate-500">
-                      ({getRoleLabel(sessionUser.rol)})
-                    </p>
-                    <p className="truncate text-[0.76rem] text-slate-500">{sessionUser.email}</p>
-                  </div>
-                  {authMode === "local" ? (
-                    <Link
-                      href="/cuenta/password"
-                      onClick={() => setMenuOpen(false)}
-                      className="mt-1 block rounded-[12px] px-3 py-2 text-[0.84rem] font-medium text-navy transition hover:bg-slate-50"
-                    >
-                      Cambiar contraseña
-                    </Link>
-                  ) : null}
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={loggingOut}
-                    className="mt-1 w-full rounded-[12px] px-3 py-2 text-left text-[0.84rem] font-medium text-[#7a2237] transition hover:bg-[#fff3f5] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {loggingOut ? "Cerrando sesión..." : "Logout"}
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center rounded-full bg-accent px-4 py-2 text-[0.82rem] font-semibold text-white transition hover:brightness-105"
-            >
-              Login
-            </Link>
-          )}
-        </div>
+        <AuthSessionControl authMode={authMode} session={session} />
       </div>
     </nav>
   );

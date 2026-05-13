@@ -60,7 +60,7 @@ describe("alumnos mutations", () => {
     });
 
     expect(prismaMock.alumno.create).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
         nombre: "Ana",
         nia: "A-1",
         nif: "12345678Z",
@@ -70,7 +70,18 @@ describe("alumnos mutations", () => {
         cicloFormativoId: 4,
         cursoCiclo: 1,
         curso: "2025-2026",
-      },
+      }),
+    });
+    expect(prismaMock.alumno.create.mock.calls[0][0].data).toEqual({
+      nombre: "Ana",
+      nia: "A-1",
+      nif: "12345678Z",
+      nuss: "123456789012",
+      telefono: "612345678",
+      email: "ana@mail.com",
+      cicloFormativoId: 4,
+      cursoCiclo: 1,
+      curso: "2025-2026",
     });
   });
 

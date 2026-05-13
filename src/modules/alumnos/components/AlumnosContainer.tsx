@@ -142,7 +142,7 @@ export default function AlumnosContainer({
   const handleCvRemove = () => {
     setCvState((current) => ({
       ...current,
-      selectedFile: current.isMarkedForRemoval ? null : null,
+      selectedFile: null,
       isMarkedForRemoval: current.existingName ? !current.isMarkedForRemoval : false,
       error: "",
       isProcessing: false,
@@ -178,7 +178,6 @@ export default function AlumnosContainer({
     }
   }
 
-  // Cargar alumnos
   async function load(opts?: { pageOverride?: number }) {
     try {
       setLoading(true);
@@ -224,7 +223,6 @@ export default function AlumnosContainer({
     }
   }, [modoHistorico, curso]);
 
-  // Search con debounce de 300ms
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
@@ -262,7 +260,6 @@ export default function AlumnosContainer({
     );
   };
 
-  // Guardar
   const handleGuardar = async () => {
     if (
       !form.nombre ||
@@ -321,13 +318,13 @@ export default function AlumnosContainer({
             ? `Alumno creado, pero el CV no se pudo guardar: ${syncError.message}`
             : "Alumno creado, pero el CV no se pudo guardar.";
       }
+
       setForm(EMPTY);
       setCvState(EMPTY_CV);
       setIsFormExpanded(false);
       await reloadToFirstPage();
       scrollToTable();
       router.refresh();
-
       setNotification(uploadMessage);
     } catch (error) {
       console.error(error);
@@ -337,7 +334,6 @@ export default function AlumnosContainer({
     }
   };
 
-  // Actualizar
   const handleActualizar = async () => {
     if (!editingId) return;
 
@@ -386,6 +382,7 @@ export default function AlumnosContainer({
             ? `Alumno actualizado, pero el CV no se pudo sincronizar: ${syncError.message}`
             : "Alumno actualizado, pero el CV no se pudo sincronizar.";
       }
+
       setEditingId(null);
       setForm(EMPTY);
       setCvState(EMPTY_CV);
@@ -393,7 +390,6 @@ export default function AlumnosContainer({
       await load();
       scrollToTable();
       router.refresh();
-
       setNotification(uploadMessage);
     } catch (error) {
       console.error(error);
@@ -403,7 +399,6 @@ export default function AlumnosContainer({
     }
   };
 
-  // Eliminar
   const handleEliminar = async (alumno: Alumno) => {
     const confirmationMessage = `¿Eliminar al alumno ${alumno.nombre} (NIA: ${alumno.nia})?`;
     if (!confirm(confirmationMessage)) return;
@@ -422,7 +417,6 @@ export default function AlumnosContainer({
 
       await load();
       router.refresh();
-
       setNotification("Alumno eliminado correctamente.");
     } catch (error) {
       console.error(error);
@@ -430,7 +424,6 @@ export default function AlumnosContainer({
     }
   };
 
-  // Editar
   const handleEditar = (alumno: Alumno) => {
     const cicloActualInactivo =
       alumno.cicloFormativoId &&
@@ -517,7 +510,7 @@ export default function AlumnosContainer({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       const disposition = response.headers.get("Content-Disposition");
-      const fileNameMatch = disposition?.match(/filename="([^"]+)"/);
+      const fileNameMatch = disposition?.match(/filename=\"([^\"]+)\"/);
       link.href = url;
       link.download = fileNameMatch?.[1] ?? "cvs_alumnos.zip";
       link.click();
@@ -559,7 +552,6 @@ export default function AlumnosContainer({
 
       await load();
       router.refresh();
-
       setNotification(
         json.data.deletedCount > 0
           ? hasCvBulkFilters
@@ -575,7 +567,6 @@ export default function AlumnosContainer({
     }
   };
 
-  // Notificacion temporal
   useEffect(() => {
     if (!notification) return;
 
@@ -601,7 +592,7 @@ export default function AlumnosContainer({
         className={[
           "overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-out motion-reduce:transition-none",
           isFormExpanded
-            ? "mb-7 max-h-[1600px] translate-y-0 opacity-100"
+            ? "mb-7 max-h-[1700px] translate-y-0 opacity-100"
             : "pointer-events-none mb-0 max-h-0 -translate-y-2 opacity-0",
         ].join(" ")}
       >
