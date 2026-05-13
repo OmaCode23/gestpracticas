@@ -28,16 +28,20 @@ export async function loginWithLocalCredentials(email: string, password: string)
 
   const normalizedEmail = normalizeEmail(email);
 
-  const usuario = await prisma.usuario.findUnique({
-    where: { email: normalizedEmail },
-    include: { localAuth: true },
-  });
+  const [usuario, localAuth] = await Promise.all([
+    prisma.usuario.findUnique({
+      where: { email: normalizedEmail },
+    }),
+    prisma.localAuthAccount.findUnique({
+      where: { email: normalizedEmail },
+    }),
+  ]);
 
-  if (!usuario || !usuario.activo || !usuario.localAuth) {
+  if (!usuario || !usuario.activo || !localAuth) {
     return { ok: false, error: "Credenciales no validas." };
   }
 
-  const passwordIsValid = await verifyPassword(password, usuario.localAuth.passwordHash);
+  const passwordIsValid = await verifyPassword(password, localAuth.passwordHash);
   if (!passwordIsValid) {
     return { ok: false, error: "Credenciales no validas." };
   }
@@ -54,7 +58,7 @@ export async function loginWithLocalCredentials(email: string, password: string)
 
   await createUserSession(usuario.id);
 
-  return { ok: true, mustChangePass: usuario.localAuth.mustChangePass };
+  return { ok: true, mustChangePass: localAuth.mustChangePass };
 }
 
 export async function logoutCurrentUser() {
@@ -95,17 +99,27 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
 
   const usuario = await prisma.usuario.findUnique({
     where: { id: session.user.id },
-    include: { localAuth: true },
   });
 
-  if (!usuario?.localAuth) {
+  if (!usuario) {
     return {
       ok: false as const,
       error: "La cuenta actual no admite cambio de contrasena local.",
     };
   }
 
-  const passwordIsValid = await verifyPassword(currentPassword, usuario.localAuth.passwordHash);
+  const localAuth = await prisma.localAuthAccount.findUnique({
+    where: { email: usuario.email },
+  });
+
+  if (!localAuth) {
+    return {
+      ok: false as const,
+      error: "La cuenta actual no admite cambio de contrasena local.",
+    };
+  }
+
+  const passwordIsValid = await verifyPassword(currentPassword, localAuth.passwordHash);
   if (!passwordIsValid) {
     return { ok: false as const, error: "La contrasena actual no es correcta." };
   }
@@ -113,7 +127,7 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
   const passwordHash = await hashPassword(newPassword);
 
   await prisma.localAuthAccount.update({
-    where: { usuarioId: usuario.id },
+    where: { email: usuario.email },
     data: {
       passwordHash,
       mustChangePass: false,

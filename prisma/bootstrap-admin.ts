@@ -1,16 +1,58 @@
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
+import { randomBytes, scrypt as nodeScrypt } from "node:crypto";
+import { promisify } from "node:util";
 import { PrismaClient, UserRole } from "@prisma/client";
-import { deriveInitials, hashPassword, normalizeEmail } from "../src/modules/auth/core";
-import { getAuthMode, isLocalAuthMode } from "../src/modules/auth/config";
 
 const prisma = new PrismaClient();
+const scrypt = promisify(nodeScrypt);
+const PASSWORD_KEY_LENGTH = 64;
 
 type BootstrapArgs = {
   email: string;
   password: string | null;
   nombre: string;
 };
+
+function getAuthMode() {
+  return process.env.AUTH_MODE?.trim().toLowerCase() === "external" ? "external" : "local";
+}
+
+function isLocalAuthMode() {
+  return getAuthMode() === "local";
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function deriveInitials(nombre: string, email?: string) {
+  const source = nombre.trim();
+  if (source) {
+    const initials = source
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((segment) => segment[0]?.toUpperCase() ?? "")
+      .join("");
+
+    if (initials) {
+      return initials;
+    }
+  }
+
+  return email ? normalizeEmail(email).slice(0, 2).toUpperCase() : "US";
+}
+
+function toBase64Url(buffer: Buffer) {
+  return buffer.toString("base64url");
+}
+
+async function hashPassword(password: string) {
+  const salt = randomBytes(16);
+  const derived = (await scrypt(password, salt, PASSWORD_KEY_LENGTH)) as Buffer;
+  return `${toBase64Url(salt)}:${toBase64Url(derived)}`;
+}
 
 function readArg(flag: string) {
   const index = process.argv.findIndex((value) => value === flag);
@@ -57,7 +99,7 @@ async function readBootstrapArgs(): Promise<BootstrapArgs> {
   const password =
     readArg("--password") ??
     process.env.BOOTSTRAP_ADMIN_PASSWORD ??
-    (await promptValue("Contrasena temporal del administrador inicial: "));
+    (await promptValue("Contraseña temporal del administrador inicial: "));
 
   if (!password) {
     throw new Error(
@@ -99,20 +141,20 @@ async function main() {
 
   if (passwordHash) {
     await prisma.localAuthAccount.upsert({
-      where: { usuarioId: usuario.id },
+      where: { email: usuario.email },
       update: {
         passwordHash,
         mustChangePass: true,
       },
       create: {
-        usuarioId: usuario.id,
+        email: usuario.email,
         passwordHash,
         mustChangePass: true,
       },
     });
   } else {
     await prisma.localAuthAccount.deleteMany({
-      where: { usuarioId: usuario.id },
+      where: { email: usuario.email },
     });
   }
 

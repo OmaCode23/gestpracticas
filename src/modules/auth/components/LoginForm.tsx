@@ -13,24 +13,73 @@ type Props = {
   externalConfigured: boolean;
 };
 
+function PasswordVisibilityButton({
+  visible,
+  onClick,
+}: {
+  visible: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-text-mid transition hover:text-navy"
+      aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+    >
+      {visible ? (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M3 3l18 18" />
+          <path d="M10.58 10.58A2 2 0 0 0 12 14a2 2 0 0 0 1.42-.58" />
+          <path d="M9.88 5.09A10.94 10.94 0 0 1 12 5c5 0 9.27 3.11 11 7- .37.84-1.05 1.96-2 3.02" />
+          <path d="M6.61 6.61C4.62 7.9 3.07 9.73 2 12c1.73 3.89 6 7 10 7 1.61 0 3.16-.4 4.55-1.1" />
+        </svg>
+      ) : (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 function getErrorMessage(code: string | null) {
   switch (code) {
     case "external-not-configured":
-      return "Falta configurar el proveedor externo en las variables de entorno.";
+      return "El acceso institucional no está disponible en este momento.";
     case "external-start-failed":
-      return "No se pudo iniciar el flujo del proveedor externo.";
+      return "No se pudo iniciar el acceso institucional.";
     case "external-provider-error":
-      return "El proveedor externo devolvio un error durante el acceso.";
+      return "Se produjo un error durante el acceso institucional.";
     case "external-state-missing":
-      return "La respuesta del proveedor externo no incluyo el estado esperado.";
+      return "La respuesta del proveedor externo no incluyó el estado esperado.";
     case "external-state-mismatch":
-      return "El estado de autenticacion externo no coincide con la sesion iniciada.";
+      return "El estado de autenticación externo no coincide con la sesión iniciada.";
     case "external-state-invalid":
-      return "El estado devuelto por el proveedor externo no es valido.";
+      return "El estado devuelto por el proveedor externo no es válido.";
     case "external-callback-pending":
-      return "El callback externo ya esta reservado, pero el intercambio real del codigo aun no esta implementado.";
+      return "No se pudo completar el acceso institucional.";
     case "external-user-not-authorized":
-      return "La identidad autenticada no existe como usuario activo y autorizado en la aplicacion.";
+      return "La identidad autenticada no existe como usuario activo y autorizado en la aplicación.";
     case "external-mode-disabled":
       return "Esta ruta solo puede usarse cuando AUTH_MODE=external.";
     default:
@@ -46,13 +95,14 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(externalError);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (authMode !== "local") {
-      setError("La autenticacion externa aun no esta integrada en esta instalacion.");
+      setError("El acceso institucional no está disponible en esta instalación.");
       return;
     }
 
@@ -74,7 +124,7 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
       const payload = (await response.json()) as ApiResponse<{ mustChangePass: boolean }>;
 
       if (!response.ok || !payload.ok) {
-        setError(payload.ok ? "No se pudo iniciar sesion." : payload.error);
+        setError(payload.ok ? "No se pudo iniciar sesión." : payload.error);
         return;
       }
 
@@ -82,7 +132,7 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
       router.refresh();
     } catch (requestError) {
       console.error("[LoginForm]", requestError);
-      setError("No se pudo iniciar sesion.");
+      setError("No se pudo iniciar sesión.");
     } finally {
       setSubmitting(false);
     }
@@ -96,11 +146,11 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
       <p className="mb-2 text-[0.78rem] text-text-light">
         Acceso <span className="text-blue">/ GestPracticas</span>
       </p>
-      <h1 className="font-display text-[1.7rem] font-bold text-navy">Iniciar sesion</h1>
+      <h1 className="font-display text-[1.7rem] font-bold text-navy">Iniciar sesión</h1>
       <p className="mt-2 text-[0.92rem] text-text-mid">
         {authMode === "local"
-          ? "Este acceso es temporal mientras se confirma la integracion con `edu.gva.es`."
-          : "La aplicacion queda preparada para autenticacion externa. La integracion con el proveedor final aun no esta implementada."}
+          ? "Accede con tus credenciales autorizadas para continuar en la aplicación."
+          : "Accede con tu identidad institucional autorizada para continuar en la aplicación."}
       </p>
 
       <label className="mt-6 block text-[0.82rem] font-semibold text-navy" htmlFor="login-email">
@@ -123,23 +173,29 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
             className="mt-4 block text-[0.82rem] font-semibold text-navy"
             htmlFor="login-password"
           >
-            Contrasena temporal
+            Contraseña
           </label>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            className="mt-2 w-full rounded-[14px] border border-border bg-white px-4 py-3 text-[0.95rem] text-navy outline-none transition focus:border-blue-light"
-            placeholder="Introduce tu contrasena"
-            required
-          />
+          <div className="relative mt-2">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              data-hide-native-password-toggle="true"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              className="w-full rounded-[14px] border border-border bg-white px-4 py-3 pr-14 text-[0.95rem] text-navy outline-none transition focus:border-blue-light"
+              placeholder="Introduce tu contraseña"
+              required
+            />
+            <PasswordVisibilityButton
+              visible={showPassword}
+              onClick={() => setShowPassword((current) => !current)}
+            />
+          </div>
         </>
       ) : (
         <p className="mt-4 rounded-[14px] border border-[#ead7d7] bg-[#fffaf7] px-4 py-3 text-[0.84rem] text-text-mid">
-          Cuando se integre el proveedor externo, el acceso se iniciara desde aqui sin
-          contrasena local almacenada en la aplicacion.
+          El acceso a esta instalación se realiza mediante identidad institucional.
         </p>
       )}
 
@@ -170,7 +226,7 @@ export default function LoginForm({ authMode, externalConfigured }: Props) {
           disabled
           className="mt-6 w-full rounded-full bg-accent px-4 py-3 text-[0.92rem] font-semibold text-white shadow-[0_10px_24px_rgba(159,29,62,0.22)] opacity-70"
         >
-          Proveedor externo sin configurar
+          Acceso institucional no disponible
         </button>
       )}
     </form>

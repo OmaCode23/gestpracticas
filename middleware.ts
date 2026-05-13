@@ -3,6 +3,13 @@ import { AUTH_COOKIE_NAME } from "@/modules/auth/config";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
+function applyNoStoreHeaders(response: NextResponse) {
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
+
 function getAuthSecret() {
   const secret = process.env.AUTH_SECRET?.trim();
   if (secret) {
@@ -67,26 +74,26 @@ export async function middleware(request: NextRequest) {
 
   if (PUBLIC_PATHS.has(pathname)) {
     if (hasValidCookie) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return applyNoStoreHeaders(NextResponse.redirect(new URL("/", request.url)));
     }
 
-    return NextResponse.next();
+    return applyNoStoreHeaders(NextResponse.next());
   }
 
   if (hasValidCookie) {
-    return NextResponse.next();
+    return applyNoStoreHeaders(NextResponse.next());
   }
 
   if (pathname.startsWith("/api/")) {
-    return NextResponse.json(
+    return applyNoStoreHeaders(NextResponse.json(
       { ok: false, error: "No autenticado." },
       { status: 401 }
-    );
+    ));
   }
 
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("next", `${pathname}${search}`);
-  return NextResponse.redirect(loginUrl);
+  return applyNoStoreHeaders(NextResponse.redirect(loginUrl));
 }
 
 export const config = {

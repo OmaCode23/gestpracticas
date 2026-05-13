@@ -33,6 +33,18 @@
     @apply font-sans;
   }
 
+  input[data-hide-native-password-toggle="true"]::-ms-reveal,
+  input[data-hide-native-password-toggle="true"]::-ms-clear {
+    display: none;
+  }
+
+  input[data-hide-native-password-toggle="true"]::-webkit-credentials-auto-fill-button,
+  input[data-hide-native-password-toggle="true"]::-webkit-contacts-auto-fill-button {
+    visibility: hidden;
+    pointer-events: none;
+    display: none !important;
+  }
+
   main {
     position: relative;
   }

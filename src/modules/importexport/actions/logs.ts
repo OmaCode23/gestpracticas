@@ -9,9 +9,9 @@ type LogStatus = "Completado" | "Fallido";
  * Usuario tecnico utilizado mientras el modulo no tenga autenticacion real.
  */
 const DEFAULT_USER = {
-  nombre: "Administrador",
-  email: "admin@gestpracticas.local",
-  iniciales: "AD",
+  nombre: "Sistema Import/Export",
+  email: "sistema.importexport@gestpracticas.local",
+  iniciales: "SI",
 };
 
 /**

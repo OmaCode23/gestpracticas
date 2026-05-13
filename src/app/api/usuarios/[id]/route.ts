@@ -52,6 +52,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       data: null,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "Usuario no encontrado." },
+        { status: 404 }
+      );
+    }
+
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
@@ -116,6 +123,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: "El reseteo de contrasena no aplica en autenticacion externa." },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "USER_NOT_FOUND") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "Usuario no encontrado." },
+        { status: 404 }
       );
     }
 

@@ -99,9 +99,20 @@ Se prefiere crear una tabla separada para las credenciales locales temporales, e
 Ejemplo conceptual:
 
 - `Usuario`: autorizacion y datos del usuario dentro de la app
-- `LocalAuthAccount`: hash de contrasena y configuracion temporal del acceso local
+- `LocalAuthAccount`: hash de contrasena y configuracion temporal del acceso local, identificado por `email`
 
 De este modo, cuando se sustituya el login local por el login con `edu.gva.es`, la tabla `Usuario` seguira siendo valida y la migracion sera pequena.
+
+`LocalAuthAccount` no debe tener clave ajena ni relacion estructural con `Usuario`.
+
+La relacion entre ambas piezas debe resolverse solo en codigo por `email`, no por un id interno de `Usuario`, porque el identificador funcional compartido entre autenticacion local temporal y futura autenticacion externa es el correo del usuario autorizado.
+
+Esto busca que la tabla local temporal se comporte lo mas parecido posible a un proveedor externo sustituible:
+
+- `Usuario` representa autorizacion interna;
+- `LocalAuthAccount` representa una fuente de credenciales separada;
+- la aplicacion cruza ambas por email en el momento del login o de la gestion de credenciales;
+- si en el futuro la autenticacion externa llega por OIDC, API o servicio independiente, el cambio quede concentrado en la capa de autenticacion y no en el modelo de autorizacion.
 
 ## Administrador inicial
 
@@ -129,6 +140,43 @@ El script de bootstrap del administrador:
 - puede solicitarlo por consola si falta en una ejecucion manual;
 - solo debe pedir contrasena en `AUTH_MODE=local`;
 - en `AUTH_MODE=external` solo debe insertar o actualizar el usuario administrador autorizado.
+
+### Puesta en marcha del administrador inicial
+
+Una vez desplegada la aplicacion y preparada la base de datos, el alta del primer administrador se realiza con el script de bootstrap.
+
+Pasos previos:
+
+1. aplicar las migraciones de Prisma;
+2. definir `AUTH_SECRET`;
+3. elegir el modo de autenticacion con `AUTH_MODE`.
+
+Si se va a trabajar temporalmente con login local, el modo debe ser:
+
+- `AUTH_MODE=local`
+
+Y el administrador inicial se crea con email, nombre y contrasena:
+
+```bash
+npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
+```
+
+Si se quiere dejar la aplicacion alineada con el futuro login externo, el modo debe ser:
+
+- `AUTH_MODE=external`
+
+Y el administrador inicial se autoriza solo por email y nombre, sin contrasena local:
+
+```bash
+npm run db:bootstrap-admin -- --email admin@edu.gva.es --name "Administrador"
+```
+
+Comportamiento adicional del script:
+
+- si no se pasa `--email`, lo solicita por consola;
+- si `AUTH_MODE=local` y no se pasa `--password`, tambien lo solicita por consola;
+- si se ejecuta de nuevo con el mismo email, actualiza ese usuario como `ADMIN` activo;
+- si se ejecuta con otro email, no desactiva automaticamente al administrador anterior.
 
 ## Gestion posterior de usuarios
 

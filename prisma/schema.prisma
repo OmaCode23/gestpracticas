@@ -35,7 +35,6 @@ model Usuario {
   createdAt    DateTime           @default(now())
   updatedAt    DateTime           @updatedAt
   logs         ImportExportLog[]
-  localAuth    LocalAuthAccount?
   sessions     Session[]
 
   @@map("usuarios")
@@ -43,8 +42,7 @@ model Usuario {
 
 model LocalAuthAccount {
   id             Int      @id @default(autoincrement())
-  usuarioId      Int      @unique @map("usuario_id")
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  email          String   @unique
   passwordHash   String   @map("password_hash")
   mustChangePass Boolean  @default(false) @map("must_change_pass")
   createdAt      DateTime @default(now())

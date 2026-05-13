@@ -2,7 +2,7 @@ import type { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
-import { AUTH_COOKIE_NAME, SESSION_TTL_SECONDS, isLocalAuthMode } from "@/modules/auth/config";
+import { AUTH_COOKIE_NAME, isLocalAuthMode } from "@/modules/auth/config";
 import { isAdminRole } from "@/modules/auth/permissions";
 import {
   buildSignedSessionValue,
@@ -28,14 +28,12 @@ export type AuthSession = {
   user: AuthenticatedUser;
 };
 
-function buildCookieOptions(expires: Date) {
+function buildCookieOptions() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    expires,
-    maxAge: SESSION_TTL_SECONDS,
   };
 }
 
@@ -53,7 +51,7 @@ export async function createUserSession(usuarioId: number) {
     },
   });
 
-  cookies().set(AUTH_COOKIE_NAME, buildSignedSessionValue(token), buildCookieOptions(expiresAt));
+  cookies().set(AUTH_COOKIE_NAME, buildSignedSessionValue(token), buildCookieOptions());
 }
 
 export async function invalidateCurrentSession() {
@@ -90,21 +88,20 @@ export async function getOptionalSession(): Promise<AuthSession | null> {
   const session = await prisma.session.findUnique({
     where: { tokenHash },
     include: {
-      usuario: {
-        include: {
-          localAuth: {
-            select: {
-              mustChangePass: true,
-            },
-          },
-        },
-      },
+      usuario: true,
     },
   });
 
   if (!session || session.expiresAt <= now || !session.usuario.activo) {
     return null;
   }
+
+  const localAuth = session.usuario.email
+    ? await prisma.localAuthAccount.findUnique({
+        where: { email: session.usuario.email },
+        select: { mustChangePass: true },
+      })
+    : null;
 
   await prisma.session.update({
     where: { id: session.id },
@@ -123,7 +120,7 @@ export async function getOptionalSession(): Promise<AuthSession | null> {
       iniciales: session.usuario.iniciales,
       rol: session.usuario.rol,
       activo: session.usuario.activo,
-      mustChangePass: session.usuario.localAuth?.mustChangePass ?? false,
+      mustChangePass: localAuth?.mustChangePass ?? false,
     },
   };
 }

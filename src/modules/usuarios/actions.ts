@@ -5,15 +5,19 @@ import { deriveInitials, hashPassword, normalizeEmail } from "@/modules/auth/cor
 
 export async function listManagedUsers() {
   const users = await prisma.usuario.findMany({
-    include: {
-      localAuth: {
-        select: {
-          mustChangePass: true,
-        },
-      },
-    },
     orderBy: [{ rol: "asc" }, { nombre: "asc" }],
   });
+
+  const localAuthAccounts = await prisma.localAuthAccount.findMany({
+    select: {
+      email: true,
+      mustChangePass: true,
+    },
+  });
+
+  const localAuthByEmail = new Map(
+    localAuthAccounts.map((account) => [account.email, account])
+  );
 
   return users.map((user) => ({
     id: user.id,
@@ -24,8 +28,8 @@ export async function listManagedUsers() {
     activo: user.activo,
     authProvider: user.authProvider,
     lastLoginAt: user.lastLoginAt,
-    mustChangePass: user.localAuth?.mustChangePass ?? false,
-    hasLocalAuth: Boolean(user.localAuth),
+    mustChangePass: localAuthByEmail.get(user.email)?.mustChangePass ?? false,
+    hasLocalAuth: localAuthByEmail.has(user.email),
   }));
 }
 
@@ -38,6 +42,7 @@ export async function deleteManagedUser(userId: number, actorUserId: number) {
     where: { id: userId },
     select: {
       id: true,
+      email: true,
       rol: true,
       activo: true,
     },
@@ -60,9 +65,14 @@ export async function deleteManagedUser(userId: number, actorUserId: number) {
     }
   }
 
-  await prisma.usuario.delete({
-    where: { id: userId },
-  });
+  await prisma.$transaction([
+    prisma.localAuthAccount.deleteMany({
+      where: { email: user.email },
+    }),
+    prisma.usuario.delete({
+      where: { id: userId },
+    }),
+  ]);
 }
 
 export async function createManagedUser(input: {
@@ -84,21 +94,18 @@ export async function createManagedUser(input: {
       rol: input.rol,
       activo: input.activo,
       authProvider: localMode ? AuthProvider.LOCAL : null,
-      ...(passwordHash
-        ? {
-            localAuth: {
-              create: {
-                passwordHash,
-                mustChangePass: true,
-              },
-            },
-          }
-        : {}),
-    },
-    include: {
-      localAuth: true,
     },
   });
+
+  if (passwordHash) {
+    await prisma.localAuthAccount.create({
+      data: {
+        email,
+        passwordHash,
+        mustChangePass: true,
+      },
+    });
+  }
 
   return usuario;
 }
@@ -113,8 +120,16 @@ export async function updateManagedUser(
   }
 ) {
   const email = normalizeEmail(input.email);
+  const existingUser = await prisma.usuario.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
 
-  return prisma.usuario.update({
+  if (!existingUser) {
+    throw new Error("USER_NOT_FOUND");
+  }
+
+  const updatedUser = await prisma.usuario.update({
     where: { id: userId },
     data: {
       nombre: input.nombre.trim(),
@@ -124,6 +139,15 @@ export async function updateManagedUser(
       activo: input.activo,
     },
   });
+
+  if (existingUser.email !== email) {
+    await prisma.localAuthAccount.updateMany({
+      where: { email: existingUser.email },
+      data: { email },
+    });
+  }
+
+  return updatedUser;
 }
 
 export async function resetManagedUserPassword(userId: number, password: string) {
@@ -131,16 +155,25 @@ export async function resetManagedUserPassword(userId: number, password: string)
     throw new Error("PASSWORD_RESET_NOT_AVAILABLE");
   }
 
+  const user = await prisma.usuario.findUnique({
+    where: { id: userId },
+    select: { email: true },
+  });
+
+  if (!user) {
+    throw new Error("USER_NOT_FOUND");
+  }
+
   const passwordHash = await hashPassword(password);
 
   return prisma.localAuthAccount.upsert({
-    where: { usuarioId: userId },
+    where: { email: user.email },
     update: {
       passwordHash,
       mustChangePass: true,
     },
     create: {
-      usuarioId: userId,
+      email: user.email,
       passwordHash,
       mustChangePass: true,
     },
