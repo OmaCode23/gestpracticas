@@ -2,13 +2,16 @@ import Image from "next/image";
 import institutoLogo from "@/app/images/logo_instituto.webp";
 import PortalSessionAccess from "@/components/layout/PortalSessionAccess";
 import { getAuthMode } from "@/modules/auth/config";
+import { requireAlumnoSession } from "@/modules/auth/session";
 import PortalAlumnoNav from "@/modules/portal-alumno/components/PortalAlumnoNav";
 
-export default function PortalAlumnoLayout({
+export default async function PortalAlumnoLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireAlumnoSession("/portal-alumno");
+
   const authMode = getAuthMode();
 
   return (

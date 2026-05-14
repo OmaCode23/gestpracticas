@@ -10,6 +10,18 @@ function applyNoStoreHeaders(response: NextResponse) {
   return response;
 }
 
+function clearAuthCookie(response: NextResponse) {
+  response.cookies.set(AUTH_COOKIE_NAME, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
+}
+
 function getAuthSecret() {
   const secret = process.env.AUTH_SECRET?.trim();
   if (secret) {
@@ -70,14 +82,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const signedValue = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const hasSessionCookie = Boolean(signedValue);
   const hasValidCookie = await hasValidSessionCookie(request);
+  const hasInvalidCookie = hasSessionCookie && !hasValidCookie;
 
   if (PUBLIC_PATHS.has(pathname)) {
-    if (hasValidCookie) {
-      return applyNoStoreHeaders(NextResponse.redirect(new URL("/", request.url)));
+    const response = applyNoStoreHeaders(NextResponse.next());
+
+    if (hasInvalidCookie) {
+      clearAuthCookie(response);
     }
 
-    return applyNoStoreHeaders(NextResponse.next());
+    return response;
   }
 
   if (hasValidCookie) {
@@ -85,15 +102,27 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith("/api/")) {
-    return applyNoStoreHeaders(NextResponse.json(
+    const response = applyNoStoreHeaders(NextResponse.json(
       { ok: false, error: "No autenticado." },
       { status: 401 }
     ));
+
+    if (hasInvalidCookie) {
+      clearAuthCookie(response);
+    }
+
+    return response;
   }
 
   const loginUrl = new URL("/login", request.url);
   loginUrl.searchParams.set("next", `${pathname}${search}`);
-  return applyNoStoreHeaders(NextResponse.redirect(loginUrl));
+  const response = applyNoStoreHeaders(NextResponse.redirect(loginUrl));
+
+  if (hasInvalidCookie) {
+    clearAuthCookie(response);
+  }
+
+  return response;
 }
 
 export const config = {

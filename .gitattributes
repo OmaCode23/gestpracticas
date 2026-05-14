@@ -1,0 +1,24 @@
+* text=auto
+
+*.ts text eol=crlf
+*.tsx text eol=crlf
+*.js text eol=crlf
+*.jsx text eol=crlf
+*.json text eol=crlf
+*.md text eol=crlf
+*.prisma text eol=crlf
+*.sql text eol=crlf
+*.ps1 text eol=crlf
+*.css text eol=crlf
+*.mjs text eol=crlf
+*.cjs text eol=crlf
+*.yml text eol=crlf
+*.yaml text eol=crlf
+*.html text eol=crlf
+*.txt text eol=crlf
+*.toml text eol=crlf
+
+.gitignore text eol=crlf
+
+Dockerfile text eol=lf
+*.sh text eol=lf

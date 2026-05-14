@@ -5,7 +5,7 @@
 -- Dumped from database version 16.4
 -- Dumped by pg_dump version 16.4
 
--- Started on 2026-05-13 04:04:20
+-- Started on 2026-05-14 02:29:19
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -730,6 +730,7 @@ INSERT INTO public.sectores (id, nombre, activo, "createdAt", "updatedAt") VALUE
 
 INSERT INTO public.sessions (id, usuario_id, token_hash, expires_at, last_used_at, "createdAt", "updatedAt") VALUES (2, 1, 'e942f43da9257dc363b1f4edb64f43ade13521d478c4b52e5a7c33d5a2cf3e97', '2026-05-13 13:41:32.004', '2026-05-13 01:43:19.217', '2026-05-13 01:41:32.006', '2026-05-13 01:43:19.222');
 INSERT INTO public.sessions (id, usuario_id, token_hash, expires_at, last_used_at, "createdAt", "updatedAt") VALUES (1, 1, '4687f64cc1afc72bab19b6c6ef5e31220ba2bc8f1300fc26f3961e9230fcd2b8', '2026-05-13 13:06:30.704', '2026-05-13 01:07:18.828', '2026-05-13 01:06:30.706', '2026-05-13 01:07:18.833');
+INSERT INTO public.sessions (id, usuario_id, token_hash, expires_at, last_used_at, "createdAt", "updatedAt") VALUES (3, 1, 'c5b6090ec43551f3397ea5afd0d82170654a32531344efb4a2663e825be631cb', '2026-05-13 14:11:33.748', '2026-05-13 02:40:59.688', '2026-05-13 02:11:33.75', '2026-05-13 02:40:59.693');
 
 
 --
@@ -749,10 +750,9 @@ INSERT INTO public.settings (id, clave, valor, "createdAt", "updatedAt") VALUES 
 -- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (13, 'Tutora FCT', 'tutora.fct@gestpracticas.local', 'TF', true, '2026-04-07 15:15:08.134', '2026-04-07 15:15:08.134', 'PROFESOR', NULL, NULL, NULL);
-INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (14, 'Administrador Demo', 'admin.demo@gestpracticas.local', 'AD', true, '2026-04-07 15:15:08.134', '2026-04-07 15:15:08.134', 'PROFESOR', NULL, NULL, NULL);
-INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (15, 'Administrador', 'admin@gestpracticas.local', 'AD', true, '2026-04-07 20:29:29.549', '2026-04-07 20:31:17.275', 'PROFESOR', NULL, NULL, NULL);
-INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (1, 'Administ', 'admin.correo@edu.gva.es', 'A', true, '2026-05-13 01:06:06.389', '2026-05-13 01:41:32.002', 'ADMIN', 'LOCAL', NULL, '2026-05-13 01:41:32.001');
+INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (1, 'Administ', 'admin.correo@edu.gva.es', 'A', true, '2026-05-13 01:06:06.389', '2026-05-13 02:11:33.744', 'ADMIN', 'LOCAL', NULL, '2026-05-13 02:11:33.742');
+INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (13, 'Marta Lopez', 'tutora.fct@gestpracticas.local', 'ML', true, '2026-04-07 15:15:08.134', '2026-05-13 02:22:20.966', 'PROFESOR', NULL, NULL, NULL);
+INSERT INTO public.usuarios (id, nombre, email, iniciales, activo, "createdAt", "updatedAt", rol, "authProvider", "authSubject", last_login_at) VALUES (15, 'Sistema', 'admin@gestpracticas.local', 'S', true, '2026-04-07 20:29:29.549', '2026-05-13 02:40:13.378', 'PROFESOR', NULL, NULL, NULL);
 
 
 --
@@ -833,7 +833,7 @@ SELECT pg_catalog.setval('public.sectores_id_seq', 194, true);
 -- Name: sessions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.sessions_id_seq', 2, true);
+SELECT pg_catalog.setval('public.sessions_id_seq', 3, true);
 
 
 --
@@ -996,7 +996,7 @@ SELECT pg_catalog.lo_close(0);
 
 COMMIT;
 
--- Completed on 2026-05-13 04:04:20
+-- Completed on 2026-05-14 02:29:19
 
 --
 -- PostgreSQL database dump complete

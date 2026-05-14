@@ -24,7 +24,7 @@ Sistema de gestión de prácticas de empresa para institutos.
 
 ## Documentacion funcional relevante
 
-- `sistema-login.md`: decisiones de arquitectura del login, modos de autenticacion, bootstrap del administrador y matriz de permisos por rol.
+- `sistema-login.md`: decisiones de arquitectura del login, modos de autenticacion, bootstrap del administrador, medidas de seguridad en servidor y visibilidad/acceso por rol.
 
 ## Estructura
 
@@ -202,7 +202,7 @@ npm run docker:up
 npm run docker:down
 ```
 
-## Preparacion de paquete de produccion
+## Preparacion de paquete de produccion (tipo de despliegue anterior a Docker)
 
 Para generar una carpeta separada con la aplicacion compilada para ejecucion:
 

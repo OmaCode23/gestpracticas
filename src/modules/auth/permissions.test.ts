@@ -5,6 +5,7 @@ import {
   canManageCatalogs,
   canManageUsers,
   isAdminRole,
+  isAlumnoRole,
 } from "@/modules/auth/permissions";
 
 describe("auth permissions", () => {
@@ -12,6 +13,12 @@ describe("auth permissions", () => {
     expect(isAdminRole("ADMIN")).toBe(true);
     expect(isAdminRole("PROFESOR")).toBe(false);
     expect(isAdminRole("ALUMNO")).toBe(false);
+  });
+
+  it("identifica correctamente al rol alumno", () => {
+    expect(isAlumnoRole("ALUMNO")).toBe(true);
+    expect(isAlumnoRole("ADMIN")).toBe(false);
+    expect(isAlumnoRole("PROFESOR")).toBe(false);
   });
 
   it("reserva la gestion de usuarios al administrador", () => {

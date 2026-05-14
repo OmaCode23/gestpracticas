@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
 import { AUTH_COOKIE_NAME, isLocalAuthMode } from "@/modules/auth/config";
-import { isAdminRole } from "@/modules/auth/permissions";
+import { isAdminRole, isAlumnoRole } from "@/modules/auth/permissions";
 import {
   buildSignedSessionValue,
   generateSessionToken,
@@ -144,6 +144,16 @@ export async function requireAdminSession(nextPath?: string) {
   const session = await requireUserSession(nextPath);
 
   if (!isAdminRole(session.user.rol)) {
+    redirect("/");
+  }
+
+  return session;
+}
+
+export async function requireAlumnoSession(nextPath?: string) {
+  const session = await requireUserSession(nextPath);
+
+  if (!isAlumnoRole(session.user.rol)) {
     redirect("/");
   }
 

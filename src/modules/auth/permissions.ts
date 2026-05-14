@@ -4,6 +4,10 @@ export function isAdminRole(role: UserRole) {
   return role === "ADMIN";
 }
 
+export function isAlumnoRole(role: UserRole) {
+  return role === "ALUMNO";
+}
+
 export function canManageUsers(role: UserRole) {
   return isAdminRole(role);
 }

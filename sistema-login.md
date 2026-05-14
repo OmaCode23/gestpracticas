@@ -67,7 +67,9 @@ Actualmente ya existe una base funcional implementada con estas piezas:
 - bootstrap del primer administrador;
 - gestion de usuarios accesible solo para `ADMIN`;
 - proteccion de paginas y rutas API relevantes en servidor;
+- proteccion especifica del portal del alumno por rol `ALUMNO`;
 - capa central de permisos por rol en codigo;
+- middleware de prefiltrado de acceso con limpieza de cookies invalidas;
 - flujo externo reservado para futura integracion real con proveedor OIDC.
 
 ## Modelo funcional previsto
@@ -237,15 +239,22 @@ No puede:
 
 ### `ALUMNO`
 
-No esta implantado todavia como rol operativo completo, pero queda reservado para una futura ampliacion.
+Actualmente ya existe un alcance funcional inicial para `ALUMNO`, aunque todavia no equivale a un portal completo de practicas.
 
-La intencion funcional es que:
+Hoy puede:
 
-- pueda iniciar sesion solo si esta autorizado y activo;
-- tenga visibilidad muy reducida;
-- no pueda acceder a administracion, configuracion, importacion ni gestion global de datos.
+- iniciar sesion solo si esta autorizado y activo;
+- acceder al `portal-alumno`;
+- ver las paginas propias del portal del alumno;
+- ver el control de sesion/login tambien dentro del portal.
 
-Hasta que se defina expresamente su alcance, no debe asumirse que un usuario con rol `ALUMNO` tenga permisos equivalentes a `PROFESOR`.
+No puede:
+
+- acceder al panel interno general;
+- acceder a administracion, configuracion o importacion/exportacion interna;
+- acceder al CRUD global de alumnos, empresas o formacion.
+
+El contenido actual del portal del alumno es todavia inicial y esta preparado para crecer, pero ya queda protegido con un alcance distinto del profesorado y de administracion.
 
 ## Capa central de permisos
 
@@ -263,6 +272,7 @@ Objetivos de esta capa:
 Permisos actualmente centralizados:
 
 - `isAdminRole`
+- `isAlumnoRole`
 - `canManageUsers`
 - `canImportExcel`
 - `canManageCatalogs`
@@ -314,6 +324,121 @@ Mientras no se conozcan todos los datos del proveedor real, la aplicacion deja p
 - La pantalla de gestion de usuarios sera solo para administradores.
 - El bootstrap del primer administrador no se expondra como funcionalidad publica web.
 
+## Capas de seguridad implementadas
+
+La autorizacion no debe depender solo de lo visible en pantalla.
+
+### 1. Visibilidad en interfaz
+
+La `Navbar` y otros componentes de interfaz ocultan o muestran enlaces segun rol.
+
+Esto mejora la UX, pero no se considera una barrera de seguridad suficiente por si sola.
+
+### 2. Guardias server-side en paginas y layouts
+
+Las paginas privadas del panel interno usan guardias en servidor:
+
+- `requireUserSession`
+- `requireAdminSession`
+- `requireAlumnoSession`
+
+Objetivo:
+
+- redirigir a `/login` si no hay sesion real valida;
+- forzar cambio de contrasena en `AUTH_MODE=local` cuando corresponda;
+- bloquear acceso por rol aunque el usuario conozca la URL.
+
+El portal del alumno queda protegido de forma comun desde su `layout`, de modo que todas sus paginas heredan la exigencia de sesion valida y rol `ALUMNO`.
+
+### 3. Proteccion de rutas API
+
+Las rutas API privadas no deben confiar solo en el `middleware`.
+
+Actualmente la capa API usa:
+
+- `ensureApiUser`
+- `ensureApiAdmin`
+- `requireApiUserSession`
+- `requireApiAdminSession`
+
+Objetivo:
+
+- devolver `401` o `403` cuando falte sesion o rol;
+- evitar que una ruta privada quede accesible por llamada directa;
+- mantener la misma politica de autorizacion que las paginas servidor.
+
+### 4. Revalidacion en consultas server-side sensibles
+
+Cuando un modulo nuevo introduce consultas server-side propias, no debe asumir que la proteccion del layout es suficiente si esas consultas pueden reutilizarse desde otros puntos.
+
+Por eso las consultas actuales del portal del alumno revalidan tambien `requireAlumnoSession(...)` antes de leer datos.
+
+### 5. Middleware como filtro previo, no como autorizacion completa
+
+El `middleware` actual cumple un papel deliberadamente limitado:
+
+- bloquea acceso anonimo obvio a rutas privadas;
+- permite el acceso a `/login`;
+- limpia cookies de sesion con firma invalida;
+- devuelve `401` temprano en APIs cuando no hay una cookie utilizable.
+
+No se apoya en Prisma ni valida por si mismo:
+
+- existencia real de la sesion en BD;
+- expiracion real de la sesion;
+- estado activo del usuario;
+- rol del usuario.
+
+Esa validacion fuerte se deja a las guardias server-side y a la capa API.
+
+## Visibilidad y acceso actual por rol
+
+### `ADMIN`
+
+Visibilidad principal:
+
+- ve la navegacion completa del panel interno;
+- ve el acceso a configuracion y a gestion de usuarios;
+- no usa el portal del alumno como espacio funcional propio.
+
+Acceso efectivo:
+
+- puede entrar en todos los modulos internos;
+- puede usar importacion y exportacion;
+- puede gestionar usuarios, catalogos y configuracion academica.
+
+### `PROFESOR`
+
+Visibilidad principal:
+
+- ve en la `Navbar` solo los modulos internos permitidos;
+- no ve enlaces de administracion reservados a `ADMIN`;
+- no debe ver el portal del alumno como sustituto del panel interno.
+
+Acceso efectivo:
+
+- puede entrar en los modulos funcionales internos ya existentes;
+- puede exportar y descargar plantillas;
+- no puede acceder a gestion de usuarios;
+- no puede usar importacion masiva desde Excel;
+- no puede modificar configuracion academica ni catalogos maestros;
+- no puede acceder al portal del alumno, aunque conozca la URL.
+
+### `ALUMNO`
+
+Visibilidad principal:
+
+- no debe usar la `Navbar` del panel interno como espacio de trabajo;
+- accede a un layout propio del `portal-alumno`;
+- dentro del portal ve su propia navegacion y el control de sesion/login.
+
+Acceso efectivo:
+
+- puede entrar solo en el `portal-alumno` si esta autorizado y activo;
+- no puede entrar en el panel interno general;
+- no puede acceder a administracion, configuracion ni mantenimiento global de datos;
+- no puede reutilizar rutas server-side del portal sin pasar la guardia de rol `ALUMNO`.
+
 ## Decision de implementacion
 
 Se acuerda avanzar ahora con:
@@ -332,6 +457,7 @@ Actualmente queda establecido que:
 - solo `ADMIN` puede anadir o eliminar usuarios;
 - solo `ADMIN` puede usar la importacion masiva desde Excel en el modulo `Import / Export`;
 - `PROFESOR` puede seguir usando las funcionalidades preexistentes de la aplicacion, salvo esas capacidades administrativas o de importacion restringidas;
+- `ALUMNO` dispone de un portal separado con visibilidad y proteccion propias;
 - la autorizacion relevante debe comprobarse en servidor, no solo en la interfaz.
 
 Restricciones adicionales ya implementadas:
@@ -340,3 +466,21 @@ Restricciones adicionales ya implementadas:
 - no se puede eliminar el ultimo administrador activo;
 - en `AUTH_MODE=external` no se muestran ni se usan flujos de contrasena local;
 - en el modulo `Import / Export`, el profesorado puede exportar y descargar plantillas, pero no importar.
+- el `portal-alumno` exige sesion valida y rol `ALUMNO` tanto en layout como en sus consultas server-side principales.
+- el `middleware` limpia cookies con firma invalida y no bloquea `/login` solo por detectar una cookie firmada.
+
+## Cobertura de pruebas de seguridad
+
+Las medidas anteriores cuentan con cobertura automatizada especifica en:
+
+- `middleware.test.ts`
+- `src/modules/auth/permissions.test.ts`
+- `src/modules/auth/session.test.ts`
+- `src/modules/portal-alumno/actions/queries.test.ts`
+
+Estas pruebas cubren al menos:
+
+- visibilidad y decision de acceso por rol en helpers centrales;
+- guardia `requireAlumnoSession`;
+- comportamiento del `middleware` con cookies invalidas y acceso a `/login`;
+- revalidacion del portal del alumno antes de consultar datos.

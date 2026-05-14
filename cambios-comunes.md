@@ -1,5 +1,51 @@
 # Cambios en archivos comunes
 
+## 14-5-26 Sbs
+
+- Archivo: `src/modules/auth/permissions.ts`
+  Motivo: anadir el helper comun `isAlumnoRole` para centralizar tambien la deteccion del rol alumno.
+  Impacto: la politica de autorizacion deja de repartir comprobaciones manuales de `ALUMNO` y gana una base unica para guards, interfaz y tests.
+
+- Archivo: `src/modules/auth/session.ts`
+  Motivo: incorporar la guardia server-side `requireAlumnoSession`.
+  Impacto: el portal del alumno y cualquier otra zona futura de este rol pueden exigir sesion valida y rol `ALUMNO` desde una API comun.
+
+- Archivo: `src/app/portal-alumno/layout.tsx`
+  Motivo: proteger el layout comun del portal del alumno con `requireAlumnoSession`.
+  Impacto: todas las paginas bajo `/portal-alumno` quedan cubiertas por la misma barrera server-side y ya no dependen solo de ocultar enlaces.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.ts`
+  Motivo: revalidar tambien la sesion/rol de alumno dentro de las consultas server-side del portal.
+  Impacto: las lecturas del portal no quedan expuestas si en el futuro se reutilizan fuera del layout o desde otro punto del codigo.
+
+- Archivo: `middleware.ts`
+  Motivo: endurecer el prefiltrado de acceso limpiando cookies de sesion con firma invalida y permitiendo `/login` sin redirigir solo por detectar una cookie firmada.
+  Impacto: se evita el riesgo de bucles entre `/login` y rutas privadas cuando la cookie ya no representa una sesion util, manteniendo el middleware como filtro ligero previo.
+
+- Archivo: `middleware.test.ts`
+  Motivo: anadir pruebas especificas del middleware para cookies invalidas, acceso a `/login`, rutas privadas y respuestas `401` en API.
+  Impacto: el comportamiento de prefiltrado y limpieza de cookies queda protegido frente a regresiones.
+
+- Archivo: `src/modules/auth/session.test.ts`
+  Motivo: cubrir la nueva guardia `requireAlumnoSession` con casos de acceso permitido y redireccion por rol no valido.
+  Impacto: la proteccion central del rol alumno queda validada de forma directa, no solo a traves de consumidores indirectos.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.test.ts`
+  Motivo: verificar que las consultas del portal exigen sesion de alumno antes de acceder a datos y mantienen su mapeo funcional.
+  Impacto: se protege la segunda capa de seguridad del portal frente a regresiones futuras.
+
+- Archivo: `src/modules/auth/permissions.test.ts`
+  Motivo: ampliar la cobertura del modulo de permisos con `isAlumnoRole`.
+  Impacto: la deteccion central del rol alumno queda alineada con el resto de helpers de permisos.
+
+- Archivo: `README.md`
+  Motivo: actualizar el punto de entrada documental para indicar que `sistema-login.md` cubre tambien seguridad server-side y visibilidad/acceso por rol.
+  Impacto: quien revise la documentacion general encuentra mas rapido la referencia correcta para permisos y seguridad.
+
+- Archivo: `sistema-login.md`
+  Motivo: documentar el estado real de la integracion del login con el portal del alumno, las capas de seguridad implementadas, la visibilidad/acceso actual por rol y la cobertura de pruebas asociada.
+  Impacto: la documentacion funcional deja de describir al rol `ALUMNO` como una idea futura abstracta y pasa a reflejar el comportamiento real ya implantado.
+
 ## 7-4-26 Sbs
 
 - Archivo: `src/app/icon.png`
