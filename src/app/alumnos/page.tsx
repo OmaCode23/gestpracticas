@@ -2,7 +2,7 @@
 
 import { unstable_noStore as noStore } from "next/cache";
 import { PageHeader } from "@/components/ui";
-import { requireUserSession } from "@/modules/auth/session";
+import { requireStaffSession } from "@/modules/auth/session";
 import { getCiclosFormativosActivosOptions } from "@/modules/catalogos/actions/queries";
 import {
   getConfiguracionAcademica,
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   noStore();
-  await requireUserSession("/alumnos");
+  await requireStaffSession("/alumnos");
 
   const [ciclosFormativos, cursos, configuracionAcademica] = await Promise.all([
     getCiclosFormativosActivosOptions(),

@@ -3,6 +3,46 @@
 ## 14-5-26 Sbs
 
 - Archivo: `src/modules/auth/permissions.ts`
+  Motivo: ampliar la capa central de permisos con `isStaffRole` para distinguir explicitamente entre personal del centro (`ADMIN` o `PROFESOR`) y `ALUMNO`.
+  Impacto: la politica de acceso deja de tratar como equivalente a cualquier usuario autenticado y permite expresar con claridad que el panel interno es solo para personal del centro.
+
+- Archivo: `src/modules/auth/session.ts`
+  Motivo: incorporar la guardia `requireStaffSession` y su equivalente API `requireApiStaffSession`.
+  Impacto: las paginas y rutas del panel interno pueden exigir de forma explicita personal del centro, mientras el portal del alumno sigue teniendo una barrera propia por rol.
+
+- Archivo: `src/modules/auth/api.ts`
+  Motivo: hacer que `ensureApiUser` responda `403` a `ALUMNO` en las APIs internas del panel, en lugar de limitarse a comprobar si existe sesion.
+  Impacto: las rutas del panel dejan de aceptar llamadas de alumnos autenticados aunque conozcan el endpoint.
+
+- Archivo: `src/app/page.tsx`, `src/app/alumnos/page.tsx`, `src/app/empresas/page.tsx`, `src/app/formacion/page.tsx`, `src/app/importexport/page.tsx`, `src/app/informes/page.tsx`, `src/app/configuracion/page.tsx`
+  Motivo: sustituir `requireUserSession` por `requireStaffSession` en las paginas del panel interno.
+  Impacto: un alumno autenticado ya no puede entrar por URL directa en estas pantallas; queda redirigido a su espacio propio.
+
+- Archivo: `src/app/login/page.tsx`
+  Motivo: redirigir a `ALUMNO` autenticado hacia `/portal-alumno` en lugar de tratarlo como usuario del panel interno.
+  Impacto: el flujo de entrada respeta la separacion funcional entre portal del alumno y panel de profesorado/administracion.
+
+- Archivo: `src/components/layout/Navbar.tsx`
+  Motivo: ajustar la visibilidad de navegacion para que el alumno no vea modulos del panel interno y tenga como acceso principal su portal.
+  Impacto: la interfaz deja de sugerir capacidades que el rol alumno no debe tener y queda alineada con la autorizacion real en servidor.
+
+- Archivo: `README.md`
+  Motivo: hacer explicita la diferencia entre sesion valida y acceso por rol, y resumir de forma visible la matriz actual `ADMIN` / `PROFESOR` / `ALUMNO`.
+  Impacto: la documentacion general deja menos margen a interpretar que una pagina del panel interno pueda protegerse solo con `requireUserSession`.
+
+- Archivo: `sistema-login.md`
+  Motivo: aclarar la ambiguedad anterior sobre `requireUserSession`, documentar `requireStaffSession` y actualizar la matriz efectiva de acceso, visibilidad y redireccion por rol.
+  Impacto: la documentacion funcional pasa a reflejar con precision la frontera real entre portal del alumno y panel interno.
+
+- Archivo: `src/modules/auth/api.test.ts`, `src/modules/auth/session.test.ts`, `src/modules/auth/permissions.test.ts`
+  Motivo: ampliar la cobertura automatizada para distinguir personal del centro frente a alumno, incluyendo `401`, `403` y redirecciones por rol.
+  Impacto: una regresion que vuelva a permitir a `ALUMNO` acceder al panel interno o a sus APIs deberia romper la suite de seguridad.
+
+- Archivo: `src/app/access-contract.test.ts`
+  Motivo: anadir pruebas de contrato sobre las paginas criticas de acceso para validar redireccion por rol desde login y uso obligatorio de `requireStaffSession` en puntos visibles del panel interno sin depender de una configuracion extra de Vitest para TSX.
+  Impacto: ya no dependemos solo de helpers aislados; tambien queda cubierta la aplicacion real de esas guards en entradas visibles al sistema.
+
+- Archivo: `src/modules/auth/permissions.ts`
   Motivo: anadir el helper comun `isAlumnoRole` para centralizar tambien la deteccion del rol alumno.
   Impacto: la politica de autorizacion deja de repartir comprobaciones manuales de `ALUMNO` y gana una base unica para guards, interfaz y tests.
 

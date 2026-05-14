@@ -54,6 +54,27 @@ describe("GET /api/empresas", () => {
     expect(getEmpresasMock).not.toHaveBeenCalled();
   });
 
+  it("devuelve 403 si la capa de auth rechaza al rol alumno", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await GET({
+      nextUrl: {
+        searchParams: new URLSearchParams(),
+      },
+    } as any);
+
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(getEmpresasMock).not.toHaveBeenCalled();
+  });
+
   it("rechaza filtros invalidos", async () => {
     const response = await GET({
       nextUrl: {

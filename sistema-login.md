@@ -246,6 +246,7 @@ Hoy puede:
 - iniciar sesion solo si esta autorizado y activo;
 - acceder al `portal-alumno`;
 - ver las paginas propias del portal del alumno;
+- ser redirigido a `portal-alumno` si pasa por `/login` teniendo ya sesion iniciada;
 - ver el control de sesion/login tambien dentro del portal.
 
 No puede:
@@ -255,6 +256,20 @@ No puede:
 - acceder al CRUD global de alumnos, empresas o formacion.
 
 El contenido actual del portal del alumno es todavia inicial y esta preparado para crecer, pero ya queda protegido con un alcance distinto del profesorado y de administracion.
+
+## Ambiguedad corregida
+
+La documentacion anterior ya expresaba que `ALUMNO` no debia acceder al panel interno, pero no dejaba suficientemente explicito un matiz tecnico importante:
+
+- `requireUserSession` valida autenticacion, no pertenencia al personal del centro;
+- por tanto, una pagina del panel interno protegida solo con `requireUserSession` seguia siendo accesible para un alumno autenticado.
+
+La regla correcta que queda fijada desde ahora es:
+
+- `requireUserSession`: sesion valida, sin decidir aun entre `PROFESOR`, `ADMIN` o `ALUMNO`;
+- `requireStaffSession`: acceso al panel interno (`ADMIN` o `PROFESOR`);
+- `requireAlumnoSession`: acceso al portal del alumno;
+- `requireAdminSession`: acceso exclusivo de administracion.
 
 ## Capa central de permisos
 
@@ -273,6 +288,7 @@ Permisos actualmente centralizados:
 
 - `isAdminRole`
 - `isAlumnoRole`
+- `isStaffRole`
 - `canManageUsers`
 - `canImportExcel`
 - `canManageCatalogs`
@@ -339,6 +355,7 @@ Esto mejora la UX, pero no se considera una barrera de seguridad suficiente por 
 Las paginas privadas del panel interno usan guardias en servidor:
 
 - `requireUserSession`
+- `requireStaffSession`
 - `requireAdminSession`
 - `requireAlumnoSession`
 
@@ -347,6 +364,13 @@ Objetivo:
 - redirigir a `/login` si no hay sesion real valida;
 - forzar cambio de contrasena en `AUTH_MODE=local` cuando corresponda;
 - bloquear acceso por rol aunque el usuario conozca la URL.
+
+Importante:
+
+- `requireUserSession` solo garantiza que existe una sesion valida;
+- no debe usarse como unica barrera para pantallas exclusivas del panel interno si el rol `ALUMNO` tambien puede iniciar sesion;
+- para el panel interno la guardia correcta es `requireStaffSession`;
+- para el portal del alumno la guardia correcta es `requireAlumnoSession`.
 
 El portal del alumno queda protegido de forma comun desde su `layout`, de modo que todas sus paginas heredan la exigencia de sesion valida y rol `ALUMNO`.
 
@@ -359,6 +383,7 @@ Actualmente la capa API usa:
 - `ensureApiUser`
 - `ensureApiAdmin`
 - `requireApiUserSession`
+- `requireApiStaffSession`
 - `requireApiAdminSession`
 
 Objetivo:
@@ -366,6 +391,12 @@ Objetivo:
 - devolver `401` o `403` cuando falte sesion o rol;
 - evitar que una ruta privada quede accesible por llamada directa;
 - mantener la misma politica de autorizacion que las paginas servidor.
+
+Convencion actual:
+
+- `ensureApiUser` se usa para las APIs del panel interno y exige en realidad rol de personal del centro (`ADMIN` o `PROFESOR`);
+- `ensureApiAdmin` se reserva para operaciones exclusivas de administracion;
+- las APIs especificas del portal del alumno deben apoyarse en `requireAlumnoSession` o un helper equivalente de ese rol.
 
 ### 4. Revalidacion en consultas server-side sensibles
 
@@ -422,13 +453,14 @@ Acceso efectivo:
 - no puede acceder a gestion de usuarios;
 - no puede usar importacion masiva desde Excel;
 - no puede modificar configuracion academica ni catalogos maestros;
-- no puede acceder al portal del alumno, aunque conozca la URL.
+- si intenta entrar manualmente en `/portal-alumno`, se le redirige fuera de ese espacio porque no es su area funcional.
 
 ### `ALUMNO`
 
 Visibilidad principal:
 
 - no debe usar la `Navbar` del panel interno como espacio de trabajo;
+- si ya tiene sesion y pasa por `/login`, se le redirige a `/portal-alumno`;
 - accede a un layout propio del `portal-alumno`;
 - dentro del portal ve su propia navegacion y el control de sesion/login.
 
@@ -474,6 +506,8 @@ Restricciones adicionales ya implementadas:
 Las medidas anteriores cuentan con cobertura automatizada especifica en:
 
 - `middleware.test.ts`
+- `src/app/access-contract.test.ts`
+- `src/modules/auth/api.test.ts`
 - `src/modules/auth/permissions.test.ts`
 - `src/modules/auth/session.test.ts`
 - `src/modules/portal-alumno/actions/queries.test.ts`
@@ -481,6 +515,9 @@ Las medidas anteriores cuentan con cobertura automatizada especifica en:
 Estas pruebas cubren al menos:
 
 - visibilidad y decision de acceso por rol en helpers centrales;
-- guardia `requireAlumnoSession`;
+- guardias `requireAlumnoSession` y `requireStaffSession`;
+- redireccion por rol desde `/login`;
 - comportamiento del `middleware` con cookies invalidas y acceso a `/login`;
-- revalidacion del portal del alumno antes de consultar datos.
+- revalidacion del portal del alumno antes de consultar datos;
+- decision `401` frente a `403` en la capa API;
+- paginas servidor representativas del panel interno que deben exigir personal del centro.

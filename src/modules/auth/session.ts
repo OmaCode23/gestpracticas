@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
 import { AUTH_COOKIE_NAME, isLocalAuthMode } from "@/modules/auth/config";
-import { isAdminRole, isAlumnoRole } from "@/modules/auth/permissions";
+import { isAdminRole, isAlumnoRole, isStaffRole } from "@/modules/auth/permissions";
 import {
   buildSignedSessionValue,
   generateSessionToken,
@@ -150,6 +150,16 @@ export async function requireAdminSession(nextPath?: string) {
   return session;
 }
 
+export async function requireStaffSession(nextPath?: string) {
+  const session = await requireUserSession(nextPath);
+
+  if (!isStaffRole(session.user.rol)) {
+    redirect("/portal-alumno");
+  }
+
+  return session;
+}
+
 export async function requireAlumnoSession(nextPath?: string) {
   const session = await requireUserSession(nextPath);
 
@@ -162,6 +172,15 @@ export async function requireAlumnoSession(nextPath?: string) {
 
 export async function requireApiUserSession() {
   return getOptionalSession();
+}
+
+export async function requireApiStaffSession() {
+  const session = await getOptionalSession();
+  if (!session || !isStaffRole(session.user.rol)) {
+    return null;
+  }
+
+  return session;
 }
 
 export async function requireApiAdminSession() {

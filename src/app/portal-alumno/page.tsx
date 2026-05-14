@@ -35,12 +35,12 @@ export default async function PortalAlumnoPage() {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle icon="OP" iconVariant="blue">
-              Ofertas de practicas
+              Ofertas de prácticas
             </CardTitle>
           </CardHeader>
           <div className="p-6">
             <p className="text-sm leading-relaxed text-text-mid">
-              Todavia no hay ofertas publicadas. Este bloque queda preparado para mostrar las plazas
+              Todavía no hay ofertas publicadas. Este bloque queda preparado para mostrar las plazas
               abiertas por empresa y ciclo formativo.
             </p>
             <Link
@@ -60,7 +60,7 @@ export default async function PortalAlumnoPage() {
           </CardHeader>
           <div className="p-6">
             <p className="text-sm leading-relaxed text-text-mid">
-              La documentacion del alumno se gestiona desde la ficha interna de alumnos.
+              La documentación del alumno se gestiona desde la ficha interna de alumnos.
             </p>
             <Link
               href="/portal-alumno/cv"

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import institutoLogo from "@/app/images/logo_instituto.webp";
 import AuthSessionControl from "@/components/layout/AuthSessionControl";
 import type { AuthMode } from "@/modules/auth/config";
-import { canManageUsers } from "@/modules/auth/permissions";
+import { canManageUsers, isAlumnoRole, isStaffRole } from "@/modules/auth/permissions";
 import { useAuthSession } from "@/components/layout/useAuthSession";
 
 const NAV_LINKS = [
@@ -18,6 +18,8 @@ const NAV_LINKS = [
   { href: "/informes", label: "Informes" },
 ] as const;
 
+const ALUMNO_LINKS = [{ href: "/portal-alumno", label: "Portal Alumno" }] as const;
+
 type Props = {
   authMode: AuthMode;
 };
@@ -27,9 +29,16 @@ export default function Navbar({ authMode }: Props) {
   const session = useAuthSession("Navbar");
   const { sessionUser } = session;
   const showUsersAdmin = !!sessionUser?.rol && canManageUsers(sessionUser.rol);
-  const visibleLinks = sessionUser ? NAV_LINKS : [];
+  const visibleLinks = sessionUser
+    ? isStaffRole(sessionUser.rol)
+      ? NAV_LINKS
+      : isAlumnoRole(sessionUser.rol)
+        ? ALUMNO_LINKS
+        : []
+    : [];
   const isConfigActive = pathname === "/configuracion" || pathname.startsWith("/configuracion/");
   const isUsersActive = pathname === "/configuracion/usuarios";
+  const showConfig = !!sessionUser?.rol && isStaffRole(sessionUser.rol);
 
   return (
     <nav className="sticky top-0 z-50 flex flex-wrap items-center gap-3 border-b border-white/10 bg-navy px-4 py-4 shadow-[0_18px_50px_rgba(61,24,34,0.22)] backdrop-blur md:px-6 xl:flex-nowrap xl:px-10">
@@ -94,7 +103,7 @@ export default function Navbar({ authMode }: Props) {
           </Link>
         ) : null}
 
-        {sessionUser ? (
+        {showConfig ? (
           <Link
             href="/configuracion"
             aria-label="Configuracion"

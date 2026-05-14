@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { PageHeader } from "@/components/ui";
-import { requireUserSession } from "@/modules/auth/session";
+import { requireStaffSession } from "@/modules/auth/session";
 import EmpresasContainer from "@/modules/empresas/components/EmpresasContainer";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 
@@ -10,7 +10,7 @@ import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
  */
 export default async function EmpresasPage() {
   noStore();
-  await requireUserSession("/empresas");
+  await requireStaffSession("/empresas");
 
   const configuracionAcademica = await getConfiguracionAcademica();
 
@@ -23,9 +23,7 @@ export default async function EmpresasPage() {
         subtitle="Alta de nuevas empresas y consulta del directorio de colaboradoras."
       />
 
-      <EmpresasContainer
-        resultadosPorPagina={configuracionAcademica.resultadosPorPagina}
-      />
+      <EmpresasContainer resultadosPorPagina={configuracionAcademica.resultadosPorPagina} />
     </div>
   );
 }

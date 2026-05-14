@@ -26,6 +26,19 @@ Sistema de gestión de prácticas de empresa para institutos.
 
 - `sistema-login.md`: decisiones de arquitectura del login, modos de autenticacion, bootstrap del administrador, medidas de seguridad en servidor y visibilidad/acceso por rol.
 
+## Resumen de acceso por rol
+
+- `ADMIN`: usa el panel interno completo, incluida la gestion de usuarios.
+- `PROFESOR`: usa el panel interno funcional, sin gestion de usuarios ni operaciones administrativas restringidas.
+- `ALUMNO`: no usa el panel interno; su espacio funcional es `portal-alumno`.
+
+Regla importante:
+
+- la visibilidad en `Navbar` es solo UX;
+- el acceso real debe quedar protegido en servidor por guardias de rol;
+- para el panel interno no basta `requireUserSession`, porque ese helper solo valida sesion y no distingue por si mismo entre `PROFESOR` y `ALUMNO`;
+- el panel interno debe protegerse con `requireStaffSession`, y el portal del alumno con `requireAlumnoSession`.
+
 ## Estructura
 
 ```text
@@ -263,6 +276,9 @@ Estandar recomendado para este repo:
 - Mantener una unica codificacion en todo el repositorio para evitar corrupciones silenciosas en merges, revisiones y copias entre terminal, editor y git.
 
 ## Tests
+
+- La suite actual combina tests de permisos, guards server-side, middleware, handlers API y algunas paginas servidor criticas de acceso.
+- Los tests de rutas API que mockean `ensureApiUser` o `ensureApiAdmin` validan el handler una vez aplicada la auth, pero no sustituyen a las pruebas especificas de la matriz de roles.
 
 - La configuración de Vitest está ajustada para funcionar en este entorno Windows usando `threads`.
 

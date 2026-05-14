@@ -1,6 +1,5 @@
 import Image from "next/image";
 import institutoLogo from "@/app/images/logo_instituto.webp";
-import PortalSessionAccess from "@/components/layout/PortalSessionAccess";
 import { getAuthMode } from "@/modules/auth/config";
 import { requireAlumnoSession } from "@/modules/auth/session";
 import PortalAlumnoNav from "@/modules/portal-alumno/components/PortalAlumnoNav";
@@ -35,17 +34,14 @@ export default async function PortalAlumnoLayout({
               Portal del Alumno
             </h1>
             <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-text-mid">
-              Practicas, empresas colaboradoras, cursos externos y CV en un espacio separado del panel interno.
+              Prácticas, empresas colaboradoras, cursos externos y CV en un espacio separado del panel interno.
             </p>
-          </div>
-          <div className="ml-auto">
-            <PortalSessionAccess authMode={authMode} />
           </div>
         </div>
       </header>
 
       <div className="mb-6">
-        <PortalAlumnoNav />
+        <PortalAlumnoNav authMode={authMode} />
       </div>
 
       {children}

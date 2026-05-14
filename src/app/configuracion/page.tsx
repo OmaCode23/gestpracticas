@@ -1,5 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { requireUserSession } from "@/modules/auth/session";
+import { requireStaffSession } from "@/modules/auth/session";
 import { getCiclosFormativos, getSectores } from "@/modules/catalogos/actions/queries";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 import ConfiguracionPanel from "@/modules/configuracion/components/ConfiguracionPanel";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ConfiguracionPage() {
   noStore();
-  await requireUserSession("/configuracion");
+  await requireStaffSession("/configuracion");
 
   const [sectores, ciclosFormativos, configuracionAcademica] = await Promise.all([
     getSectores(),

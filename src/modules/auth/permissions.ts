@@ -8,6 +8,10 @@ export function isAlumnoRole(role: UserRole) {
   return role === "ALUMNO";
 }
 
+export function isStaffRole(role: UserRole) {
+  return role === "ADMIN" || role === "PROFESOR";
+}
+
 export function canManageUsers(role: UserRole) {
   return isAdminRole(role);
 }

@@ -6,6 +6,7 @@ import {
   canManageUsers,
   isAdminRole,
   isAlumnoRole,
+  isStaffRole,
 } from "@/modules/auth/permissions";
 
 describe("auth permissions", () => {
@@ -19,6 +20,12 @@ describe("auth permissions", () => {
     expect(isAlumnoRole("ALUMNO")).toBe(true);
     expect(isAlumnoRole("ADMIN")).toBe(false);
     expect(isAlumnoRole("PROFESOR")).toBe(false);
+  });
+
+  it("identifica correctamente al personal del centro", () => {
+    expect(isStaffRole("ADMIN")).toBe(true);
+    expect(isStaffRole("PROFESOR")).toBe(true);
+    expect(isStaffRole("ALUMNO")).toBe(false);
   });
 
   it("reserva la gestion de usuarios al administrador", () => {

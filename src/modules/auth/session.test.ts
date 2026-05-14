@@ -42,7 +42,7 @@ vi.mock("@/database/prisma", () => ({
   },
 }));
 
-import { requireAlumnoSession } from "@/modules/auth/session";
+import { requireAlumnoSession, requireStaffSession } from "@/modules/auth/session";
 import { AUTH_COOKIE_NAME } from "@/modules/auth/config";
 
 describe("auth session guards", () => {
@@ -110,5 +110,43 @@ describe("auth session guards", () => {
 
     await expect(requireAlumnoSession("/portal-alumno")).rejects.toThrow("REDIRECT:/");
     expect(redirectMock).toHaveBeenCalledWith("/");
+  });
+
+  it("permite el acceso al panel interno cuando la sesion pertenece a personal del centro", async () => {
+    sessionFindUniqueMock.mockResolvedValue({
+      id: 23,
+      expiresAt: new Date(Date.now() + 60_000),
+      usuario: {
+        id: 9,
+        nombre: "Profesor Demo",
+        email: "profe@example.com",
+        iniciales: "PD",
+        rol: "PROFESOR",
+        activo: true,
+      },
+    });
+
+    const session = await requireStaffSession("/informes");
+
+    expect(session.user.rol).toBe("PROFESOR");
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("redirige al portal del alumno si un alumno intenta entrar al panel interno", async () => {
+    sessionFindUniqueMock.mockResolvedValue({
+      id: 24,
+      expiresAt: new Date(Date.now() + 60_000),
+      usuario: {
+        id: 10,
+        nombre: "Alumno Demo",
+        email: "alumno@example.com",
+        iniciales: "AD",
+        rol: "ALUMNO",
+        activo: true,
+      },
+    });
+
+    await expect(requireStaffSession("/informes")).rejects.toThrow("REDIRECT:/portal-alumno");
+    expect(redirectMock).toHaveBeenCalledWith("/portal-alumno");
   });
 });

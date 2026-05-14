@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ApiResponse } from "@/shared/types/api";
 import { requireApiAdminSession, requireApiUserSession } from "@/modules/auth/session";
+import { isStaffRole } from "@/modules/auth/permissions";
 
 function isTestRuntime() {
   return process.env.NODE_ENV === "test" || process.env.VITEST === "true";
@@ -12,13 +13,20 @@ export async function ensureApiUser() {
   }
 
   const session = await requireApiUserSession();
-  if (session) {
+  if (!session) {
+    return NextResponse.json<ApiResponse<never>>(
+      { ok: false, error: "No autenticado." },
+      { status: 401 }
+    );
+  }
+
+  if (isStaffRole(session.user.rol)) {
     return null;
   }
 
   return NextResponse.json<ApiResponse<never>>(
-    { ok: false, error: "No autenticado." },
-    { status: 401 }
+    { ok: false, error: "No autorizado." },
+    { status: 403 }
   );
 }
 

@@ -48,20 +48,20 @@ export default function AuthSessionControl({ authMode, session, variant = "navba
           <span className={loadingTextClassName}>Cargando</span>
         </div>
       ) : sessionUser ? (
-        <div ref={menuRef} className="relative flex items-center text-[0.86rem] text-white">
+        <div ref={menuRef} className="relative z-40 flex items-center text-[0.86rem] text-white">
           <button
             type="button"
             onClick={() => setMenuOpen((current) => !current)}
             className={toggleButtonClassName}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
-            aria-label="Abrir menu de usuario"
+            aria-label="Abrir menú de usuario"
           >
             {initials}
           </button>
 
           {menuOpen ? (
-            <div className="absolute right-0 top-[calc(100%+0.75rem)] min-w-[240px] rounded-[18px] border border-white/20 bg-white p-2 text-navy shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
+            <div className="absolute right-0 top-[calc(100%+0.75rem)] z-50 min-w-[240px] rounded-[18px] border border-white/20 bg-white p-2 text-navy shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
               <div className="border-b border-slate-100 px-3 py-2">
                 <p className="truncate text-[0.84rem] font-semibold">{sessionUser.nombre}</p>
                 <p className="truncate text-[0.76rem] text-slate-500">({getRoleLabel(sessionUser.rol)})</p>
@@ -73,7 +73,7 @@ export default function AuthSessionControl({ authMode, session, variant = "navba
                   onClick={() => setMenuOpen(false)}
                   className="mt-1 block rounded-[12px] px-3 py-2 text-[0.84rem] font-medium text-navy transition hover:bg-slate-50"
                 >
-                  Cambiar contrasena
+                  Cambiar contraseña
                 </Link>
               ) : null}
               <button
@@ -82,7 +82,7 @@ export default function AuthSessionControl({ authMode, session, variant = "navba
                 disabled={loggingOut}
                 className="mt-1 w-full rounded-[12px] px-3 py-2 text-left text-[0.84rem] font-medium text-[#7a2237] transition hover:bg-[#fff3f5] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {loggingOut ? "Cerrando sesion..." : "Logout"}
+                {loggingOut ? "Cerrando sesión..." : "Logout"}
               </button>
             </div>
           ) : null}
