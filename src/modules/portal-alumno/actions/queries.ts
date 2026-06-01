@@ -8,6 +8,8 @@ type PortalAlumnoDbRecord = {
   id: number;
   nombre: string;
   nia: string;
+  nif: string | null;
+  nuss: string | null;
   telefono: string;
   email: string;
   cursoCiclo: number;
@@ -24,10 +26,27 @@ type PortalAlumnoDbRecord = {
   } | null;
 };
 
+type PortalEmpresaListDbRecord = {
+  id: number;
+  nombre: string;
+  sectorRef: {
+    nombre: string;
+  };
+  localidadRef: {
+    nombre: string;
+  };
+  cicloFormativoRef: {
+    nombre: string;
+    codigo: string | null;
+  } | null;
+};
+
 export type PortalAlumno = {
   id: number;
   nombre: string;
   nia: string;
+  nif: string | null;
+  nuss: string | null;
   telefono: string;
   email: string;
   cursoCiclo: number;
@@ -41,10 +60,21 @@ export type PortalAlumno = {
   cvUpdatedAt: string | null;
 };
 
+export type PortalEmpresaListItem = {
+  id: number;
+  nombre: string;
+  sector: string;
+  localidad: string;
+  cicloFormativo: string;
+  cicloFormativoCodigo: string | null;
+};
+
 const PORTAL_ALUMNO_SELECT = {
   id: true,
   nombre: true,
   nia: true,
+  nif: true,
+  nuss: true,
   telefono: true,
   email: true,
   cursoCiclo: true,
@@ -63,11 +93,34 @@ const PORTAL_ALUMNO_SELECT = {
   },
 } as const;
 
+const PORTAL_EMPRESA_LIST_SELECT = {
+  id: true,
+  nombre: true,
+  sectorRef: {
+    select: {
+      nombre: true,
+    },
+  },
+  localidadRef: {
+    select: {
+      nombre: true,
+    },
+  },
+  cicloFormativoRef: {
+    select: {
+      nombre: true,
+      codigo: true,
+    },
+  },
+} as const;
+
 function normalizeAlumno(alumno: PortalAlumnoDbRecord): PortalAlumno {
   return {
     id: alumno.id,
     nombre: alumno.nombre,
     nia: alumno.nia,
+    nif: alumno.nif,
+    nuss: alumno.nuss,
     telefono: alumno.telefono,
     email: alumno.email,
     cursoCiclo: alumno.cursoCiclo,
@@ -79,6 +132,17 @@ function normalizeAlumno(alumno: PortalAlumnoDbRecord): PortalAlumno {
     cvMimeType: alumno.cvMimeType,
     cvTamano: alumno.cvTamano,
     cvUpdatedAt: alumno.cvUpdatedAt?.toISOString() ?? null,
+  };
+}
+
+function normalizePortalEmpresa(empresa: PortalEmpresaListDbRecord): PortalEmpresaListItem {
+  return {
+    id: empresa.id,
+    nombre: empresa.nombre,
+    sector: empresa.sectorRef.nombre,
+    localidad: empresa.localidadRef.nombre,
+    cicloFormativo: empresa.cicloFormativoRef?.nombre ?? "Varios ciclos",
+    cicloFormativoCodigo: empresa.cicloFormativoRef?.codigo ?? null,
   };
 }
 
@@ -217,34 +281,22 @@ export async function getPortalEmpresasDisponibles(limit = 8, alumno?: PortalAlu
     where: buildEmpresaPortalWhere(resolvedAlumno),
     take: limit,
     orderBy: { nombre: "asc" },
-    include: {
-      sectorRef: {
-        select: {
-          nombre: true,
-        },
-      },
-      localidadRef: {
-        select: {
-          nombre: true,
-        },
-      },
-      cicloFormativoRef: {
-        select: {
-          nombre: true,
-          codigo: true,
-        },
-      },
-    },
+    select: PORTAL_EMPRESA_LIST_SELECT,
   });
 
-  return empresas.map((empresa) => ({
-    id: empresa.id,
-    nombre: empresa.nombre,
-    sector: empresa.sectorRef.nombre,
-    localidad: empresa.localidadRef.nombre,
-    cicloFormativo: empresa.cicloFormativoRef?.nombre ?? "Varios ciclos",
-    cicloFormativoCodigo: empresa.cicloFormativoRef?.codigo ?? null,
-  }));
+  return empresas.map(normalizePortalEmpresa);
+}
+
+export async function getPortalEmpresasGenerales(limit?: number) {
+  await requireAlumnoSession("/portal-alumno/empresas");
+
+  const empresas = await prisma.empresa.findMany({
+    ...(limit ? { take: limit } : {}),
+    orderBy: { nombre: "asc" },
+    select: PORTAL_EMPRESA_LIST_SELECT,
+  });
+
+  return empresas.map(normalizePortalEmpresa);
 }
 
 export async function getPortalFormacionesAlumno(alumno?: PortalAlumno) {

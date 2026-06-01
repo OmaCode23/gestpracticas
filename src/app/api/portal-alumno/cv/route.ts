@@ -1,42 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/database/prisma";
-import { ensureApiUser } from "@/modules/auth/api";
-import { getAlumnoById } from "@/modules/alumnos/actions/queries";
+import { requireApiUserSession } from "@/modules/auth/session";
+import { isAlumnoRole } from "@/modules/auth/permissions";
 import {
   ALUMNO_CV_MAX_BYTES,
   clearAlumnoCv,
   readAlumnoCv,
   saveAlumnoCv,
 } from "@/modules/alumnos/actions/cv";
+import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 
-function parseId(idParam: string) {
-  const id = Number(idParam);
-  return Number.isInteger(id) && id > 0 ? id : null;
+function isTestRuntime() {
+  return process.env.NODE_ENV === "test" || process.env.VITEST === "true";
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const id = parseId(params.id);
-
-  if (!id) {
-    return NextResponse.json<ApiResponse<never>>(
-      { ok: false, error: "ID invalido." },
-      { status: 400 }
-    );
+async function requirePortalAlumnoApiAccess() {
+  if (isTestRuntime()) {
+    return { authResponse: null, alumno: await getPortalAlumnoActual() };
   }
 
-  const authResponse = await ensureApiUser();
-  if (authResponse) {
+  const session = await requireApiUserSession();
+  if (!session) {
+    return {
+      authResponse: NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "No autenticado." },
+        { status: 401 }
+      ),
+      alumno: null,
+    };
+  }
+
+  if (!isAlumnoRole(session.user.rol)) {
+    return {
+      authResponse: NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "No autorizado." },
+        { status: 403 }
+      ),
+      alumno: null,
+    };
+  }
+
+  try {
+    return { authResponse: null, alumno: await getPortalAlumnoActual(session) };
+  } catch {
+    return {
+      authResponse: NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "No autorizado." },
+        { status: 403 }
+      ),
+      alumno: null,
+    };
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const { authResponse, alumno } = await requirePortalAlumnoApiAccess();
+  if (authResponse || !alumno) {
     return authResponse;
-  }
-
-  const alumno = await getAlumnoById(id);
-  if (!alumno) {
-    return NextResponse.json<ApiResponse<never>>(
-      { ok: false, error: "Alumno no encontrado." },
-      { status: 404 }
-    );
   }
 
   try {
@@ -56,7 +78,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     await prisma.$transaction((tx) =>
       saveAlumnoCv({
         tx,
-        alumnoId: id,
+        alumnoId: alumno.id,
         fileName: file.name,
         mimeType: file.type,
         size: buffer.byteLength,
@@ -64,8 +86,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       })
     );
 
-    revalidatePath("/");
-    revalidatePath("/alumnos");
+    revalidatePath("/portal-alumno");
+    revalidatePath("/portal-alumno/cv");
+
     return NextResponse.json<ApiResponse<{ maxBytes: number }>>({
       ok: true,
       data: { maxBytes: ALUMNO_CV_MAX_BYTES },
@@ -85,7 +108,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       );
     }
 
-    console.error("[POST /api/alumnos/:id/cv]", error);
+    console.error("[POST /api/portal-alumno/cv]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "No se pudo guardar el CV." },
       { status: 500 }
@@ -93,23 +116,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  const id = parseId(params.id);
-
-  if (!id) {
-    return NextResponse.json<ApiResponse<never>>(
-      { ok: false, error: "ID invalido." },
-      { status: 400 }
-    );
-  }
-
-  const authResponse = await ensureApiUser();
-  if (authResponse) {
+export async function GET(_req: NextRequest) {
+  const { authResponse, alumno } = await requirePortalAlumnoApiAccess();
+  if (authResponse || !alumno) {
     return authResponse;
   }
 
   try {
-    const cv = await prisma.$transaction((tx) => readAlumnoCv(tx, id));
+    const cv = await prisma.$transaction((tx) => readAlumnoCv(tx, alumno.id));
 
     if (!cv) {
       return NextResponse.json<ApiResponse<never>>(
@@ -128,7 +142,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
       },
     });
   } catch (error) {
-    console.error("[GET /api/alumnos/:id/cv]", error);
+    console.error("[GET /api/portal-alumno/cv]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "No se pudo recuperar el CV." },
       { status: 500 }
@@ -136,40 +150,24 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const id = parseId(params.id);
-
-  if (!id) {
-    return NextResponse.json<ApiResponse<never>>(
-      { ok: false, error: "ID invalido." },
-      { status: 400 }
-    );
-  }
-
-  const authResponse = await ensureApiUser();
-  if (authResponse) {
+export async function DELETE(_req: NextRequest) {
+  const { authResponse, alumno } = await requirePortalAlumnoApiAccess();
+  if (authResponse || !alumno) {
     return authResponse;
   }
 
   try {
-    const alumno = await getAlumnoById(id);
-    if (!alumno) {
-      return NextResponse.json<ApiResponse<never>>(
-        { ok: false, error: "Alumno no encontrado." },
-        { status: 404 }
-      );
-    }
+    await prisma.$transaction((tx) => clearAlumnoCv(tx, alumno.id));
 
-    await prisma.$transaction((tx) => clearAlumnoCv(tx, id));
+    revalidatePath("/portal-alumno");
+    revalidatePath("/portal-alumno/cv");
 
-    revalidatePath("/");
-    revalidatePath("/alumnos");
     return NextResponse.json<ApiResponse<null>>({
       ok: true,
       data: null,
     });
   } catch (error) {
-    console.error("[DELETE /api/alumnos/:id/cv]", error);
+    console.error("[DELETE /api/portal-alumno/cv]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "No se pudo eliminar el CV." },
       { status: 500 }

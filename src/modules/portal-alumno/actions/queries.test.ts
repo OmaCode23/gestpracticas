@@ -32,6 +32,7 @@ vi.mock("@/modules/auth/session", () => ({
 import {
   getPortalAlumnoActual,
   getPortalAlumnoDashboard,
+  getPortalEmpresasGenerales,
   getPortalAlumnoSummary,
   getPortalEmpresasDisponibles,
   getPortalFormacionesAlumno,
@@ -42,6 +43,8 @@ const alumnoDb = {
   id: 7,
   nombre: "Ana Portal",
   nia: "NIA-7",
+  nif: "12345678Z",
+  nuss: "123456789012",
   telefono: "600111222",
   email: "ana@iesgrao.es",
   cursoCiclo: 2,
@@ -62,6 +65,8 @@ const alumnoPortal: PortalAlumno = {
   id: 7,
   nombre: "Ana Portal",
   nia: "NIA-7",
+  nif: "12345678Z",
+  nuss: "123456789012",
   telefono: "600111222",
   email: "ana@iesgrao.es",
   cursoCiclo: 2,
@@ -186,6 +191,53 @@ describe("portal alumno queries", () => {
         cicloFormativoCodigo: null,
       },
     ]);
+  });
+
+  it("lista empresas generales del portal con sesion de alumno y solo los campos visibles", async () => {
+    prismaMock.empresa.findMany.mockResolvedValue([
+      {
+        id: 8,
+        nombre: "Empresa Global",
+        sectorRef: { nombre: "Sanidad" },
+        localidadRef: { nombre: "Castellon" },
+        cicloFormativoRef: null,
+        cif: "B00000000",
+        direccion: "Campo oculto",
+      },
+    ]);
+
+    const empresas = await getPortalEmpresasGenerales();
+
+    expect(requireAlumnoSessionMock).toHaveBeenCalledWith("/portal-alumno/empresas");
+    expect(prismaMock.empresa.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: { nombre: "asc" },
+        select: expect.objectContaining({
+          id: true,
+          nombre: true,
+          sectorRef: expect.any(Object),
+          localidadRef: expect.any(Object),
+          cicloFormativoRef: expect.any(Object),
+        }),
+      })
+    );
+    expect(prismaMock.empresa.findMany).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        where: expect.anything(),
+      })
+    );
+    expect(empresas).toEqual([
+      {
+        id: 8,
+        nombre: "Empresa Global",
+        sector: "Sanidad",
+        localidad: "Castellon",
+        cicloFormativo: "Varios ciclos",
+        cicloFormativoCodigo: null,
+      },
+    ]);
+    expect(empresas[0]).not.toHaveProperty("cif");
+    expect(empresas[0]).not.toHaveProperty("direccion");
   });
 
   it("resume empresas compatibles y formaciones del alumno autenticado", async () => {

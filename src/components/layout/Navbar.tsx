@@ -14,9 +14,11 @@ const NAV_LINKS = [
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
   { href: "/profesores", label: "Profesores" },
-  { href: "/formacion", label: "Formacion Empresa" },
+  { href: "/formacion", label: "Formación Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },
+  { href: "/ofertas", label: "Ofertas" },
+  { href: "/cursos", label: "Cursos" },
 ] as const;
 
 const ALUMNO_LINKS = [{ href: "/portal-alumno", label: "Portal Alumno" }] as const;
@@ -100,15 +102,18 @@ export default function Navbar({ authMode }: Props) {
                 : "",
             ].join(" ")}
           >
-            Administracion de usuarios
+            <span className="text-center">
+              <span className="block">Administración</span>
+              <span className="block">de usuarios</span>
+            </span>
           </Link>
         ) : null}
 
         {showConfig ? (
           <Link
             href="/configuracion"
-            aria-label="Configuracion"
-            title="Configuracion"
+            aria-label="Configuración"
+            title="Configuración"
             className={[
               "inline-flex items-center justify-center text-white transition hover:scale-105",
               isConfigActive ? "text-[#f6e6cb]" : "hover:text-white",

@@ -1,30 +1,67 @@
-import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
-import { Alert, Badge, Card, CardHeader, CardTitle } from "@/components/ui";
-import { formatFileSize } from "@/modules/alumnos/utils/cv";
-import { getPortalAlumnoActualOrNull } from "@/modules/portal-alumno/actions/queries";
+import { Alert, Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
+import {
+  getPortalAlumnoActualOrNull,
+  getPortalEmpresasDisponibles,
+  getPortalFormacionesAlumno,
+} from "@/modules/portal-alumno/actions/queries";
+import PortalAlumnoCvManager from "@/modules/portal-alumno/components/PortalAlumnoCvManager";
 
 export const dynamic = "force-dynamic";
-
-function formatPortalDate(value: string | null) {
-  if (!value) return "-";
-
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(value));
-}
 
 export default async function PortalAlumnoCvPage() {
   noStore();
 
   const alumno = await getPortalAlumnoActualOrNull();
   if (!alumno) return null;
+  const [formaciones, empresas] = await Promise.all([
+    getPortalFormacionesAlumno(alumno),
+    getPortalEmpresasDisponibles(12, alumno),
+  ]);
 
   return (
     <div className="space-y-6">
-      <Alert>Documentacion de {alumno.nombre}.</Alert>
+      <Alert>Formación y documentación de {alumno.nombre}.</Alert>
+
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <CardTitle icon="AL" iconVariant="blue">
+            Detalle del alumno
+          </CardTitle>
+        </CardHeader>
+        <div className="p-6">
+          <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
+            <h2 className="text-lg font-bold text-navy">{alumno.nombre}</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">NIA:</span> {alumno.nia}
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">NIF:</span> {alumno.nif ?? "-"}
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">NUSS:</span> {alumno.nuss ?? "-"}
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">Ciclo:</span>{" "}
+                {alumno.cicloFormativoCodigo ?? alumno.cicloFormativoNombre ?? "Pendiente"}
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">Curso ciclo:</span> {alumno.cursoCiclo}.º
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">Curso académico:</span> {alumno.curso}
+              </p>
+              <p className="text-sm text-text-mid">
+                <span className="font-semibold text-navy">Teléfono:</span> {alumno.telefono}
+              </p>
+              <p className="break-all text-sm text-text-mid">
+                <span className="font-semibold text-navy">Correo:</span> {alumno.email}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="overflow-hidden">
         <CardHeader>
@@ -33,61 +70,120 @@ export default async function PortalAlumnoCvPage() {
           </CardTitle>
         </CardHeader>
         <div className="p-6">
-          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
-              <Badge variant="green">Alumno conectado</Badge>
-              <h2 className="mt-4 text-lg font-bold text-navy">{alumno.nombre}</h2>
-              <div className="mt-4 grid gap-2 text-sm text-text-mid">
-                <p>
-                  <span className="font-semibold text-navy">NIA:</span> {alumno.nia}
-                </p>
-                <p>
-                  <span className="font-semibold text-navy">Ciclo:</span> {alumno.cicloFormativoNombre ?? "Pendiente"}
-                </p>
-                <p>
-                  <span className="font-semibold text-navy">Curso:</span> {alumno.curso}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-[18px] border border-border bg-surface px-5 py-4">
-              {alumno.cvNombre ? (
-                <>
-                  <Badge variant="purple">CV adjunto</Badge>
-                  <div className="mt-4 grid gap-2 text-sm text-text-mid">
-                    <p>
-                      <span className="font-semibold text-navy">Archivo:</span> {alumno.cvNombre}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-navy">Tipo:</span> {alumno.cvMimeType}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-navy">Tamano:</span> {formatFileSize(alumno.cvTamano)}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-navy">Actualizado:</span> {formatPortalDate(alumno.cvUpdatedAt)}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/api/alumnos/${alumno.id}/cv`}
-                    className="mt-5 inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#851534]"
-                  >
-                    Ver o descargar CV
-                  </Link>
-                </>
-              ) : (
-                <div className="rounded-[18px] border border-dashed border-border bg-white/70 px-5 py-8 text-center">
-                  <Badge variant="gray">Sin CV</Badge>
-                  <h2 className="mt-4 text-lg font-bold text-navy">No hay CV adjunto todavia</h2>
-                  <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-text-mid">
-                    Cuando se suba un PDF desde la ficha interna del alumno, aparecera aqui automaticamente.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <PortalAlumnoCvManager
+            cvNombre={alumno.cvNombre}
+            cvMimeType={alumno.cvMimeType}
+            cvTamano={alumno.cvTamano}
+            cvUpdatedAt={alumno.cvUpdatedAt}
+          />
         </div>
       </Card>
+
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <CardTitle icon="OP" iconVariant="blue">
+            Prácticas asignadas
+          </CardTitle>
+        </CardHeader>
+        <div className="p-6">
+          {formaciones.length > 0 ? (
+            <div className="grid gap-4">
+              {formaciones.map((formacion) => (
+                <div key={formacion.id} className="rounded-[18px] border border-border bg-surface px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-bold text-navy">{formacion.empresa.nombre}</h2>
+                      <p className="mt-1 text-sm text-text-mid">{formacion.empresa.localidad}</p>
+                    </div>
+                    <Badge variant="green">{formacion.periodo ?? formacion.curso}</Badge>
+                  </div>
+                  <div className="mt-4 grid gap-4 text-sm text-text-mid md:grid-cols-2">
+                    <div className="grid gap-2">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">
+                        Datos de la empresa
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Empresa:</span>{" "}
+                        {formacion.empresa.nombre}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Localidad:</span>{" "}
+                        {formacion.empresa.localidad}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Sector:</span>{" "}
+                        {formacion.empresa.sector}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Ciclo:</span>{" "}
+                        {formacion.empresa.cicloFormativo}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-2">
+                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-text-light">
+                        Datos de la formación
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Curso académico:</span>{" "}
+                        {formacion.curso}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Periodo:</span>{" "}
+                        {formacion.periodo ?? "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Tutor laboral:</span>{" "}
+                        {formacion.tutorLaboral ?? "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Email tutor laboral:</span>{" "}
+                        {formacion.emailTutorLaboral ?? "-"}
+                      </p>
+                      <p>
+                        <span className="font-semibold text-navy">Descripción:</span>{" "}
+                        {formacion.descripcion ?? "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-[18px] border border-dashed border-border bg-surface px-5 py-8 text-center">
+              <Badge variant="gray">Sin asignación</Badge>
+              <h2 className="mt-4 text-lg font-bold text-navy">Todavía no hay práctica asignada</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-text-mid">
+                Cuando se cree una formación para este alumno, aparecerá en este bloque.
+              </p>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div>
+        <SectionLabel>Empresas compatibles</SectionLabel>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {empresas.map((empresa) => (
+            <Card key={empresa.id} className="p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-navy">{empresa.nombre}</h2>
+                  <p className="mt-1 text-sm text-text-mid">{empresa.localidad}</p>
+                </div>
+                <Badge variant="green">{empresa.cicloFormativoCodigo ?? "Ciclos"}</Badge>
+              </div>
+              <p className="mt-4 text-sm text-text-mid">{empresa.sector}</p>
+            </Card>
+          ))}
+          {empresas.length === 0 && (
+            <Card className="p-5">
+              <p className="text-sm text-text-mid">No hay empresas compatibles registradas todavía.</p>
+            </Card>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

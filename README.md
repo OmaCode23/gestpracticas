@@ -32,6 +32,12 @@ Sistema de gestión de prácticas de empresa para institutos.
 - `PROFESOR`: usa el panel interno funcional, incluida la pagina de `profesores`, sin gestion de usuarios ni operaciones administrativas restringidas.
 - `ALUMNO`: no usa el panel interno; su espacio funcional es `portal-alumno`.
 
+## Notas funcionales del portal del alumno
+
+- Las paginas `Ofertas`, `Empresas` y `Cursos` del `portal-alumno` se muestran como informacion general del portal, no como vistas personalizadas por alumno, salvo los bloques especificamente pensados para la ficha del alumno autenticado.
+- En `Formacion alumno`, el bloque `Empresas compatibles` muestra actualmente 12 empresas iniciales.
+- En la pagina `Empresas` del `portal-alumno` se muestran 24 empresas iniciales y, si hay mas, el boton `Ver mas empresas` carga 12 adicionales en cada pulsacion.
+
 Regla importante:
 
 - la visibilidad en `Navbar` es solo UX;
@@ -283,25 +289,32 @@ node server.js
 
 ## Codificación de caracteres
 
-En archivos de este proyecto se han visto problemas frecuentes de codificación de caracteres especialmente visibles en los acentos.
-
-La causa mas probable es una mezcla de codificaciones al editar o guardar archivos:
-
-- Archivo guardado originalmente en `UTF-8`.
-- Edicion posterior desde una herramienta o terminal que interpreta o re-guarda en `ANSI` / `Windows-1252`.
-- Reapertura posterior como `UTF-8`, lo que produce mojibake en cadenas con tildes y otros caracteres no ASCII.
+En archivos de este proyecto se han visto problemas frecuentes de codificación de caracteres especialmente visibles en los acentos. La causa mas probable es una mezcla de codificaciones al editar o guardar archivos; posiblemente a pesar de que se trabaja con `UTF-8`, se produce alguna edicion posterior desde una herramienta o terminal que interpreta o re-guarda en `ANSI` / `Windows-1252`.
 
 Recomendacion de trabajo para el equipo:
-
 - Guardar siempre los archivos de codigo y documentacion en `UTF-8`.
+- Preferir `UTF-8 sin BOM` en archivos fuente y documentacion.
 - No convertir archivos a `ANSI`, `Western`, `Windows-1252` ni codificaciones locales similares.
+- Evitar mezclar `UTF-8` con `Windows-1252` o `ISO-8859-1` dentro del mismo flujo de trabajo.
 - Si un archivo ya muestra texto roto, corregir la cadena visible y volver a guardar el archivo completo en `UTF-8`.
+- Si un archivo se ve bien en VS Code pero mal en PowerShell o en otra terminal de Windows, asumir primero que el problema puede estar en la terminal y no en el archivo.
+- Antes de convertir un archivo existente, comprobar primero como lo interpreta VS Code para no estropear texto que ya esta correcto.
+- No cambiar la codificacion de un archivo solo porque la terminal muestre mal los acentos.
+- Cuando aparezca texto corrupto, revisar primero la codificacion de la terminal y despues la del archivo.
+- Crear archivos nuevos desde VS Code y guardarlos antes de editarlos desde otras herramientas o asistentes.
 - Tener especial cuidado en Windows al editar desde distintas herramientas sobre el mismo archivo.
-
-Estandar recomendado para este repo:
-
-- `TypeScript`, `TSX`, `JavaScript`, `JSON`, `CSS`, `MD` y `Prisma`: `UTF-8`.
 - Mantener una unica codificacion en todo el repositorio para evitar corrupciones silenciosas en merges, revisiones y copias entre terminal, editor y git.
+- Priorizar siempre la codificacion real de los archivos del proyecto por encima de como los represente una terminal concreta.
+- `TypeScript`, `TSX`, `JavaScript`, `JSON`, `CSS`, `MD`, `Prisma`, `YAML` y ficheros de texto del proyecto deben mantenerse en `UTF-8 sin BOM`.
+- Si hace falta revisar texto con acentos en consola clasica, usar `chcp 65001`.
+- En PowerShell conviene trabajar con salida y guardado en `UTF-8`.
+- Evitar re-guardar archivos fuente desde scripts o comandos que usen codificaciones heredadas por defecto.
+- En VS Code, se recomienda añadir en su configuración global`settings.json`:
+```json
+"files.encoding": "utf8",
+"files.autoGuessEncoding": true,
+"files.insertFinalNewline": true
+```
 
 ## Tests
 

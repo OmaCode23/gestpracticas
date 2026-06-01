@@ -207,6 +207,7 @@ Puede:
 
 - iniciar sesion si esta autorizado y activo;
 - acceder a todos los modulos existentes de la aplicacion;
+- acceder tambien a las paginas generales `ofertas` y `cursos` del panel interno;
 - crear usuarios;
 - editar usuarios;
 - eliminar usuarios, salvo:
@@ -226,6 +227,7 @@ Puede:
 
 - iniciar sesion si esta autorizado y activo;
 - acceder a los modulos funcionales ya existentes de la aplicacion;
+- acceder tambien a las paginas generales `ofertas` y `cursos` del panel interno;
 - acceder a la pagina y al CRUD funcional de `profesores`;
 - consultar, crear, editar o eliminar datos funcionales segun las capacidades ya presentes en cada modulo de negocio;
 - exportar datos;
@@ -250,7 +252,7 @@ Hoy puede:
 
 - iniciar sesion solo si esta autorizado y activo;
 - acceder al `portal-alumno`;
-- ver las paginas propias del portal del alumno;
+- ver las paginas propias del portal del alumno, incluidas sus vistas generales de `ofertas`, `empresas` y `cursos`, y sus vistas personalizadas como `formacion alumno`;
 - ser redirigido a `portal-alumno` si pasa por `/login` teniendo ya sesion iniciada;
 - ver el control de sesion/login tambien dentro del portal.
 
@@ -403,6 +405,20 @@ Convencion actual:
 - `ensureApiAdmin` se reserva para operaciones exclusivas de administracion;
 - las APIs especificas del portal del alumno deben apoyarse en `requireAlumnoSession` o un helper equivalente de ese rol.
 
+Aplicacion actual de esa convencion:
+
+- la gestion del CV del alumno desde su portal usa una ruta propia separada bajo `/api/portal-alumno/cv`;
+- la ruta interna `/api/alumnos/[id]/cv` queda reservada al panel interno y al personal del centro, igual que el resto de APIs de ese espacio.
+
+Criterio de diseño acordado para `portal-alumno`:
+
+- no es necesario crear una API HTTP propia del portal del alumno para todas las lecturas;
+- si una pagina del portal puede resolverse enteramente en servidor, se prefiere usar consultas server-side protegidas por `requireAlumnoSession`, o helpers equivalentes que revaliden ese rol;
+- esto aplica por ejemplo a vistas como resumen del alumno, empresas compatibles, empresas generales, ofertas o cursos informativos del portal;
+- en cambio, cuando el portal del alumno necesita operaciones interactivas desde cliente contra servidor, como subida, borrado o descarga controlada de archivos, formularios con `fetch` o acciones similares, se prefiere una API propia bajo un espacio separado tipo `/api/portal-alumno/*`;
+- esas APIs del portal no deben reutilizar por defecto rutas del panel interno tipo `/api/alumnos/*`, `/api/empresas/*` o similares, salvo que exista una justificacion expresa y una restriccion de acceso equivalente o mas estricta;
+- con este criterio, el panel interno y el portal del alumno quedan separados no solo en interfaz, sino tambien en sus puntos de entrada HTTP cuando hay mutaciones o acciones cliente-servidor.
+
 ### 4. Revalidacion en consultas server-side sensibles
 
 Cuando un modulo nuevo introduce consultas server-side propias, no debe asumir que la proteccion del layout es suficiente si esas consultas pueden reutilizarse desde otros puntos.
@@ -440,6 +456,7 @@ Visibilidad principal:
 Acceso efectivo:
 
 - puede entrar en todos los modulos internos;
+- puede entrar tambien en `ofertas` y `cursos` cuando esas paginas se publican como contenido general del centro dentro del panel interno;
 - puede usar importacion y exportacion;
 - puede gestionar usuarios, catalogos y configuracion academica.
 
@@ -455,6 +472,7 @@ Visibilidad principal:
 Acceso efectivo:
 
 - puede entrar en los modulos funcionales internos ya existentes;
+- puede entrar tambien en `ofertas` y `cursos` cuando esas paginas se publican como contenido general del centro dentro del panel interno;
 - puede entrar en `profesores`;
 - puede exportar y descargar plantillas;
 - no puede acceder a gestion de usuarios;
@@ -474,9 +492,11 @@ Visibilidad principal:
 Acceso efectivo:
 
 - puede entrar solo en el `portal-alumno` si esta autorizado y activo;
+- dentro del `portal-alumno` puede ver tanto contenido general del portal como su informacion personalizada autorizada;
 - no puede entrar en el panel interno general;
 - no puede acceder a administracion, configuracion ni mantenimiento global de datos;
-- no puede reutilizar rutas server-side del portal sin pasar la guardia de rol `ALUMNO`.
+- no puede reutilizar rutas server-side del portal sin pasar la guardia de rol `ALUMNO`;
+- no puede usar las APIs internas del panel como sustituto de las rutas propias del `portal-alumno`.
 
 ## Decision de implementacion
 
@@ -506,6 +526,7 @@ Restricciones adicionales ya implementadas:
 - en `AUTH_MODE=external` no se muestran ni se usan flujos de contrasena local;
 - en el modulo `Import / Export`, el profesorado puede exportar y descargar plantillas, pero no importar.
 - el `portal-alumno` exige sesion valida y rol `ALUMNO` tanto en layout como en sus consultas server-side principales.
+- el CV del alumno en su portal usa una API propia separada de las APIs internas del panel.
 - el `middleware` limpia cookies con firma invalida y no bloquea `/login` solo por detectar una cookie firmada.
 
 ## Cobertura de pruebas de seguridad

@@ -145,7 +145,7 @@ export default async function PortalAlumnoPage() {
               </Link>
               {alumno.cvNombre ? (
                 <Link
-                  href={`/api/alumnos/${alumno.id}/cv`}
+                  href="/api/portal-alumno/cv"
                   className="inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#851534]"
                 >
                   Descargar

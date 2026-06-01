@@ -17,7 +17,7 @@ export const PORTAL_ALUMNO_LINKS = [
   },
   {
     href: "/portal-alumno/cv",
-    label: "CV",
+    label: "Formación alumno",
   },
 ] as const;
 
