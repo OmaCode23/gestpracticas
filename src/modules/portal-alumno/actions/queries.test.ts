@@ -4,6 +4,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     alumno: {
       findFirst: vi.fn(),
+      findMany: vi.fn(),
     },
     empresa: {
       count: vi.fn(),
@@ -80,6 +81,7 @@ describe("portal alumno queries", () => {
     requireAlumnoSessionMock.mockResolvedValue({
       user: {
         id: 10,
+        nombre: "Ana Portal",
         email: "ana@iesgrao.es",
         rol: "ALUMNO",
       },
@@ -100,8 +102,32 @@ describe("portal alumno queries", () => {
     expect(result).toEqual(alumnoPortal);
   });
 
+  it("si no encuentra por email, intenta una coincidencia unica por nombre", async () => {
+    prismaMock.alumno.findFirst.mockResolvedValue(null);
+    prismaMock.alumno.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([alumnoDb]);
+
+    const result = await getPortalAlumnoActual();
+
+    expect(result).toEqual(alumnoPortal);
+    expect(prismaMock.alumno.findMany).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        where: {
+          nombre: {
+            contains: "Ana Portal",
+            mode: "insensitive",
+          },
+        },
+      })
+    );
+  });
+
   it("falla si la sesion de alumno no tiene ficha asociada", async () => {
     prismaMock.alumno.findFirst.mockResolvedValue(null);
+    prismaMock.alumno.findMany.mockResolvedValueOnce([]);
+    prismaMock.alumno.findMany.mockResolvedValueOnce([]);
 
     await expect(getPortalAlumnoActual()).rejects.toThrow(
       "No existe una ficha de alumno asociada a la sesion actual."

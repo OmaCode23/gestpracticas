@@ -83,12 +83,51 @@ function normalizeAlumno(alumno: PortalAlumnoDbRecord): PortalAlumno {
 
 async function findPortalAlumnoBySession(session: AuthSession) {
   const email = session.user.email.trim().toLowerCase();
+  const nombre = session.user.nombre.trim();
 
-  return prisma.alumno.findFirst({
+  const alumnoByEmail = await prisma.alumno.findFirst({
     where: { email },
     select: PORTAL_ALUMNO_SELECT,
     orderBy: { id: "asc" },
   });
+
+  if (alumnoByEmail) {
+    return alumnoByEmail;
+  }
+
+  const alumnosByExactName = await prisma.alumno.findMany({
+    where: {
+      nombre: {
+        equals: nombre,
+        mode: "insensitive",
+      },
+    },
+    select: PORTAL_ALUMNO_SELECT,
+    take: 2,
+    orderBy: { id: "asc" },
+  });
+
+  if (alumnosByExactName.length === 1) {
+    return alumnosByExactName[0];
+  }
+
+  const alumnosByPartialName = await prisma.alumno.findMany({
+    where: {
+      nombre: {
+        contains: nombre,
+        mode: "insensitive",
+      },
+    },
+    select: PORTAL_ALUMNO_SELECT,
+    take: 2,
+    orderBy: { id: "asc" },
+  });
+
+  if (alumnosByPartialName.length === 1) {
+    return alumnosByPartialName[0];
+  }
+
+  return null;
 }
 
 function buildEmpresaPortalWhere(alumno: PortalAlumno) {
