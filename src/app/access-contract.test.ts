@@ -27,4 +27,11 @@ describe("app access contracts", () => {
     expect(source).toContain('requireStaffSession("/empresas")');
     expect(source).not.toContain('requireUserSession("/empresas")');
   });
+
+  it("protege el modulo de profesores con requireStaffSession", () => {
+    const source = readAppFile("profesores/page.tsx");
+
+    expect(source).toContain('requireStaffSession("/profesores")');
+    expect(source).not.toContain('requireUserSession("/profesores")');
+  });
 });

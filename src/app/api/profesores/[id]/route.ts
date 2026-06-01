@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getProfesorById } from "@/modules/profesores/actions/queries";
 import { updateProfesor, deleteProfesor } from "@/modules/profesores/actions/mutations";
 import { profesorSchema } from "@/modules/profesores/types/schema";
@@ -23,6 +24,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {
@@ -56,6 +62,11 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {
@@ -117,6 +128,11 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const id = parseId(params.id);
 
     if (!id) {

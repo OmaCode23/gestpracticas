@@ -1,14 +1,16 @@
 # Sistema de login
 
-## Objetivo final
+## Enfoque actual y alternativa futura
 
-El objetivo final es que la aplicacion use autenticacion externa con cuentas institucionales `@edu.gva.es`, previsiblemente a traves del sistema de identidad de la Generalitat si el responsable TIC confirma que:
+Actualmente la aplicacion queda planteada con un sistema de autenticacion propio ya operativo y documentado en este archivo.
+
+Ademas, se mantiene abierta la posibilidad de migrar en el futuro a autenticacion externa con cuentas institucionales `@edu.gva.es`, previsiblemente a traves del sistema de identidad de la Generalitat si el responsable TIC confirma que:
 
 - existe un proveedor de identidad utilizable por aplicaciones del centro;
 - puede registrarse una aplicacion propia;
 - pueden obtenerse los datos minimos necesarios del usuario autenticado.
 
-En ese escenario:
+En ese escenario futuro:
 
 - la autenticacion se haria fuera de nuestra aplicacion;
 - la aplicacion no almacenaria contrasenas locales de profesorado o administradores;
@@ -26,21 +28,23 @@ El criterio de acceso sera:
 
 Esto evita que pueda entrar cualquier persona con una cuenta `@edu.gva.es` de otro centro.
 
-## Solucion temporal mientras responde TIC
+## Solucion actual y posible migracion
 
-Mientras no se confirme la integracion real con `edu.gva.es`, se implementara un sistema de login local que simule esa autenticacion externa para poder avanzar el resto de la arquitectura de forma practicamente definitiva.
+La solucion actual del proyecto es un sistema de login propio, con sesiones en servidor y autorizacion decidida en nuestra base de datos.
 
-La idea es separar:
+Sobre esa base, se deja preparada una posible migracion futura a `edu.gva.es` o a otro proveedor externo compatible, sin obligar a cambiar el modelo de autorizacion interno.
+
+La idea arquitectonica es separar:
 
 - identidad autorizada en la aplicacion;
-- credenciales temporales de acceso local.
+- credenciales del modo de acceso que se use en cada momento.
 
 ## Modos de autenticacion
 
 La aplicacion debe diferenciar explicitamente dos modos mediante `AUTH_MODE`:
 
-- `local`: modo temporal de desarrollo o despliegue provisional, con credenciales locales.
-- `external`: modo objetivo para autenticacion externa, sin gestion de contrasenas en la aplicacion.
+- `local`: modo de autenticacion propio del proyecto, con credenciales locales.
+- `external`: modo alternativo para una integracion futura con autenticacion externa, sin gestion de contrasenas en la aplicacion.
 
 Consecuencias:
 
@@ -70,7 +74,7 @@ Actualmente ya existe una base funcional implementada con estas piezas:
 - proteccion especifica del portal del alumno por rol `ALUMNO`;
 - capa central de permisos por rol en codigo;
 - middleware de prefiltrado de acceso con limpieza de cookies invalidas;
-- flujo externo reservado para futura integracion real con proveedor OIDC.
+- flujo externo reservado como alternativa abierta para una futura integracion real con proveedor OIDC.
 
 ## Modelo funcional previsto
 
@@ -94,20 +98,20 @@ Roles previstos:
 - `PROFESOR`
 - `ALUMNO`
 
-### Tabla temporal de autenticacion local
+### Tabla de autenticacion local
 
-Se prefiere crear una tabla separada para las credenciales locales temporales, en lugar de guardar la contrasena directamente en `Usuario`.
+Se prefiere crear una tabla separada para las credenciales locales, en lugar de guardar la contrasena directamente en `Usuario`.
 
 Ejemplo conceptual:
 
 - `Usuario`: autorizacion y datos del usuario dentro de la app
-- `LocalAuthAccount`: hash de contrasena y configuracion temporal del acceso local, identificado por `email`
+- `LocalAuthAccount`: hash de contrasena y configuracion del acceso local, identificado por `email`
 
-De este modo, cuando se sustituya el login local por el login con `edu.gva.es`, la tabla `Usuario` seguira siendo valida y la migracion sera pequena.
+De este modo, si en el futuro se migra el login local por uno basado en `edu.gva.es`, la tabla `Usuario` seguira siendo valida y la migracion sera pequena.
 
 `LocalAuthAccount` no debe tener clave ajena ni relacion estructural con `Usuario`.
 
-La relacion entre ambas piezas debe resolverse solo en codigo por `email`, no por un id interno de `Usuario`, porque el identificador funcional compartido entre autenticacion local temporal y futura autenticacion externa es el correo del usuario autorizado.
+La relacion entre ambas piezas debe resolverse solo en codigo por `email`, no por un id interno de `Usuario`, porque el identificador funcional compartido entre el acceso local actual y una posible autenticacion externa futura es el correo del usuario autorizado.
 
 Esto busca que la tabla local temporal se comporte lo mas parecido posible a un proveedor externo sustituible:
 
@@ -131,9 +135,9 @@ Si la autenticacion final es externa:
 - en nuestra base de datos solo se registrara su email y sus datos de autorizacion;
 - la contrasena no se almacenara en la aplicacion.
 
-Mientras el login sea local temporal:
+Mientras se use el login local:
 
-- el administrador tambien tendra una credencial local temporal en la tabla correspondiente.
+- el administrador tambien tendra una credencial local en la tabla correspondiente.
 
 El script de bootstrap del administrador:
 
@@ -153,7 +157,7 @@ Pasos previos:
 2. definir `AUTH_SECRET`;
 3. elegir el modo de autenticacion con `AUTH_MODE`.
 
-Si se va a trabajar temporalmente con login local, el modo debe ser:
+Si se va a trabajar con login local, el modo debe ser:
 
 - `AUTH_MODE=local`
 
@@ -190,7 +194,7 @@ Desde esa pantalla se podra:
 - asignar rol;
 - activar o desactivar acceso;
 - eliminar usuarios con restricciones de seguridad;
-- en la fase temporal local, crear o resetear credenciales locales;
+- en el modo local, crear o resetear credenciales locales;
 - en el futuro, gestionar el acceso sin almacenar contrasenas locales.
 
 En `AUTH_MODE=external` no se mostraran acciones de cambio o reseteo de contrasena.
@@ -209,7 +213,7 @@ Puede:
   - su propio usuario administrador;
   - el ultimo administrador activo;
 - activar o desactivar usuarios;
-- en `AUTH_MODE=local`, asignar o resetear contrasenas temporales;
+- en `AUTH_MODE=local`, asignar o resetear contrasenas locales;
 - importar datos masivamente desde Excel;
 - exportar datos;
 - gestionar configuracion academica;
@@ -222,6 +226,7 @@ Puede:
 
 - iniciar sesion si esta autorizado y activo;
 - acceder a los modulos funcionales ya existentes de la aplicacion;
+- acceder a la pagina y al CRUD funcional de `profesores`;
 - consultar, crear, editar o eliminar datos funcionales segun las capacidades ya presentes en cada modulo de negocio;
 - exportar datos;
 - descargar plantillas de importacion.
@@ -308,7 +313,7 @@ Regla de mantenimiento:
 
 ## Flujo previsto de la aplicacion
 
-### Fase temporal
+### Modo local
 
 1. El administrador o el despliegue crea usuarios en `Usuario`.
 2. Si el login es local, existe una credencial temporal asociada.
@@ -316,7 +321,7 @@ Regla de mantenimiento:
 4. La aplicacion crea una sesion segura.
 5. La autorizacion se decide por `Usuario.activo` y `Usuario.rol`.
 
-### Fase definitiva
+### Modo external
 
 1. El usuario inicia sesion en `edu.gva.es`.
 2. La aplicacion recibe la identidad autenticada.
@@ -443,12 +448,14 @@ Acceso efectivo:
 Visibilidad principal:
 
 - ve en la `Navbar` solo los modulos internos permitidos;
+- ve el acceso a `profesores` dentro del panel interno;
 - no ve enlaces de administracion reservados a `ADMIN`;
 - no debe ver el portal del alumno como sustituto del panel interno.
 
 Acceso efectivo:
 
 - puede entrar en los modulos funcionales internos ya existentes;
+- puede entrar en `profesores`;
 - puede exportar y descargar plantillas;
 - no puede acceder a gestion de usuarios;
 - no puede usar importacion masiva desde Excel;
@@ -473,14 +480,14 @@ Acceso efectivo:
 
 ## Decision de implementacion
 
-Se acuerda avanzar ahora con:
+Se acuerda mantener como solucion base:
 
-- autenticacion local temporal;
+- autenticacion local operativa;
 - configuracion explicita por `AUTH_MODE`;
 - autorizacion definitiva basada en `Usuario`;
 - roles `ADMIN`, `PROFESOR` y preparacion para `ALUMNO`;
 - pantalla de administracion de usuarios;
-- posibilidad futura de sustituir la autenticacion local por la de `edu.gva.es` con el minimo impacto posible.
+- posibilidad futura de migrar la autenticacion hacia `edu.gva.es` u otro proveedor externo con el minimo impacto posible.
 
 ## Estado actual acordado
 
@@ -488,7 +495,7 @@ Actualmente queda establecido que:
 
 - solo `ADMIN` puede anadir o eliminar usuarios;
 - solo `ADMIN` puede usar la importacion masiva desde Excel en el modulo `Import / Export`;
-- `PROFESOR` puede seguir usando las funcionalidades preexistentes de la aplicacion, salvo esas capacidades administrativas o de importacion restringidas;
+- `PROFESOR` puede seguir usando las funcionalidades preexistentes de la aplicacion, incluida la gestion funcional de `profesores`, salvo esas capacidades administrativas o de importacion restringidas;
 - `ALUMNO` dispone de un portal separado con visibilidad y proteccion propias;
 - la autorizacion relevante debe comprobarse en servidor, no solo en la interfaz.
 

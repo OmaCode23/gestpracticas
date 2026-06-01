@@ -29,7 +29,7 @@ Sistema de gestión de prácticas de empresa para institutos.
 ## Resumen de acceso por rol
 
 - `ADMIN`: usa el panel interno completo, incluida la gestion de usuarios.
-- `PROFESOR`: usa el panel interno funcional, sin gestion de usuarios ni operaciones administrativas restringidas.
+- `PROFESOR`: usa el panel interno funcional, incluida la pagina de `profesores`, sin gestion de usuarios ni operaciones administrativas restringidas.
 - `ALUMNO`: no usa el panel interno; su espacio funcional es `portal-alumno`.
 
 Regla importante:
@@ -98,6 +98,7 @@ npm install
 # 2. Copiar y configurar variables de entorno
 Copy-Item .env.example .env
 # Editar .env con la cadena de PostgreSQL
+# Definir tambien AUTH_SECRET y AUTH_MODE (local o external)
 
 # 3. Aplicar migraciones
 npm run db:migrate
@@ -105,11 +106,38 @@ npm run db:migrate
 # 4. Cargar catálogos base iniciales
 npm run db:seed
 
-# 5. Arrancar en desarrollo
+# 5. Crear el administrador inicial
+npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
+
+# 6. Arrancar en desarrollo
 npm run dev
 ```
 
 La aplicación quedará disponible en `http://localhost:3000`.
+
+## Puesta en marcha del login
+
+Ademas de la configuracion general, para poder entrar en la aplicacion hay que preparar el sistema de login:
+
+- definir `AUTH_SECRET` en `.env`;
+- elegir `AUTH_MODE`;
+- `AUTH_MODE=local` usa el sistema de login propio actual del proyecto;
+- `AUTH_MODE=external` deja preparada una alternativa futura basada en un proveedor externo;
+- ejecutar `npm run db:bootstrap-admin` para crear el primer usuario `ADMIN`.
+
+Ejemplo en modo local:
+
+```bash
+npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
+```
+
+Ejemplo en modo external:
+
+```bash
+npm run db:bootstrap-admin -- --email admin@edu.gva.es --name "Administrador"
+```
+
+La explicacion completa del sistema de login actual, la alternativa `external` y la matriz de permisos por rol esta en `sistema-login.md`.
 
 ## Scripts
 

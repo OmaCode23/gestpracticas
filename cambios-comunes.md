@@ -1,5 +1,43 @@
 # Cambios en archivos comunes
 
+## 1-6-26 Codex
+
+- Archivo: `prisma/schema.prisma`, `prisma/migrations/20260522000000_add_profesores/migration.sql`
+  Motivo: integrar en `rama-sbs` el nuevo modelo `Profesor` llegado desde `master`, manteniendo a la vez el esquema ya existente de autenticacion local/externa, sesiones y roles.
+  Impacto: el merge conserva tanto la evolucion del dominio academico como el sistema de login implantado previamente.
+
+- Archivo: `src/app/page.tsx`, `src/components/layout/Navbar.tsx`
+  Motivo: incorporar el nuevo modulo de `profesores` al panel interno y a la navegacion visible para personal del centro, sin romper la separacion por roles ya implantada.
+  Impacto: `ADMIN` y `PROFESOR` ven y usan `profesores` como parte del panel interno; `ALUMNO` sigue quedando fuera de esa navegacion.
+
+- Archivo: `src/app/profesores/page.tsx`, `src/app/api/profesores/route.ts`, `src/app/api/profesores/[id]/route.ts`, `src/app/access-contract.test.ts`
+  Motivo: cerrar el ajuste de autorizacion del nuevo modulo `profesores` para que la pagina use `requireStaffSession("/profesores")` y sus APIs pasen por `ensureApiUser()`.
+  Impacto: `profesores` queda accesible solo para `ADMIN` y `PROFESOR`, no para `ALUMNO`, tanto por interfaz como por URL directa o llamada API.
+
+- Archivo: `src/modules/importexport/actions/export.ts`, `src/modules/importexport/actions/import.ts`, `src/modules/importexport/components/ImportExportPanel.tsx`, `src/modules/importexport/utils.ts`, `src/modules/importexport/config.ts`, `src/modules/importexport/types.ts`, `src/app/api/exportar/[tipo]/route.ts`, `src/app/api/importar/profesores/route.ts`
+  Motivo: integrar en el modulo `Import / Export` la nueva entidad `profesores`, manteniendo a la vez la restriccion ya acordada de que solo `ADMIN` pueda importar masivamente desde Excel.
+  Impacto: el personal del centro puede exportar y descargar plantillas tambien de `profesores`, y solo administracion conserva la capacidad de importar datos.
+
+- Archivo: `src/app/portal-alumno/layout.tsx`, `src/app/portal-alumno/page.tsx`, `src/app/portal-alumno/ofertas/page.tsx`, `src/app/portal-alumno/empresas/page.tsx`, `src/app/portal-alumno/cv/page.tsx`, `src/app/portal-alumno/cursos/page.tsx`, `src/modules/portal-alumno/actions/queries.ts`
+  Motivo: resolver la integracion entre el portal enriquecido llegado desde `master` y el sistema de login existente, eliminando la logica provisional de alumno demo y rehaciendo las consultas para trabajar solo con autenticacion real.
+  Impacto: el portal del alumno ya no inventa ni selecciona alumnos de prueba; todo su contenido parte de la sesion real del alumno autenticado y de su ficha asociada.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.test.ts`, `src/app/api/exportar/[tipo]/route.test.ts`
+  Motivo: reconciliar y ampliar los tests afectados por el merge, uniendo la cobertura funcional nueva con la cobertura de seguridad ya existente y adaptando los mocks a `profesores`.
+  Impacto: la suite vuelve a cubrir tanto el portal del alumno autenticado como el export/import expandido tras el merge.
+
+- Archivo: `.gitignore`, `cambios-comunes.md`, `README.md`, `sistema-login.md`
+  Motivo: consolidar pequenos cambios comunes del merge, documentar la visibilidad y acceso real del modulo `profesores` por rol, y anadir al `README` la puesta en marcha minima del sistema de login (`AUTH_SECRET`, `AUTH_MODE` y bootstrap del primer administrador).
+  Impacto: la documentacion operativa y funcional queda alineada con el comportamiento real del proyecto tras esta integracion.
+
+- Archivo: `tsconfig.tsbuildinfo`, cliente Prisma generado
+  Motivo: regenerar artefactos derivados tras integrar el nuevo esquema con `profesores`.
+  Impacto: el proyecto vuelve a compilar sin errores de tipos relacionados con el cliente de Prisma.
+
+- Verificacion final
+  Motivo: confirmar que el merge no solo queda sin conflictos, sino tambien sano a nivel de compilacion y tests.
+  Impacto: `npm.cmd run db:generate`, `npm.cmd run build` y `npm.cmd test` quedan completados correctamente al cerrar esta tanda de integracion.
+
 ## 14-5-26 Sbs
 
 - Archivo: `src/modules/auth/permissions.ts`

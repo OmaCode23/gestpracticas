@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getProfesores } from "@/modules/profesores/actions/queries";
 import { createProfesor } from "@/modules/profesores/actions/mutations";
 import { profesorFilterSchema, profesorSchema } from "@/modules/profesores/types/schema";
@@ -14,6 +15,11 @@ import type { ApiResponse } from "@/shared/types/api";
 
 export async function GET(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const { searchParams } = req.nextUrl;
 
     const parsedFilters = profesorFilterSchema.safeParse({
@@ -45,6 +51,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResponse = await ensureApiUser();
+    if (authResponse) {
+      return authResponse;
+    }
+
     const body = await req.json();
     const parsed = profesorSchema.safeParse(body);
 
