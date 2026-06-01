@@ -28,6 +28,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/shared/catalogs ./src/shared/catalogs
 COPY --from=builder /app/scripts/with-db-env.mjs ./scripts/with-db-env.mjs
 COPY --from=builder /app/scripts/runtime-env.mjs ./scripts/runtime-env.mjs
+COPY --from=builder /app/scripts/run-ts.cjs ./scripts/run-ts.cjs
 COPY --from=builder /app/scripts/container/start-prod.sh ./scripts/container/start-prod.sh
 COPY --from=builder /app/scripts/container/validate-env.mjs ./scripts/container/validate-env.mjs
 COPY --from=builder /app/scripts/container/wait-for-url.mjs ./scripts/container/wait-for-url.mjs

@@ -5,6 +5,7 @@
 *.js text eol=crlf
 *.jsx text eol=crlf
 *.json text eol=crlf
+package-lock.json -text
 *.md text eol=crlf
 *.prisma text eol=crlf
 *.sql text eol=crlf

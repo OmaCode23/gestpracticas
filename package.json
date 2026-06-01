@@ -20,13 +20,13 @@
     "db:generate": "node scripts/with-db-env.mjs prisma generate",
     "db:migrate": "node scripts/with-db-env.mjs prisma migrate dev",
     "db:migrate:deploy": "node scripts/with-db-env.mjs prisma migrate deploy",
-    "db:seed": "node scripts/with-db-env.mjs node --experimental-strip-types prisma/seed.ts",
-    "db:bootstrap-admin": "node scripts/with-db-env.mjs node --experimental-strip-types prisma/bootstrap-admin.ts",
+    "db:seed": "node scripts/with-db-env.mjs node scripts/run-ts.cjs prisma/seed.ts",
+    "db:bootstrap-admin": "node scripts/with-db-env.mjs node scripts/run-ts.cjs prisma/bootstrap-admin.ts",
     "db:push": "node scripts/with-db-env.mjs prisma db push",
     "db:studio": "node scripts/with-db-env.mjs prisma studio"
   },
   "prisma": {
-    "seed": "node scripts/with-db-env.mjs node --experimental-strip-types prisma/seed.ts"
+    "seed": "node scripts/with-db-env.mjs node scripts/run-ts.cjs prisma/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

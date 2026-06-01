@@ -22,6 +22,14 @@ export default async function PortalAlumnoPage() {
 
   const { alumno, summary, empresas, formaciones } = await getPortalAlumnoDashboard();
 
+  if (!alumno) {
+    return (
+      <div className="rounded-[24px] border border-white/70 bg-white/82 p-8 shadow-card">
+        <p className="text-sm text-text-mid">No se encontró una ficha de alumno asociada a esta cuenta.</p>
+      </div>
+    );
+  }
+
   const stats = [
     { label: "Practicas asignadas", value: summary.formacionesAsignadas, variant: "blue" as const },
     { label: "Empresas compatibles", value: summary.empresasCompatibles, variant: "green" as const },

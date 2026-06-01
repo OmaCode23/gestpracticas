@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { Alert, Badge, Card, SectionLabel } from "@/components/ui";
-import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
+import { getPortalAlumnoActualOrNull } from "@/modules/portal-alumno/actions/queries";
 import { CURSOS_EXTERNOS_PREVIEW } from "@/modules/portal-alumno/data";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function PortalAlumnoCursosPage() {
   noStore();
 
-  const alumno = await getPortalAlumnoActual();
+  const alumno = await getPortalAlumnoActualOrNull();
+  if (!alumno) return null;
 
   return (
     <div className="space-y-5">

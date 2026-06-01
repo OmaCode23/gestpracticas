@@ -96,7 +96,7 @@ describe("portal alumno queries", () => {
     expect(requireAlumnoSessionMock).toHaveBeenCalledWith("/portal-alumno");
     expect(prismaMock.alumno.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { email: "ana@iesgrao.es" },
+        where: { email: { equals: "ana@iesgrao.es", mode: "insensitive" } },
       })
     );
     expect(result).toEqual(alumnoPortal);

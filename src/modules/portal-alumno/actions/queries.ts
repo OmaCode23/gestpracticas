@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
 import type { AuthSession } from "@/modules/auth/session";
 import { requireAlumnoSession } from "@/modules/auth/session";
@@ -86,7 +87,7 @@ async function findPortalAlumnoBySession(session: AuthSession) {
   const nombre = session.user.nombre.trim();
 
   const alumnoByEmail = await prisma.alumno.findFirst({
-    where: { email },
+    where: { email: { equals: email, mode: "insensitive" } },
     select: PORTAL_ALUMNO_SELECT,
     orderBy: { id: "asc" },
   });
@@ -155,15 +156,36 @@ function buildEmpresaPortalWhere(alumno: PortalAlumno) {
   return {};
 }
 
+const ALUMNO_SESSION_FICHA_ERROR = "No existe una ficha de alumno asociada a la sesion actual." as const;
+
 export async function getPortalAlumnoActual(session?: AuthSession): Promise<PortalAlumno> {
   const activeSession = session ?? (await requireAlumnoSession("/portal-alumno"));
   const alumno = await findPortalAlumnoBySession(activeSession);
 
   if (!alumno) {
-    throw new Error("No existe una ficha de alumno asociada a la sesion actual.");
+    throw new Error(ALUMNO_SESSION_FICHA_ERROR);
   }
 
   return normalizeAlumno(alumno);
+}
+
+export async function getPortalAlumnoActualOrNull(session?: AuthSession): Promise<PortalAlumno | null> {
+  try {
+    return await getPortalAlumnoActual(session);
+  } catch {
+    return null;
+  }
+}
+
+export async function requirePortalAlumnoActual(session?: AuthSession): Promise<PortalAlumno> {
+  try {
+    return await getPortalAlumnoActual(session);
+  } catch (error) {
+    if (error instanceof Error && error.message === ALUMNO_SESSION_FICHA_ERROR) {
+      redirect(`/login?error=portal-alumno-no-ficha&next=${encodeURIComponent("/portal-alumno")}`);
+    }
+    throw error;
+  }
 }
 
 export async function getPortalAlumnoSummary(alumno?: PortalAlumno) {
@@ -274,18 +296,26 @@ export async function getPortalFormacionesAlumno(alumno?: PortalAlumno) {
   }));
 }
 
+const EMPTY_DASHBOARD = {
+  alumno: null,
+  summary: { empresasDisponibles: 0, empresasCompatibles: 0, formacionesAsignadas: 0, ofertasPublicadas: 0, cursosDisponibles: 0 },
+  empresas: [] as Awaited<ReturnType<typeof getPortalEmpresasDisponibles>>,
+  formaciones: [] as Awaited<ReturnType<typeof getPortalFormacionesAlumno>>,
+} as const;
+
 export async function getPortalAlumnoDashboard() {
-  const alumno = await getPortalAlumnoActual();
+  let alumno: PortalAlumno | null;
+  try {
+    alumno = await getPortalAlumnoActual();
+  } catch {
+    return EMPTY_DASHBOARD;
+  }
+
   const [summary, empresas, formaciones] = await Promise.all([
     getPortalAlumnoSummary(alumno),
     getPortalEmpresasDisponibles(4, alumno),
     getPortalFormacionesAlumno(alumno),
   ]);
 
-  return {
-    alumno,
-    summary,
-    empresas,
-    formaciones,
-  };
+  return { alumno, summary, empresas, formaciones };
 }

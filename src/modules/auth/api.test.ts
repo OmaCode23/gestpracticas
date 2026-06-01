@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { requireApiUserSessionMock, requireApiAdminSessionMock } = vi.hoisted(() => ({
   requireApiUserSessionMock: vi.fn(),
@@ -13,23 +13,14 @@ vi.mock("@/modules/auth/session", () => ({
 import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
 
 describe("auth api guards", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-  const originalVitestFlag = process.env.VITEST;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NODE_ENV = "development";
-    delete process.env.VITEST;
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("VITEST", "");
   });
 
-  afterAll(() => {
-    process.env.NODE_ENV = originalNodeEnv;
-
-    if (originalVitestFlag === undefined) {
-      delete process.env.VITEST;
-    } else {
-      process.env.VITEST = originalVitestFlag;
-    }
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("devuelve 401 si no hay sesion en una API interna", async () => {

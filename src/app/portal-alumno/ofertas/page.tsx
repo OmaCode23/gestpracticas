@@ -2,7 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import Link from "next/link";
 import { Alert, Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
 import {
-  getPortalAlumnoActual,
+  getPortalAlumnoActualOrNull,
   getPortalEmpresasDisponibles,
   getPortalFormacionesAlumno,
 } from "@/modules/portal-alumno/actions/queries";
@@ -13,7 +13,8 @@ export const dynamic = "force-dynamic";
 export default async function PortalAlumnoOfertasPage() {
   noStore();
 
-  const alumno = await getPortalAlumnoActual();
+  const alumno = await getPortalAlumnoActualOrNull();
+  if (!alumno) return null;
   const [formaciones, empresas] = await Promise.all([
     getPortalFormacionesAlumno(alumno),
     getPortalEmpresasDisponibles(12, alumno),

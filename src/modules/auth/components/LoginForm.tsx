@@ -82,6 +82,8 @@ function getErrorMessage(code: string | null) {
       return "La identidad autenticada no existe como usuario activo y autorizado en la aplicación.";
     case "external-mode-disabled":
       return "Esta ruta solo puede usarse cuando AUTH_MODE=external.";
+    case "portal-alumno-no-ficha":
+      return "No existe una ficha de alumno asociada a la sesión actual. Contacta con el administrador.";
     default:
       return null;
   }

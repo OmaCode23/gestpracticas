@@ -13,6 +13,7 @@ scripts/*
 !scripts/package-prod.ps1
 !scripts/package-demo.ps1
 !scripts/*.mjs
+!scripts/*.cjs
 !scripts/container/
 !scripts/container/**
 TODO.md

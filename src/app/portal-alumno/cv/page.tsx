@@ -2,7 +2,7 @@ import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import { Alert, Badge, Card, CardHeader, CardTitle } from "@/components/ui";
 import { formatFileSize } from "@/modules/alumnos/utils/cv";
-import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
+import { getPortalAlumnoActualOrNull } from "@/modules/portal-alumno/actions/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,8 @@ function formatPortalDate(value: string | null) {
 export default async function PortalAlumnoCvPage() {
   noStore();
 
-  const alumno = await getPortalAlumnoActual();
+  const alumno = await getPortalAlumnoActualOrNull();
+  if (!alumno) return null;
 
   return (
     <div className="space-y-6">
