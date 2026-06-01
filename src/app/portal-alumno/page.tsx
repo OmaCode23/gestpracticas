@@ -1,27 +1,69 @@
 import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
-import { Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
-import { getPortalAlumnoSummary, getPortalEmpresasDisponibles } from "@/modules/portal-alumno/actions/queries";
+import { Alert, Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
+import { formatFileSize } from "@/modules/alumnos/utils/cv";
+import { getPortalAlumnoDashboard } from "@/modules/portal-alumno/actions/queries";
 import { CURSOS_EXTERNOS_PREVIEW } from "@/modules/portal-alumno/data";
 
 export const dynamic = "force-dynamic";
 
+function formatPortalDate(value: string | null) {
+  if (!value) return "-";
+
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 export default async function PortalAlumnoPage() {
   noStore();
 
-  const [summary, empresas] = await Promise.all([
-    getPortalAlumnoSummary(),
-    getPortalEmpresasDisponibles(4),
-  ]);
+  const { alumno, summary, empresas, formaciones } = await getPortalAlumnoDashboard();
 
   const stats = [
-    { label: "Ofertas publicadas", value: summary.ofertasPublicadas, variant: "blue" as const },
-    { label: "Empresas disponibles", value: summary.empresasDisponibles, variant: "green" as const },
+    { label: "Practicas asignadas", value: summary.formacionesAsignadas, variant: "blue" as const },
+    { label: "Empresas compatibles", value: summary.empresasCompatibles, variant: "green" as const },
     { label: "Cursos disponibles", value: summary.cursosDisponibles, variant: "amber" as const },
   ];
 
   return (
     <div className="space-y-7">
+      {alumno.isDemo && (
+        <Alert>
+          No hay alumnos reales disponibles para el portal. Se esta mostrando una ficha de prueba.
+        </Alert>
+      )}
+
+      <Card className="p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={alumno.isDemo ? "amber" : "green"}>
+                {alumno.isDemo ? "Alumno de prueba" : "Alumno seleccionado"}
+              </Badge>
+              {alumno.cicloFormativoCodigo && <Badge variant="blue">{alumno.cicloFormativoCodigo}</Badge>}
+            </div>
+            <h2 className="mt-4 text-xl font-bold text-navy">{alumno.nombre}</h2>
+            <p className="mt-1 text-sm text-text-mid">
+              {alumno.cicloFormativoNombre ?? "Ciclo pendiente"} / {alumno.curso} / {alumno.cursoCiclo} curso
+            </p>
+          </div>
+          <div className="grid gap-1 text-sm text-text-mid md:text-right">
+            <p>
+              <span className="font-semibold text-navy">NIA:</span> {alumno.nia}
+            </p>
+            <p>
+              <span className="font-semibold text-navy">Email:</span> {alumno.email}
+            </p>
+            <p>
+              <span className="font-semibold text-navy">Telefono:</span> {alumno.telefono}
+            </p>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((item) => (
           <Card key={item.label} className="p-5">
@@ -35,14 +77,32 @@ export default async function PortalAlumnoPage() {
         <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle icon="OP" iconVariant="blue">
-              Ofertas de practicas
+              Practicas y opciones
             </CardTitle>
           </CardHeader>
           <div className="p-6">
-            <p className="text-sm leading-relaxed text-text-mid">
-              Todavia no hay ofertas publicadas. Este bloque queda preparado para mostrar las plazas
-              abiertas por empresa y ciclo formativo.
-            </p>
+            {formaciones.length > 0 ? (
+              <div className="space-y-4">
+                {formaciones.slice(0, 2).map((formacion) => (
+                  <div key={formacion.id} className="rounded-[16px] border border-border bg-surface px-4 py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-bold text-navy">{formacion.empresa.nombre}</p>
+                        <p className="mt-1 text-xs text-text-mid">{formacion.empresa.localidad}</p>
+                      </div>
+                      <Badge variant="green">{formacion.periodo ?? formacion.curso}</Badge>
+                    </div>
+                    {formacion.descripcion && (
+                      <p className="mt-3 text-sm leading-relaxed text-text-mid">{formacion.descripcion}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-text-mid">
+                Todavia no hay una practica asignada a este alumno. Se muestran empresas compatibles con su ciclo.
+              </p>
+            )}
             <Link
               href="/portal-alumno/ofertas"
               className="mt-4 inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#851534]"
@@ -59,21 +119,45 @@ export default async function PortalAlumnoPage() {
             </CardTitle>
           </CardHeader>
           <div className="p-6">
-            <p className="text-sm leading-relaxed text-text-mid">
-              La documentacion del alumno se gestiona desde la ficha interna de alumnos.
-            </p>
-            <Link
-              href="/portal-alumno/cv"
-              className="mt-4 inline-flex rounded-lg border border-border bg-surface2 px-4 py-2 text-sm font-semibold text-text-mid no-underline transition-colors hover:bg-[#e5d7d0]"
-            >
-              Ir al CV
-            </Link>
+            {alumno.cvNombre ? (
+              <div className="space-y-2 text-sm text-text-mid">
+                <p>
+                  <span className="font-semibold text-navy">Archivo:</span> {alumno.cvNombre}
+                </p>
+                <p>
+                  <span className="font-semibold text-navy">Tamano:</span> {formatFileSize(alumno.cvTamano)}
+                </p>
+                <p>
+                  <span className="font-semibold text-navy">Actualizado:</span> {formatPortalDate(alumno.cvUpdatedAt)}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-text-mid">
+                Este alumno todavia no tiene CV adjunto en su ficha interna.
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/portal-alumno/cv"
+                className="inline-flex rounded-lg border border-border bg-surface2 px-4 py-2 text-sm font-semibold text-text-mid no-underline transition-colors hover:bg-[#e5d7d0]"
+              >
+                Ir al CV
+              </Link>
+              {alumno.id && alumno.cvNombre && (
+                <Link
+                  href={`/api/alumnos/${alumno.id}/cv`}
+                  className="inline-flex rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white no-underline transition-colors hover:bg-[#851534]"
+                >
+                  Descargar
+                </Link>
+              )}
+            </div>
           </div>
         </Card>
       </div>
 
       <div>
-        <SectionLabel>Empresas destacadas</SectionLabel>
+        <SectionLabel>Empresas compatibles</SectionLabel>
         <div className="grid gap-4 md:grid-cols-2">
           {empresas.map((empresa) => (
             <Card key={empresa.id} className="p-5">
@@ -87,6 +171,11 @@ export default async function PortalAlumnoPage() {
               <p className="mt-4 text-sm text-text-mid">{empresa.sector}</p>
             </Card>
           ))}
+          {empresas.length === 0 && (
+            <Card className="p-5">
+              <p className="text-sm text-text-mid">No hay empresas compatibles registradas todavia.</p>
+            </Card>
+          )}
         </div>
       </div>
 

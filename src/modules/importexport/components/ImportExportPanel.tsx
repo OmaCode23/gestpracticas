@@ -28,6 +28,7 @@ import {
   mapAlumnoRows,
   mapEmpresaRows,
   mapFormacionRows,
+  mapProfesorRows,
 } from "@/modules/importexport/utils";
 import type { ApiResponse } from "@/shared/types/api";
 
@@ -35,6 +36,7 @@ const ENTITY_LOG_LABEL: Record<Entidad, string> = {
   alumnos: "Alumnos",
   empresas: "Empresas",
   formacion: "Form. Empresa",
+  profesores: "Profesores",
 };
 
 /**
@@ -51,16 +53,19 @@ export default function ImportExportPanel({
     alumnos: "",
     empresas: "",
     formacion: "",
+    profesores: "",
   });
   const [busyByEntity, setBusyByEntity] = useState<Record<Entidad, BusyAction>>({
     alumnos: null,
     empresas: null,
     formacion: null,
+    profesores: null,
   });
   const [errorDetails, setErrorDetails] = useState<Record<Entidad, string[]>>({
     alumnos: [],
     empresas: [],
     formacion: [],
+    profesores: [],
   });
   const [logs, setLogs] = useState<ImportExportLogRow[]>([]);
   const [logsError, setLogsError] = useState("");
@@ -320,7 +325,9 @@ export default function ImportExportPanel({
                 ? mapAlumnoRows(rows)
                 : config.entidad === "formacion"
                   ? mapFormacionRows(rows)
-                  : rows,
+                  : config.entidad === "profesores"
+                    ? mapProfesorRows(rows)
+                    : rows,
         }),
       });
       const json: ApiResponse<ImportResponse, string[]> = await res.json();

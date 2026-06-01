@@ -5,6 +5,8 @@ import { createEmpresasBatch } from "@/modules/empresas/actions/mutations";
 import type { EmpresaInput } from "@/modules/empresas/types";
 import { empresaSchema } from "@/modules/empresas/types/schema";
 import { formacionSchema } from "@/modules/formacion/types/schema";
+import { createProfesoresBatch } from "@/modules/profesores/actions/mutations";
+import { profesorSchema } from "@/modules/profesores/types/schema";
 import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
 import { createImportExportLog } from "./logs";
 import type { ZodError } from "zod";
@@ -42,6 +44,15 @@ export type FormacionImportRow = {
   tutorLaboral?: string;
   emailTutorLaboral?: string;
   curso: string;
+};
+
+export type ProfesorImportRow = {
+  nombre: string;
+  nif?: string;
+  especialidad?: string;
+  telefono?: string;
+  email?: string;
+  cicloFormativo?: string;
 };
 
 export type ImportResult =
@@ -556,6 +567,108 @@ export async function importFormaciones(rows: FormacionImportRow[]): Promise<Imp
 
   await createImportExportLog({
     entidad: "Form. Empresa",
+    accion: "Importacion",
+    registros: result.count,
+    estado: "Completado",
+    detalle: `${result.count} registro(s) importado(s) correctamente.`,
+  });
+
+  return { ok: true, message, importedCount: result.count };
+}
+
+export async function importProfesores(rows: ProfesorImportRow[]): Promise<ImportResult> {
+  const errors: string[] = [];
+
+  if (rows.length === 0) {
+    const message = "El archivo no contiene filas con datos para importar.";
+    await createImportExportLog({
+      entidad: "Profesores",
+      accion: "Importacion",
+      registros: 0,
+      estado: "Fallido",
+      detalle: message,
+    });
+    return { ok: false, message, importedCount: 0, errors: [message] };
+  }
+
+  const ciclosByName = await getCiclosFormativosActivosByName();
+  const parsedRows: ReturnType<typeof profesorSchema.parse>[] = [];
+
+  const seenNif = new Map<string, number>();
+  rows.forEach((row, index) => {
+    const nif = (row.nif ?? "").trim().toUpperCase();
+    if (!nif) return;
+    const excelRow = index + 2;
+    const firstRow = seenNif.get(nif);
+    if (firstRow) {
+      errors.push(`NIF duplicado en el Excel: "${nif}" aparece en las filas ${firstRow} y ${excelRow}.`);
+      return;
+    }
+    seenNif.set(nif, excelRow);
+  });
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const cicloNombre = row.cicloFormativo?.trim() ?? "";
+    const ciclo = cicloNombre ? ciclosByName.get(normalizeKey(cicloNombre)) : null;
+
+    if (cicloNombre && !ciclo) {
+      errors.push(
+        `Fila ${excelRow}: el ciclo formativo "${cicloNombre}" no existe en el catalogo activo.`
+      );
+    }
+
+    const parsed = profesorSchema.safeParse({
+      nombre: row.nombre ?? "",
+      nif: row.nif ?? "",
+      especialidad: row.especialidad ?? "",
+      telefono: row.telefono ?? "",
+      email: row.email ?? "",
+      cicloFormativoId: ciclo?.id ?? null,
+    });
+
+    if (!parsed.success) {
+      errors.push(...buildRowValidationErrors(excelRow, parsed.error));
+      return;
+    }
+
+    parsedRows.push(parsed.data);
+  });
+
+  const nifs = rows.map((r) => (r.nif ?? "").trim().toUpperCase()).filter(Boolean);
+
+  if (nifs.length > 0) {
+    const existingProfesores = await prisma.profesor.findMany({
+      where: { nif: { in: nifs } },
+      select: { nif: true },
+    });
+    const existingNifs = new Set(existingProfesores.map((p) => (p.nif ?? "").toUpperCase()));
+
+    rows.forEach((row, index) => {
+      const nif = (row.nif ?? "").trim().toUpperCase();
+      if (nif && existingNifs.has(nif)) {
+        errors.push(`Fila ${index + 2}: ya existe un profesor con el NIF ${nif}.`);
+      }
+    });
+  }
+
+  if (errors.length > 0) {
+    const message = `Importacion cancelada. Revisa ${errors.length} incidencia(s).`;
+    await createImportExportLog({
+      entidad: "Profesores",
+      accion: "Importacion",
+      registros: 0,
+      estado: "Fallido",
+      detalle: errors.join("\n"),
+    });
+    return { ok: false, message, importedCount: 0, errors };
+  }
+
+  const result = await createProfesoresBatch(parsedRows);
+  const message = `Importacion completada (${result.count} registros).`;
+
+  await createImportExportLog({
+    entidad: "Profesores",
     accion: "Importacion",
     registros: result.count,
     estado: "Completado",

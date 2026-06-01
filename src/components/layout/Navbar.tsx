@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
+  { href: "/profesores", label: "Profesores" },
   { href: "/formacion", label: "Formación Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },

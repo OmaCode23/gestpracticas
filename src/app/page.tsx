@@ -11,10 +11,11 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   noStore();
 
-  const [empresas, alumnos, formaciones] = await Promise.all([
+  const [empresas, alumnos, formaciones, profesores] = await Promise.all([
     prisma.empresa.count(),
     prisma.alumno.count(),
     prisma.formacionEmpresa.count(),
+    prisma.profesor.count(),
   ]);
 
   const menuCards = [
@@ -35,6 +36,15 @@ export default async function HomePage() {
       title: "Alumnos",
       desc: "Registro de alumnos en practicas. Filtros por ciclo formativo y curso academico.",
       count: `${alumnos} alumnos`,
+    },
+    {
+      href: "/profesores",
+      color: "#7b4f1e",
+      bg: "bg-[#fdf0e0]",
+      icon: "🧑‍🏫",
+      title: "Profesores",
+      desc: "Gestion del profesorado del centro. Alta, edicion y consulta por ciclo formativo.",
+      count: `${profesores} profesores`,
     },
     {
       href: "/formacion",
@@ -109,8 +119,8 @@ export default async function HomePage() {
       <div className="mb-7 grid grid-cols-1 gap-[18px] md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon="🏢" variant="blue" value={empresas} label="Empresas registradas" trend="Datos actuales" />
         <StatCard icon="🎓" variant="green" value={alumnos} label="Alumnos registrados" trend="Datos actuales" />
-        <StatCard icon="📋" variant="amber" value={formaciones} label="Formaciones registradas" trend="Datos actuales" />
-        <StatCard icon="✅" variant="purple" value={empresas + alumnos + formaciones} label="Registros totales" trend="Suma de modulos" />
+        <StatCard icon="🧑‍🏫" variant="amber" value={profesores} label="Profesores registrados" trend="Datos actuales" />
+        <StatCard icon="📋" variant="purple" value={formaciones} label="Formaciones registradas" trend="Datos actuales" />
       </div>
 
       <SectionLabel>Accesos rapidos</SectionLabel>

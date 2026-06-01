@@ -1,5 +1,23 @@
 # Cambios en archivos comunes
 
+## 12-5-26 Codex
+
+- Archivo: `src/modules/portal-alumno/actions/queries.ts`
+  Motivo: conectar el portal con datos reales de alumnos, formaciones, empresas compatibles y CV, resolviendo temporalmente un alumno real de forma automatica y usando un alumno de prueba si no hay registros.
+  Impacto: el portal queda preparado para sustituir esa resolucion por el alumno autenticado cuando se implemente el login.
+
+- Archivo: `src/app/portal-alumno/layout.tsx`
+  Motivo: mostrar en la cabecera del portal el alumno activo, su curso y ciclo.
+  Impacto: todas las pantallas del portal dejan claro que datos de alumno estan cargando.
+
+- Archivo: `src/app/portal-alumno/page.tsx`, `src/app/portal-alumno/ofertas/page.tsx`, `src/app/portal-alumno/empresas/page.tsx`, `src/app/portal-alumno/cv/page.tsx`, `src/app/portal-alumno/cursos/page.tsx`
+  Motivo: reemplazar bloques placeholder por lecturas del alumno activo, sus practicas asignadas, empresas compatibles, estado del CV y contexto de cursos.
+  Impacto: el portal del alumno ya refleja datos de la aplicacion aunque todavia no exista autenticacion.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.test.ts`
+  Motivo: cubrir la resolucion temporal de alumno, el fallback demo y los filtros de empresas/formaciones usados por el portal.
+  Impacto: la conexion provisional del portal queda protegida frente a regresiones hasta integrar el login real.
+
 ## 7-4-26 Sbs
 
 - Archivo: `src/app/icon.png`

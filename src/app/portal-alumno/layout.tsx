@@ -1,12 +1,21 @@
 import Image from "next/image";
+import { unstable_noStore as noStore } from "next/cache";
 import institutoLogo from "@/app/images/logo_instituto.webp";
+import { Badge } from "@/components/ui";
 import PortalAlumnoNav from "@/modules/portal-alumno/components/PortalAlumnoNav";
+import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
 
-export default function PortalAlumnoLayout({
+export const dynamic = "force-dynamic";
+
+export default async function PortalAlumnoLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  noStore();
+
+  const alumno = await getPortalAlumnoActual();
+
   return (
     <div>
       <header className="mb-7 overflow-hidden rounded-[24px] border border-white/70 bg-white/82 shadow-card">
@@ -32,6 +41,20 @@ export default function PortalAlumnoLayout({
             </p>
           </div>
 
+          <div className="min-w-[220px] rounded-2xl border border-border bg-surface px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={alumno.isDemo ? "amber" : "green"}>
+                {alumno.isDemo ? "Vista de prueba" : "Alumno conectado"}
+              </Badge>
+              {alumno.cicloFormativoCodigo && (
+                <Badge variant="blue">{alumno.cicloFormativoCodigo}</Badge>
+              )}
+            </div>
+            <p className="mt-3 truncate text-sm font-bold text-navy">{alumno.nombre}</p>
+            <p className="mt-1 text-xs text-text-mid">
+              {alumno.curso} / curso {alumno.cursoCiclo}
+            </p>
+          </div>
         </div>
       </header>
 

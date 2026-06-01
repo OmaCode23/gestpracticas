@@ -3,7 +3,7 @@ import type { ApiResponse } from "@/shared/types/api";
 /**
  * Entidades soportadas por el panel de importacion/exportacion.
  */
-export type Entidad = "alumnos" | "empresas" | "formacion";
+export type Entidad = "alumnos" | "empresas" | "formacion" | "profesores";
 
 /**
  * Representa una fila generica de Excel ya normalizada a pares columna/valor.

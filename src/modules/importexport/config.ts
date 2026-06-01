@@ -2,6 +2,7 @@ import type { BadgeVariant } from "@/components/ui";
 import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import { FORMACION_FIELDS } from "@/modules/formacion/fields";
+import { PROFESOR_FIELDS } from "@/modules/profesores/fields";
 import type { CardConfig } from "./types";
 
 function buildColumns(fields: { label: string }[]) {
@@ -62,6 +63,21 @@ export const CARDS: CardConfig[] = [
     importPath: "/api/formacion",
     enabled: true,
   },
+  {
+    entidad: "profesores",
+    titulo: "Profesores",
+    icono: "\u{1F9D1}‍\u{1F3EB}",
+    headerBg: "bg-orange-500",
+    descripcion: "Importa o exporta el listado de profesores del centro.",
+    plantillaDescripcion: "Plantilla base de profesores",
+    importDescripcion: "Carga masiva de profesores desde Excel",
+    exportDescripcion: "Listado completo de profesores",
+    columnas: buildColumns(PROFESOR_FIELDS),
+    requiredColumns: buildRequiredColumns(PROFESOR_FIELDS),
+    fileName: "profesores",
+    importPath: "/api/importar/profesores",
+    enabled: true,
+  },
 ];
 
 /**
@@ -71,6 +87,7 @@ export const ENTIDAD_BADGE: Record<string, BadgeVariant> = {
   Alumnos: "blue",
   Empresas: "green",
   "Form. Empresa": "purple",
+  Profesores: "orange",
 };
 
 /**
@@ -91,6 +108,7 @@ export const LOG_FILTER_OPTIONS = {
     { value: "Empresas", label: "Empresas" },
     { value: "Alumnos", label: "Alumnos" },
     { value: "Form. Empresa", label: "Form. Empresa" },
+    { value: "Profesores", label: "Profesores" },
   ],
   accion: [
     { value: "", label: "Todas las acciones" },
