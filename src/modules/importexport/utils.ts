@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import { FORMACION_FIELDS } from "@/modules/formacion/fields";
+import { PROFESOR_FIELDS } from "@/modules/profesores/fields";
 import {
   DEFAULT_MES_CAMBIO_CURSO,
   DEFAULT_NUMERO_CURSOS_VISIBLES,
@@ -352,6 +353,17 @@ export async function collectExcelValidationErrors(input: {
     errors.push(...collectFormacionCatalogErrors(rows, catalogs));
   }
 
+  if (config.entidad === "profesores") {
+    errors.push(...collectProfesorCatalogErrors(rows, catalogs));
+
+    const duplicateNifs = findDuplicateValues(rows, "NIF");
+    duplicateNifs.forEach((duplicate) => {
+      errors.push(
+        `NIF duplicado en el Excel: "${duplicate.value}" aparece en las filas ${duplicate.firstRow} y ${duplicate.duplicateRow}.`
+      );
+    });
+  }
+
   return errors;
 }
 
@@ -374,6 +386,13 @@ export function mapAlumnoRows(rows: SheetRow[]) {
 
 export function mapFormacionRows(rows: SheetRow[]) {
   return mapRowsByFieldConfig(rows, FORMACION_FIELDS);
+}
+
+export function mapProfesorRows(rows: SheetRow[]) {
+  return mapRowsByFieldConfig(rows, PROFESOR_FIELDS).map((row) => ({
+    ...row,
+    telefono: normalizePhone(row.telefono ?? ""),
+  }));
 }
 
 /**
@@ -427,6 +446,24 @@ function collectAlumnoCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs
 
     if (curso && !cursos.has(curso)) {
       errors.push(`Fila ${excelRow}: el curso "${curso}" no existe en la configuracion academica.`);
+    }
+  });
+
+  return errors;
+}
+
+function collectProfesorCatalogErrors(rows: SheetRow[], catalogs: WorkbookCatalogs) {
+  const ciclos = new Set(catalogs.ciclosFormativos);
+  const errors: string[] = [];
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const cicloFormativo = String(getRowValue(row, "Ciclo Formativo")).trim();
+
+    if (cicloFormativo && !ciclos.has(cicloFormativo)) {
+      errors.push(
+        `Fila ${excelRow}: el ciclo formativo "${cicloFormativo}" no existe en el catalogo.`
+      );
     }
   });
 

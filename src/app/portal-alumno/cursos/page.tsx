@@ -1,9 +1,22 @@
-import { Badge, Card, SectionLabel } from "@/components/ui";
+import { unstable_noStore as noStore } from "next/cache";
+import { Alert, Badge, Card, SectionLabel } from "@/components/ui";
+import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
 import { CURSOS_EXTERNOS_PREVIEW } from "@/modules/portal-alumno/data";
 
-export default function PortalAlumnoCursosPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PortalAlumnoCursosPage() {
+  noStore();
+
+  const alumno = await getPortalAlumnoActual();
+
   return (
-    <div>
+    <div className="space-y-5">
+      <Alert>
+        Cursos externos visibles para {alumno.nombre}
+        {alumno.cicloFormativoCodigo ? ` (${alumno.cicloFormativoCodigo})` : ""}.
+      </Alert>
+
       <SectionLabel>Cursos disponibles</SectionLabel>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

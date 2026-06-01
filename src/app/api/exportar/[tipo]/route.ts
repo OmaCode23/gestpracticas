@@ -12,6 +12,7 @@ import {
   getAlumnosExport,
   getEmpresasExport,
   getFormacionExport,
+  getProfesoresExport,
 } from "@/modules/importexport/actions/export";
 import { createImportExportLog } from "@/modules/importexport/actions/logs";
 import type { ApiResponse } from "@/shared/types/api";
@@ -30,6 +31,7 @@ export async function GET(
       empresas: { entidad: "Empresas", getData: getEmpresasExport },
       alumnos: { entidad: "Alumnos", getData: getAlumnosExport },
       formacion: { entidad: "Form. Empresa", getData: getFormacionExport },
+      profesores: { entidad: "Profesores", getData: getProfesoresExport },
     } as const;
 
     const currentExport = exportConfig[params.tipo as keyof typeof exportConfig];

@@ -86,6 +86,24 @@
   Motivo: documentar el estado real de la integracion del login con el portal del alumno, las capas de seguridad implementadas, la visibilidad/acceso actual por rol y la cobertura de pruebas asociada.
   Impacto: la documentacion funcional deja de describir al rol `ALUMNO` como una idea futura abstracta y pasa a reflejar el comportamiento real ya implantado.
 
+## 12-5-26 Codex
+
+- Archivo: `src/modules/portal-alumno/actions/queries.ts`
+  Motivo: ampliar el portal del alumno con dashboard, empresas compatibles, practicas asignadas y estado del CV, dejando la resolucion provisional del alumno lista para sustituirse por autenticacion real.
+  Impacto: el portal gano contenido funcional reutilizable que despues se ha integrado con el login real.
+
+- Archivo: `src/app/portal-alumno/layout.tsx`
+  Motivo: enriquecer la cabecera del portal con informacion del alumno activo.
+  Impacto: el contexto del alumno quedo visible en todas las pantallas del portal.
+
+- Archivo: `src/app/portal-alumno/page.tsx`, `src/app/portal-alumno/ofertas/page.tsx`, `src/app/portal-alumno/empresas/page.tsx`, `src/app/portal-alumno/cv/page.tsx`, `src/app/portal-alumno/cursos/page.tsx`
+  Motivo: sustituir bloques placeholder por lecturas del alumno activo, sus practicas asignadas, empresas compatibles, estado del CV y contexto de cursos.
+  Impacto: el portal del alumno dejo de ser una maqueta y paso a reflejar datos reales de la aplicacion.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.test.ts`
+  Motivo: cubrir la evolucion funcional del portal en sus consultas principales.
+  Impacto: el comportamiento del dashboard y de sus filtros quedo protegido antes de integrarlo con el login real.
+
 ## 7-4-26 Sbs
 
 - Archivo: `src/app/icon.png`

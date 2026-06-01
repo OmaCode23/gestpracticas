@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./route";
 
-const { getEmpresasExportMock, getAlumnosExportMock, getFormacionExportMock, createImportExportLogMock } =
+const {
+  getEmpresasExportMock,
+  getAlumnosExportMock,
+  getFormacionExportMock,
+  getProfesoresExportMock,
+  createImportExportLogMock,
+} =
   vi.hoisted(() => ({
     getEmpresasExportMock: vi.fn(),
     getAlumnosExportMock: vi.fn(),
     getFormacionExportMock: vi.fn(),
+    getProfesoresExportMock: vi.fn(),
     createImportExportLogMock: vi.fn(),
   }));
 
@@ -13,6 +20,7 @@ vi.mock("@/modules/importexport/actions/export", () => ({
   getEmpresasExport: getEmpresasExportMock,
   getAlumnosExport: getAlumnosExportMock,
   getFormacionExport: getFormacionExportMock,
+  getProfesoresExport: getProfesoresExportMock,
 }));
 
 vi.mock("@/modules/importexport/actions/logs", () => ({

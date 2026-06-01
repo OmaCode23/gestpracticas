@@ -13,9 +13,10 @@ export default async function HomePage() {
   noStore();
   await requireStaffSession("/");
 
-  const [empresas, alumnos, formaciones] = await Promise.all([
+  const [empresas, alumnos, profesores, formaciones] = await Promise.all([
     prisma.empresa.count(),
     prisma.alumno.count(),
+    prisma.profesor.count(),
     prisma.formacionEmpresa.count(),
   ]);
 
@@ -26,7 +27,7 @@ export default async function HomePage() {
       bg: "bg-[#f5dde4]",
       icon: "🏢",
       title: "Empresas",
-      desc: "Alta, edición y consulta de empresas colaboradoras. Filtros por sector y localidad.",
+      desc: "Alta, edicion y consulta de empresas colaboradoras. Filtros por sector y localidad.",
       count: `${empresas} registros`,
     },
     {
@@ -35,16 +36,25 @@ export default async function HomePage() {
       bg: "bg-[#e7efe7]",
       icon: "🎓",
       title: "Alumnos",
-      desc: "Registro de alumnos en prácticas. Filtros por ciclo formativo y curso académico.",
+      desc: "Registro de alumnos en practicas. Filtros por ciclo formativo y curso academico.",
       count: `${alumnos} alumnos`,
+    },
+    {
+      href: "/profesores",
+      color: "#7b4f1e",
+      bg: "bg-[#fdf0e0]",
+      icon: "🧑‍🏫",
+      title: "Profesores",
+      desc: "Gestion del profesorado del centro. Alta, edicion y consulta por ciclo formativo.",
+      count: `${profesores} profesores`,
     },
     {
       href: "/formacion",
       color: "#986333",
       bg: "bg-[#f7ead5]",
       icon: "📋",
-      title: "Formación Empresa",
-      desc: "Gestión de formaciones en empresa. Consulta y filtrado por curso académico.",
+      title: "Formacion Empresa",
+      desc: "Gestion de formaciones en empresa. Consulta y filtrado por curso academico.",
       count: `${formaciones} formaciones`,
     },
     {
@@ -53,7 +63,7 @@ export default async function HomePage() {
       bg: "bg-[#eee4ea]",
       icon: "🔄",
       title: "Importar / Exportar",
-      desc: "Carga masiva con plantillas Excel y exportación de registros actuales.",
+      desc: "Carga masiva con plantillas Excel y exportacion de registros actuales.",
       count: null,
     },
     {
@@ -62,7 +72,7 @@ export default async function HomePage() {
       bg: "bg-[#efe5df]",
       icon: "📊",
       title: "Informes",
-      desc: "Genera informes de asignación, cobertura por sector y seguimiento por ciclo.",
+      desc: "Genera informes de asignacion, cobertura por sector y seguimiento por ciclo.",
       count: null,
     },
     {
@@ -70,8 +80,8 @@ export default async function HomePage() {
       color: "#7d4f57",
       bg: "bg-[#f1e4e6]",
       icon: "⚙️",
-      title: "Configuración",
-      desc: "Parámetros del sistema, ciclos formativos, cursos académicos y usuarios.",
+      title: "Configuracion",
+      desc: "Parametros del sistema, ciclos formativos, cursos academicos y usuarios.",
       count: null,
     },
   ] as const;
@@ -88,11 +98,11 @@ export default async function HomePage() {
               Instituto <span className="text-blue">/ Inicio</span>
             </p>
             <h1 className="font-display text-[1.7rem] font-bold leading-tight text-navy md:text-[2rem]">
-              Panel de Gestión de Prácticas
+              Panel de Gestion de Practicas
             </h1>
             <p className="mt-2 max-w-2xl text-[0.95rem] leading-relaxed text-text-mid">
-              Centraliza la gestión de empresas colaboradoras, alumnado en prácticas y
-              formaciones en empresa desde un único panel claro, rápido y preparado para el
+              Centraliza la gestion de empresas colaboradoras, alumnado en practicas y
+              formaciones en empresa desde un unico panel claro, rapido y preparado para el
               seguimiento diario del centro.
             </p>
           </div>
@@ -111,11 +121,11 @@ export default async function HomePage() {
       <div className="mb-7 grid grid-cols-1 gap-[18px] md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon="🏢" variant="blue" value={empresas} label="Empresas registradas" trend="Datos actuales" />
         <StatCard icon="🎓" variant="green" value={alumnos} label="Alumnos registrados" trend="Datos actuales" />
-        <StatCard icon="📋" variant="amber" value={formaciones} label="Formaciones registradas" trend="Datos actuales" />
-        <StatCard icon="✅" variant="purple" value={empresas + alumnos + formaciones} label="Registros totales" trend="Suma de módulos" />
+        <StatCard icon="🧑‍🏫" variant="amber" value={profesores} label="Profesores registrados" trend="Datos actuales" />
+        <StatCard icon="📋" variant="purple" value={formaciones} label="Formaciones registradas" trend="Datos actuales" />
       </div>
 
-      <SectionLabel>Accesos rápidos</SectionLabel>
+      <SectionLabel>Accesos rapidos</SectionLabel>
       <div className="mt-2 grid grid-cols-1 gap-[22px] md:grid-cols-2 xl:grid-cols-3">
         {menuCards.map((card) => (
           <Link
@@ -127,11 +137,11 @@ export default async function HomePage() {
               className="absolute inset-x-0 top-0 h-1.5"
               style={{ background: `linear-gradient(90deg, ${card.color}, rgba(255,255,255,0.35))` }}
             />
-            {card.count && (
+            {card.count ? (
               <span className="absolute right-5 top-5 rounded-full bg-surface2 px-2.5 py-0.5 text-[0.75rem] font-bold text-text-mid">
                 {card.count}
               </span>
-            )}
+            ) : null}
             <div className={`mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-[16px] text-2xl ${card.bg}`}>
               {card.icon}
             </div>

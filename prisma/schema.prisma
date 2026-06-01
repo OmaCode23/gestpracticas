@@ -175,8 +175,25 @@ model CicloFormativo {
   updatedAt DateTime  @updatedAt
   empresas  Empresa[]
   alumnos   Alumno[]
+  profesores Profesor[]
 
   @@map("ciclos_formativos")
+}
+
+model Profesor {
+  id                Int             @id @default(autoincrement())
+  nombre            String
+  nif               String?         @unique
+  especialidad      String?
+  telefono          String?
+  email             String?
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo? @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  activo            Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@map("profesores")
 }
 
 model Setting {

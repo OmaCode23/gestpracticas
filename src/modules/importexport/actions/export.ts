@@ -2,6 +2,7 @@ import { prisma } from "@/database/prisma";
 import { ALUMNO_FIELDS } from "@/modules/alumnos/fields";
 import { EMPRESA_FIELDS } from "@/modules/empresas/fields";
 import { FORMACION_FIELDS } from "@/modules/formacion/fields";
+import { PROFESOR_FIELDS } from "@/modules/profesores/fields";
 import { normalizeEmpresaCatalogos } from "@/shared/utils/empresaCatalogos";
 
 /**
@@ -72,6 +73,26 @@ export async function getAlumnosExport() {
     [ALUMNO_FIELDS[6].label]: alumno.cicloFormativoRef?.nombre ?? "",
     [ALUMNO_FIELDS[7].label]: alumno.cursoCiclo,
     [ALUMNO_FIELDS[8].label]: alumno.curso,
+  }));
+}
+
+export async function getProfesoresExport() {
+  const profesores = await prisma.profesor.findMany({
+    include: {
+      cicloFormativoRef: {
+        select: { nombre: true },
+      },
+    },
+    orderBy: { nombre: "asc" },
+  });
+
+  return profesores.map((p) => ({
+    [PROFESOR_FIELDS[0].label]: p.nombre,
+    [PROFESOR_FIELDS[1].label]: p.nif ?? "",
+    [PROFESOR_FIELDS[2].label]: p.especialidad ?? "",
+    [PROFESOR_FIELDS[3].label]: p.telefono ?? "",
+    [PROFESOR_FIELDS[4].label]: p.email ?? "",
+    [PROFESOR_FIELDS[5].label]: p.cicloFormativoRef?.nombre ?? "",
   }));
 }
 

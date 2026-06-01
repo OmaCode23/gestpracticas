@@ -6,19 +6,18 @@ import { Alert, PageHeader } from "@/components/ui";
 import { CARDS } from "@/modules/importexport/config";
 import { EntidadCard } from "@/modules/importexport/components/EntidadCard";
 import { ImportExportActivityTable } from "@/modules/importexport/components/ImportExportActivityTable";
-import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 import type {
   BusyAction,
   CardConfig,
   Entidad,
   ImportExportLogRow,
+  ImportResponse,
   LogFilters,
   PaginatedImportExportLogs,
-  ImportResponse,
 } from "@/modules/importexport/types";
 import {
-  buildSheetRows,
   buildRawRowsFromPreview,
+  buildSheetRows,
   collectExcelValidationErrors,
   downloadWorkbook,
   findHeaderRowIndex,
@@ -28,20 +27,18 @@ import {
   mapAlumnoRows,
   mapEmpresaRows,
   mapFormacionRows,
+  mapProfesorRows,
 } from "@/modules/importexport/utils";
+import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
 import type { ApiResponse } from "@/shared/types/api";
 
 const ENTITY_LOG_LABEL: Record<Entidad, string> = {
   alumnos: "Alumnos",
   empresas: "Empresas",
   formacion: "Form. Empresa",
+  profesores: "Profesores",
 };
 
-/**
- * Componente orquestador del modulo:
- * maneja el estado de cada entidad, ejecuta importaciones/exportaciones
- * y mantiene sincronizado el historial de actividad.
- */
 export default function ImportExportPanel({
   resultadosPorPagina = DEFAULT_RESULTADOS_POR_PAGINA,
   canImport = false,
@@ -53,16 +50,19 @@ export default function ImportExportPanel({
     alumnos: "",
     empresas: "",
     formacion: "",
+    profesores: "",
   });
   const [busyByEntity, setBusyByEntity] = useState<Record<Entidad, BusyAction>>({
     alumnos: null,
     empresas: null,
     formacion: null,
+    profesores: null,
   });
   const [errorDetails, setErrorDetails] = useState<Record<Entidad, string[]>>({
     alumnos: [],
     empresas: [],
     formacion: [],
+    profesores: [],
   });
   const [logs, setLogs] = useState<ImportExportLogRow[]>([]);
   const [logsError, setLogsError] = useState("");
@@ -75,9 +75,6 @@ export default function ImportExportPanel({
     estado: "",
   });
 
-  /**
-   * Consulta el historial actual aplicando paginacion y filtros.
-   */
   const loadLogs = async () => {
     try {
       const params = new URLSearchParams();
@@ -107,19 +104,14 @@ export default function ImportExportPanel({
     }
   };
 
-  // Recarga el historial cuando cambia cualquiera de los filtros o la pagina actual.
   useEffect(() => {
     void loadLogs();
   }, [logFilters.entidad, logFilters.accion, logFilters.estado, logsPage, resultadosPorPagina]);
 
-  // Al cambiar filtros volvemos a la primera pagina para evitar huecos de paginacion.
   useEffect(() => {
     setLogsPage(1);
   }, [logFilters.entidad, logFilters.accion, logFilters.estado]);
 
-  /**
-   * Helpers para actualizar solo la parte del estado asociada a una entidad concreta.
-   */
   const setEntityStatus = (entidad: Entidad, message: string) => {
     setStatus((current) => ({ ...current, [entidad]: message }));
   };
@@ -157,15 +149,9 @@ export default function ImportExportPanel({
     }
   };
 
-  /**
-   * Descarga los datos actuales de una entidad como Excel.
-   */
   const handleExport = async (config: CardConfig) => {
     if (!config.enabled) {
-      setEntityStatus(
-        config.entidad,
-        config.pendingMessage ?? "Pendiente de integracion."
-      );
+      setEntityStatus(config.entidad, config.pendingMessage ?? "Pendiente de integracion.");
       return;
     }
 
@@ -184,17 +170,13 @@ export default function ImportExportPanel({
       }
 
       if (json.data.length === 0) {
-        setEntityStatus(
-          config.entidad,
-          "No hay registros disponibles para exportar."
-        );
+        setEntityStatus(config.entidad, "No hay registros disponibles para exportar.");
         return;
       }
 
       const rows = json.data.map((row) => {
         const normalizedRow: Record<string, string> = {};
 
-        // La hoja final siempre sigue el orden exacto definido en la configuracion.
         for (const column of config.columnas) {
           normalizedRow[column] = String(row[column] ?? "");
         }
@@ -202,21 +184,13 @@ export default function ImportExportPanel({
         return normalizedRow;
       });
 
-      await downloadWorkbook(
-        rows,
-        config.columnas,
-        `${config.fileName}_${formatDateStamp()}.xlsx`,
-        {
-          title: `Exportacion de ${config.titulo}`,
-          subtitle: `${json.data.length} registro(s) exportado(s)`,
-          sheetName: "Exportacion",
-        }
-      );
+      await downloadWorkbook(rows, config.columnas, `${config.fileName}_${formatDateStamp()}.xlsx`, {
+        title: `Exportacion de ${config.titulo}`,
+        subtitle: `${json.data.length} registro(s) exportado(s)`,
+        sheetName: "Exportacion",
+      });
 
-      setEntityStatus(
-        config.entidad,
-        `Exportacion completada (${json.data.length} registros).`
-      );
+      setEntityStatus(config.entidad, `Exportacion completada (${json.data.length} registros).`);
       await loadLogs();
     } catch (error) {
       setEntityStatus(config.entidad, `Error: ${getErrorMessage(error)}`);
@@ -225,20 +199,15 @@ export default function ImportExportPanel({
     }
   };
 
-  /**
-   * Descarga una plantilla vacia para que el usuario rellene datos con el formato correcto.
-   */
   const handlePlantilla = async (config: CardConfig) => {
     if (!config.enabled) {
-      setEntityStatus(
-        config.entidad,
-        config.pendingMessage ?? "Pendiente de integracion."
-      );
+      setEntityStatus(config.entidad, config.pendingMessage ?? "Pendiente de integracion.");
       return;
     }
 
     clearEntityFeedback(config.entidad);
     setEntityBusy(config.entidad, "plantilla");
+
     try {
       await downloadWorkbook([], config.columnas, `plantilla_${config.fileName}.xlsx`, {
         title: `Plantilla de ${config.titulo}`,
@@ -254,15 +223,9 @@ export default function ImportExportPanel({
     }
   };
 
-  /**
-   * Lee el Excel, valida su contenido y lo envia a la API de importacion correspondiente.
-   */
   const handleImport = async (config: CardConfig, file: File) => {
     if (!config.enabled) {
-      setEntityStatus(
-        config.entidad,
-        config.pendingMessage ?? "Pendiente de integracion."
-      );
+      setEntityStatus(config.entidad, config.pendingMessage ?? "Pendiente de integracion.");
       return;
     }
 
@@ -280,8 +243,6 @@ export default function ImportExportPanel({
       }
 
       const worksheet = workbook.Sheets[sheetName];
-
-      // Primero se inspecciona la cabecera real para validar columnas obligatorias.
       const previewRows = XLSX.utils.sheet_to_json<(string | number)[]>(worksheet, {
         header: 1,
         defval: "",
@@ -304,9 +265,7 @@ export default function ImportExportPanel({
         setEntityErrors(config.entidad, excelErrors);
         await registerImportFailureLog(config.entidad, excelErrors);
         await loadLogs();
-        throw new Error(
-          `Se han detectado ${excelErrors.length} incidencia(s) en el Excel.`
-        );
+        throw new Error(`Se han detectado ${excelErrors.length} incidencia(s) en el Excel.`);
       }
 
       const res = await fetch(config.importPath, {
@@ -322,7 +281,9 @@ export default function ImportExportPanel({
                 ? mapAlumnoRows(rows)
                 : config.entidad === "formacion"
                   ? mapFormacionRows(rows)
-                  : rows,
+                  : config.entidad === "profesores"
+                    ? mapProfesorRows(rows)
+                    : rows,
         }),
       });
       const json: ApiResponse<ImportResponse, string[]> = await res.json();
@@ -353,8 +314,7 @@ export default function ImportExportPanel({
       />
 
       <Alert variant="info">
-        Las plantillas incluyen las columnas necesarias. Respeta el formato antes de
-        importar para evitar errores de validacion.
+        Las plantillas incluyen las columnas necesarias. Respeta el formato antes de importar para evitar errores de validacion.
       </Alert>
 
       {!canImport ? (

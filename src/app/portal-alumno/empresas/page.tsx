@@ -1,16 +1,25 @@
 import { unstable_noStore as noStore } from "next/cache";
-import { Badge, Card, SectionLabel } from "@/components/ui";
-import { getPortalEmpresasDisponibles } from "@/modules/portal-alumno/actions/queries";
+import { Alert, Badge, Card, SectionLabel } from "@/components/ui";
+import {
+  getPortalAlumnoActual,
+  getPortalEmpresasDisponibles,
+} from "@/modules/portal-alumno/actions/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalAlumnoEmpresasPage() {
   noStore();
 
-  const empresas = await getPortalEmpresasDisponibles(24);
+  const alumno = await getPortalAlumnoActual();
+  const empresas = await getPortalEmpresasDisponibles(24, alumno);
 
   return (
-    <div>
+    <div className="space-y-5">
+      <Alert>
+        Empresas filtradas para {alumno.nombre}
+        {alumno.cicloFormativoNombre ? ` (${alumno.cicloFormativoNombre})` : ""}.
+      </Alert>
+
       <SectionLabel>Empresas disponibles</SectionLabel>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -33,6 +42,11 @@ export default async function PortalAlumnoEmpresasPage() {
             </div>
           </Card>
         ))}
+        {empresas.length === 0 && (
+          <Card className="p-5">
+            <p className="text-sm text-text-mid">No hay empresas compatibles registradas todavia.</p>
+          </Card>
+        )}
       </div>
     </div>
   );

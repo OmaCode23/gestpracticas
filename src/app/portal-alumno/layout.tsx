@@ -1,7 +1,9 @@
 import Image from "next/image";
 import institutoLogo from "@/app/images/logo_instituto.webp";
+import { Badge } from "@/components/ui";
 import { getAuthMode } from "@/modules/auth/config";
 import { requireAlumnoSession } from "@/modules/auth/session";
+import { getPortalAlumnoActual } from "@/modules/portal-alumno/actions/queries";
 import PortalAlumnoNav from "@/modules/portal-alumno/components/PortalAlumnoNav";
 
 export default async function PortalAlumnoLayout({
@@ -9,9 +11,9 @@ export default async function PortalAlumnoLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAlumnoSession("/portal-alumno");
-
+  const session = await requireAlumnoSession("/portal-alumno");
   const authMode = getAuthMode();
+  const alumno = await getPortalAlumnoActual(session);
 
   return (
     <div>
@@ -34,7 +36,20 @@ export default async function PortalAlumnoLayout({
               Portal del Alumno
             </h1>
             <p className="mt-1 max-w-2xl text-[0.9rem] leading-relaxed text-text-mid">
-              Prácticas, empresas colaboradoras, cursos externos y CV en un espacio separado del panel interno.
+              Practicas, empresas colaboradoras, cursos externos y CV en un espacio separado del panel interno.
+            </p>
+          </div>
+
+          <div className="min-w-[220px] rounded-2xl border border-border bg-surface px-4 py-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="green">Alumno conectado</Badge>
+              {alumno.cicloFormativoCodigo ? (
+                <Badge variant="blue">{alumno.cicloFormativoCodigo}</Badge>
+              ) : null}
+            </div>
+            <p className="mt-3 truncate text-sm font-bold text-navy">{alumno.nombre}</p>
+            <p className="mt-1 text-xs text-text-mid">
+              {alumno.curso} / curso {alumno.cursoCiclo}
             </p>
           </div>
         </div>

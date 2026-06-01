@@ -5,14 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import institutoLogo from "@/app/images/logo_instituto.webp";
 import AuthSessionControl from "@/components/layout/AuthSessionControl";
+import { useAuthSession } from "@/components/layout/useAuthSession";
 import type { AuthMode } from "@/modules/auth/config";
 import { canManageUsers, isAlumnoRole, isStaffRole } from "@/modules/auth/permissions";
-import { useAuthSession } from "@/components/layout/useAuthSession";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
   { href: "/empresas", label: "Empresas" },
   { href: "/alumnos", label: "Alumnos" },
+  { href: "/profesores", label: "Profesores" },
   { href: "/formacion", label: "Formacion Empresa" },
   { href: "/importexport", label: "Importar / Exportar" },
   { href: "/informes", label: "Informes" },
