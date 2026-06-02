@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, type Prisma } from "@prisma/client";
 import {
   CICLOS_FORMATIVOS_BASE,
   DEFAULT_MES_CAMBIO_CURSO,
@@ -20,7 +20,37 @@ const SETTING_DEFAULTS = [
     clave: "listados.resultadosPorPagina",
     valor: String(DEFAULT_RESULTADOS_POR_PAGINA),
   },
-] as const;
+];
+
+const CURSOS_EXTERNOS_BASE: Prisma.CursoExternoCreateManyInput[] = [
+  {
+    proveedor: "Cisco",
+    titulo: "Redes y conectividad",
+    area: "Redes",
+    nivel: "Inicial",
+    modalidad: "Online",
+    duracion: "Autoguiado",
+    descripcion: "Curso introductorio para reforzar conceptos de redes y conectividad.",
+  },
+  {
+    proveedor: "Amazon Web Services",
+    titulo: "Fundamentos de cloud",
+    area: "Cloud",
+    nivel: "Inicial",
+    modalidad: "Online",
+    duracion: "Autoguiado",
+    descripcion: "Formacion base sobre servicios cloud y conceptos de despliegue.",
+  },
+  {
+    proveedor: "Microsoft",
+    titulo: "Servicios cloud y administracion",
+    area: "Cloud",
+    nivel: "Intermedio",
+    modalidad: "Online",
+    duracion: "Autoguiado",
+    descripcion: "Curso orientado a administracion de servicios cloud y buenas practicas.",
+  },
+];
 
 async function main() {
   await prisma.sector.createMany({
@@ -48,6 +78,11 @@ async function main() {
       },
     });
   }
+
+  await prisma.cursoExterno.createMany({
+    data: CURSOS_EXTERNOS_BASE,
+    skipDuplicates: true,
+  });
 
   console.log("Catalogos base sembrados correctamente.");
 }

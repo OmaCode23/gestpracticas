@@ -14,6 +14,13 @@ const { prismaMock } = vi.hoisted(() => ({
       count: vi.fn(),
       findMany: vi.fn(),
     },
+    cursoExterno: {
+      count: vi.fn(),
+      findMany: vi.fn(),
+    },
+    ofertaPractica: {
+      count: vi.fn(),
+    },
   },
 }));
 
@@ -91,6 +98,9 @@ describe("portal alumno queries", () => {
         rol: "ALUMNO",
       },
     });
+    prismaMock.cursoExterno.count.mockResolvedValue(0);
+    prismaMock.cursoExterno.findMany.mockResolvedValue([]);
+    prismaMock.ofertaPractica.count.mockResolvedValue(0);
   });
 
   it("resuelve el alumno real asociado a la sesion", async () => {
@@ -243,6 +253,8 @@ describe("portal alumno queries", () => {
   it("resume empresas compatibles y formaciones del alumno autenticado", async () => {
     prismaMock.empresa.count.mockResolvedValueOnce(10).mockResolvedValueOnce(4);
     prismaMock.formacionEmpresa.count.mockResolvedValue(2);
+    prismaMock.ofertaPractica.count.mockResolvedValue(6);
+    prismaMock.cursoExterno.count.mockResolvedValue(3);
 
     const result = await getPortalAlumnoSummary(alumnoPortal);
 
@@ -250,7 +262,7 @@ describe("portal alumno queries", () => {
       empresasDisponibles: 10,
       empresasCompatibles: 4,
       formacionesAsignadas: 2,
-      ofertasPublicadas: 4,
+      ofertasPublicadas: 6,
       cursosDisponibles: 3,
     });
   });
@@ -307,6 +319,24 @@ describe("portal alumno queries", () => {
     prismaMock.formacionEmpresa.count.mockResolvedValue(1);
     prismaMock.empresa.findMany.mockResolvedValue([]);
     prismaMock.formacionEmpresa.findMany.mockResolvedValue([]);
+    prismaMock.ofertaPractica.count.mockResolvedValue(5);
+    prismaMock.cursoExterno.count.mockResolvedValue(2);
+    prismaMock.cursoExterno.findMany.mockResolvedValue([
+      {
+        id: 1,
+        titulo: "Redes",
+        proveedor: "Cisco",
+        area: "Redes",
+        nivel: "Inicial",
+        modalidad: "Online",
+        duracion: null,
+        descripcion: null,
+        enlace: null,
+        activo: true,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ]);
 
     const result = await getPortalAlumnoDashboard();
 
@@ -314,5 +344,6 @@ describe("portal alumno queries", () => {
     expect(result.summary.formacionesAsignadas).toBe(1);
     expect(result.empresas).toEqual([]);
     expect(result.formaciones).toEqual([]);
+    expect(result.cursos).toHaveLength(1);
   });
 });

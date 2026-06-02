@@ -22,6 +22,12 @@ enum AuthProvider {
   GVA
 }
 
+enum OfertaEstado {
+  BORRADOR
+  PUBLICADA
+  CERRADA
+}
+
 model Usuario {
   id           Int                @id @default(autoincrement())
   nombre       String
@@ -176,6 +182,7 @@ model CicloFormativo {
   empresas  Empresa[]
   alumnos   Alumno[]
   profesores Profesor[]
+  ofertasPracticas OfertaPractica[]
 
   @@map("ciclos_formativos")
 }
@@ -194,6 +201,44 @@ model Profesor {
   updatedAt         DateTime        @updatedAt
 
   @@map("profesores")
+}
+
+model CursoExterno {
+  id          Int      @id @default(autoincrement())
+  titulo      String
+  proveedor   String
+  area        String
+  nivel       String
+  modalidad   String
+  duracion    String?
+  descripcion String?
+  enlace      String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([titulo, proveedor])
+  @@index([activo])
+  @@map("cursos_externos")
+}
+
+model OfertaPractica {
+  id                Int             @id @default(autoincrement())
+  titulo            String
+  empresa           String
+  cicloFormativoId  Int?
+  cicloFormativoRef CicloFormativo? @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  plazas            Int             @default(1)
+  requisitos        String?
+  periodo           String?
+  descripcion       String?
+  estado            OfertaEstado    @default(PUBLICADA)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([estado])
+  @@index([cicloFormativoId])
+  @@map("ofertas_practicas")
 }
 
 model Setting {

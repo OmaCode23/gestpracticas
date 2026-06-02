@@ -3,7 +3,6 @@ import { unstable_noStore as noStore } from "next/cache";
 import { Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
 import { formatFileSize } from "@/modules/alumnos/utils/cv";
 import { getPortalAlumnoDashboard } from "@/modules/portal-alumno/actions/queries";
-import { CURSOS_EXTERNOS_PREVIEW } from "@/modules/portal-alumno/data";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +19,7 @@ function formatPortalDate(value: string | null) {
 export default async function PortalAlumnoPage() {
   noStore();
 
-  const { alumno, summary, empresas, formaciones } = await getPortalAlumnoDashboard();
+  const { alumno, summary, empresas, formaciones, cursos } = await getPortalAlumnoDashboard();
 
   if (!alumno) {
     return (
@@ -182,7 +181,7 @@ export default async function PortalAlumnoPage() {
       <div>
         <SectionLabel>Cursos externos</SectionLabel>
         <div className="grid gap-4 md:grid-cols-3">
-          {CURSOS_EXTERNOS_PREVIEW.map((curso) => (
+          {cursos.map((curso) => (
             <Card key={curso.id} className="p-5">
               <Badge variant="amber">{curso.proveedor}</Badge>
               <h2 className="mt-4 text-base font-bold text-navy">{curso.titulo}</h2>
@@ -191,6 +190,11 @@ export default async function PortalAlumnoPage() {
               </p>
             </Card>
           ))}
+          {cursos.length === 0 ? (
+            <Card className="p-5">
+              <p className="text-sm text-text-mid">No hay cursos externos activos todavia.</p>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>

@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
 import type { AuthSession } from "@/modules/auth/session";
 import { requireAlumnoSession } from "@/modules/auth/session";
-import { CURSOS_EXTERNOS_PREVIEW } from "../data";
+import {
+  countCursosExternosPublicados,
+  getCursosExternosPublicados,
+} from "@/modules/cursos/actions/queries";
+import { countOfertasPracticasPublicadas } from "@/modules/ofertas/actions/queries";
 
 type PortalAlumnoDbRecord = {
   id: number;
@@ -256,20 +260,28 @@ export async function getPortalAlumnoSummary(alumno?: PortalAlumno) {
   const resolvedAlumno = alumno ?? (await getPortalAlumnoActual());
   const empresaWhere = buildEmpresaPortalWhere(resolvedAlumno);
 
-  const [empresasDisponibles, empresasCompatibles, formacionesAsignadas] = await Promise.all([
+  const [
+    empresasDisponibles,
+    empresasCompatibles,
+    formacionesAsignadas,
+    ofertasPublicadas,
+    cursosDisponibles,
+  ] = await Promise.all([
     prisma.empresa.count(),
     prisma.empresa.count({ where: empresaWhere }),
     prisma.formacionEmpresa.count({
       where: { alumnoId: resolvedAlumno.id },
     }),
+    countOfertasPracticasPublicadas(),
+    countCursosExternosPublicados(),
   ]);
 
   return {
     empresasDisponibles,
     empresasCompatibles,
     formacionesAsignadas,
-    ofertasPublicadas: empresasCompatibles,
-    cursosDisponibles: CURSOS_EXTERNOS_PREVIEW.length,
+    ofertasPublicadas,
+    cursosDisponibles,
   };
 }
 
@@ -353,6 +365,7 @@ const EMPTY_DASHBOARD = {
   summary: { empresasDisponibles: 0, empresasCompatibles: 0, formacionesAsignadas: 0, ofertasPublicadas: 0, cursosDisponibles: 0 },
   empresas: [] as Awaited<ReturnType<typeof getPortalEmpresasDisponibles>>,
   formaciones: [] as Awaited<ReturnType<typeof getPortalFormacionesAlumno>>,
+  cursos: [] as Awaited<ReturnType<typeof getCursosExternosPublicados>>,
 } as const;
 
 export async function getPortalAlumnoDashboard() {
@@ -363,11 +376,12 @@ export async function getPortalAlumnoDashboard() {
     return EMPTY_DASHBOARD;
   }
 
-  const [summary, empresas, formaciones] = await Promise.all([
+  const [summary, empresas, formaciones, cursos] = await Promise.all([
     getPortalAlumnoSummary(alumno),
     getPortalEmpresasDisponibles(4, alumno),
     getPortalFormacionesAlumno(alumno),
+    getCursosExternosPublicados(3),
   ]);
 
-  return { alumno, summary, empresas, formaciones };
+  return { alumno, summary, empresas, formaciones, cursos };
 }
