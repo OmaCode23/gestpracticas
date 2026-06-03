@@ -13,8 +13,8 @@ import {
 
 export type CursoFormState = {
   titulo: string;
-  proveedor: string;
-  area: string;
+  proveedorId: string;
+  areaId: string;
   nivel: string;
   modalidad: string;
   duracion: string;
@@ -23,10 +23,19 @@ export type CursoFormState = {
   activo: boolean;
 };
 
+type CursoCatalogoOption = {
+  id: number;
+  nombre: string;
+};
+
 type CursoFormProps = {
   form: CursoFormState;
   saving: boolean;
   editingId: number | null;
+  proveedores: CursoCatalogoOption[];
+  areas: CursoCatalogoOption[];
+  niveles: readonly string[];
+  modalidades: readonly string[];
   onChange: (key: keyof CursoFormState, value: string | boolean) => void;
   onClear: () => void;
   onSave: () => void;
@@ -36,6 +45,10 @@ export default function CursoForm({
   form,
   saving,
   editingId,
+  proveedores,
+  areas,
+  niveles,
+  modalidades,
   onChange,
   onClear,
   onSave,
@@ -62,45 +75,65 @@ export default function CursoForm({
           </FormGroup>
 
           <FormGroup label="Proveedor *">
-            <input
+            <select
               className={INPUT_CLS}
-              maxLength={100}
-              value={form.proveedor}
-              onChange={(e) => onChange("proveedor", e.target.value)}
-              placeholder="Cisco, AWS, Microsoft..."
-            />
+              value={form.proveedorId}
+              onChange={(e) => onChange("proveedorId", e.target.value)}
+            >
+              <option value="">Seleccionar proveedor</option>
+              {proveedores.map((proveedor) => (
+                <option key={proveedor.id} value={proveedor.id}>
+                  {proveedor.nombre}
+                </option>
+              ))}
+            </select>
           </FormGroup>
         </FormRow>
 
         <FormRow cols={3}>
           <FormGroup label="Area *">
-            <input
+            <select
               className={INPUT_CLS}
-              maxLength={80}
-              value={form.area}
-              onChange={(e) => onChange("area", e.target.value)}
-              placeholder="Cloud"
-            />
+              value={form.areaId}
+              onChange={(e) => onChange("areaId", e.target.value)}
+            >
+              <option value="">Seleccionar area</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.nombre}
+                </option>
+              ))}
+            </select>
           </FormGroup>
 
           <FormGroup label="Nivel *">
-            <input
+            <select
               className={INPUT_CLS}
-              maxLength={60}
               value={form.nivel}
               onChange={(e) => onChange("nivel", e.target.value)}
-              placeholder="Inicial"
-            />
+            >
+              <option value="">Seleccionar nivel</option>
+              {niveles.map((nivel) => (
+                <option key={nivel} value={nivel}>
+                  {nivel}
+                </option>
+              ))}
+            </select>
           </FormGroup>
 
           <FormGroup label="Modalidad *">
-            <input
+            <select
               className={INPUT_CLS}
-              maxLength={60}
               value={form.modalidad}
               onChange={(e) => onChange("modalidad", e.target.value)}
-              placeholder="Online"
-            />
+            >
+              <option value="">Seleccionar modalidad</option>
+              {modalidades.map((modalidad) => (
+                <option key={modalidad} value={modalidad}>
+                  {modalidad}
+                </option>
+              ))}
+            </select>
           </FormGroup>
         </FormRow>
 

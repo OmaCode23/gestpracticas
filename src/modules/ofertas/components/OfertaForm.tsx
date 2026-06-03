@@ -14,7 +14,7 @@ import { OFERTA_ESTADOS } from "../types/schema";
 
 export type OfertaFormState = {
   titulo: string;
-  empresa: string;
+  empresaId: string;
   cicloFormativoId: string;
   plazas: string;
   requisitos: string;
@@ -29,10 +29,16 @@ type CicloFormativoOption = {
   codigo: string | null;
 };
 
+type EmpresaOption = {
+  id: number;
+  nombre: string;
+};
+
 type OfertaFormProps = {
   form: OfertaFormState;
   saving: boolean;
   editingId: number | null;
+  empresas: EmpresaOption[];
   ciclosFormativos: CicloFormativoOption[];
   onChange: (key: keyof OfertaFormState, value: string) => void;
   onClear: () => void;
@@ -49,6 +55,7 @@ export default function OfertaForm({
   form,
   saving,
   editingId,
+  empresas,
   ciclosFormativos,
   onChange,
   onClear,
@@ -76,13 +83,18 @@ export default function OfertaForm({
           </FormGroup>
 
           <FormGroup label="Empresa *">
-            <input
+            <select
               className={INPUT_CLS}
-              maxLength={120}
-              value={form.empresa}
-              onChange={(e) => onChange("empresa", e.target.value)}
-              placeholder="Empresa colaboradora"
-            />
+              value={form.empresaId}
+              onChange={(e) => onChange("empresaId", e.target.value)}
+            >
+              <option value="">Seleccionar empresa</option>
+              {empresas.map((empresa) => (
+                <option key={empresa.id} value={empresa.id}>
+                  {empresa.nombre}
+                </option>
+              ))}
+            </select>
           </FormGroup>
         </FormRow>
 

@@ -9,6 +9,7 @@ export type OfertaPracticaFilters = z.infer<typeof ofertaPracticaFilterSchema>;
 export type OfertaPractica = {
   id: number;
   titulo: string;
+  empresaId: number | null;
   empresa: string;
   cicloFormativoId: number | null;
   cicloFormativo: string | null;

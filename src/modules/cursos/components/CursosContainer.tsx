@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, SectionLabel } from "@/components/ui";
 import { DEFAULT_RESULTADOS_POR_PAGINA } from "@/shared/catalogs/academico";
+import { CURSO_MODALIDADES, CURSO_NIVELES } from "@/shared/catalogs/cursos";
 import type { ApiResponse } from "@/shared/types/api";
 import { cursoExternoSchema } from "../types/schema";
 import type { CursoExterno, PaginatedCursosExternos } from "../types";
@@ -12,14 +13,33 @@ import CursosTable from "./CursosTable";
 
 const EMPTY_FORM: CursoFormState = {
   titulo: "",
-  proveedor: "",
-  area: "",
-  nivel: "",
+  proveedorId: "",
+  areaId: "",
+  nivel: "Principiante",
   modalidad: "Online",
   duracion: "",
   descripcion: "",
   enlace: "",
   activo: true,
+};
+
+type CursoCatalogoOption = {
+  id: number;
+  nombre: string;
+};
+
+type CursoCatalogos = {
+  proveedores: CursoCatalogoOption[];
+  areas: CursoCatalogoOption[];
+  niveles: string[];
+  modalidades: string[];
+};
+
+const EMPTY_CATALOGOS: CursoCatalogos = {
+  proveedores: [],
+  areas: [],
+  niveles: [...CURSO_NIVELES],
+  modalidades: [...CURSO_MODALIDADES],
 };
 
 export default function CursosContainer({
@@ -41,6 +61,9 @@ export default function CursosContainer({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [catalogos, setCatalogos] = useState<CursoCatalogos>(EMPTY_CATALOGOS);
+  const [formProveedores, setFormProveedores] = useState<CursoCatalogoOption[]>([]);
+  const [formAreas, setFormAreas] = useState<CursoCatalogoOption[]>([]);
 
   const handleFormChange = (key: keyof CursoFormState, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -57,6 +80,8 @@ export default function CursosContainer({
     }
 
     setIsFormOpen(false);
+    setFormProveedores(catalogos.proveedores);
+    setFormAreas(catalogos.areas);
   };
 
   async function cargarCursos() {
@@ -86,9 +111,29 @@ export default function CursosContainer({
     }
   }
 
+  async function cargarCatalogos() {
+    try {
+      const res = await fetch("/api/catalogos/cursos", { cache: "no-store" });
+      const json: ApiResponse<CursoCatalogos> = await res.json();
+
+      if (!json.ok) throw new Error(json.error);
+
+      setCatalogos(json.data);
+      setFormProveedores(json.data.proveedores);
+      setFormAreas(json.data.areas);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron cargar los catalogos de cursos.");
+    }
+  }
+
   useEffect(() => {
     void cargarCursos();
   }, [activo, search, page, resultadosPorPagina]);
+
+  useEffect(() => {
+    void cargarCatalogos();
+  }, []);
 
   useEffect(() => {
     if (!notification) return;
@@ -98,7 +143,11 @@ export default function CursosContainer({
   }, [notification]);
 
   const handleGuardar = async () => {
-    const parsed = cursoExternoSchema.safeParse(form);
+    const parsed = cursoExternoSchema.safeParse({
+      ...form,
+      proveedorId: form.proveedorId || undefined,
+      areaId: form.areaId || undefined,
+    });
 
     if (!parsed.success) {
       alert(parsed.error.errors[0].message);
@@ -139,10 +188,22 @@ export default function CursosContainer({
   };
 
   const handleEditar = (curso: CursoExterno) => {
+    const proveedorActualInactivo =
+      curso.proveedorId &&
+      !catalogos.proveedores.some((proveedor) => proveedor.id === curso.proveedorId)
+        ? [{ id: curso.proveedorId, nombre: `${curso.proveedor} (inactivo)` }]
+        : [];
+    const areaActualInactiva =
+      curso.areaId && !catalogos.areas.some((area) => area.id === curso.areaId)
+        ? [{ id: curso.areaId, nombre: `${curso.area} (inactiva)` }]
+        : [];
+
+    setFormProveedores([...catalogos.proveedores, ...proveedorActualInactivo]);
+    setFormAreas([...catalogos.areas, ...areaActualInactiva]);
     setForm({
       titulo: curso.titulo,
-      proveedor: curso.proveedor,
-      area: curso.area,
+      proveedorId: curso.proveedorId ? String(curso.proveedorId) : "",
+      areaId: curso.areaId ? String(curso.areaId) : "",
       nivel: curso.nivel,
       modalidad: curso.modalidad,
       duracion: curso.duracion ?? "",
@@ -179,6 +240,8 @@ export default function CursosContainer({
   const handleLimpiar = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setFormProveedores(catalogos.proveedores);
+    setFormAreas(catalogos.areas);
   };
 
   return (
@@ -210,7 +273,7 @@ export default function CursosContainer({
         </div>
       )}
 
-      <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
         <Button
           ref={toggleButtonRef}
           variant={isFormOpen ? "secondary" : "primary"}
@@ -221,6 +284,8 @@ export default function CursosContainer({
               return;
             }
 
+            setFormProveedores(catalogos.proveedores);
+            setFormAreas(catalogos.areas);
             setIsFormOpen(true);
           }}
         >
@@ -241,6 +306,10 @@ export default function CursosContainer({
           form={form}
           saving={saving}
           editingId={editingId}
+          proveedores={formProveedores}
+          areas={formAreas}
+          niveles={catalogos.niveles}
+          modalidades={catalogos.modalidades}
           onChange={handleFormChange}
           onClear={handleLimpiar}
           onSave={handleGuardar}

@@ -8,7 +8,9 @@ export type CursoExternoFilters = z.infer<typeof cursoExternoFilterSchema>;
 export type CursoExterno = {
   id: number;
   titulo: string;
+  proveedorId: number | null;
   proveedor: string;
+  areaId: number | null;
   area: string;
   nivel: string;
   modalidad: string;

@@ -27,7 +27,7 @@ const CURSOS_EXTERNOS_BASE: Prisma.CursoExternoCreateManyInput[] = [
     proveedor: "Cisco",
     titulo: "Redes y conectividad",
     area: "Redes",
-    nivel: "Inicial",
+    nivel: "Principiante",
     modalidad: "Online",
     duracion: "Autoguiado",
     descripcion: "Curso introductorio para reforzar conceptos de redes y conectividad.",
@@ -36,7 +36,7 @@ const CURSOS_EXTERNOS_BASE: Prisma.CursoExternoCreateManyInput[] = [
     proveedor: "Amazon Web Services",
     titulo: "Fundamentos de cloud",
     area: "Cloud",
-    nivel: "Inicial",
+    nivel: "Principiante",
     modalidad: "Online",
     duracion: "Autoguiado",
     descripcion: "Formacion base sobre servicios cloud y conceptos de despliegue.",
@@ -52,6 +52,12 @@ const CURSOS_EXTERNOS_BASE: Prisma.CursoExternoCreateManyInput[] = [
   },
 ];
 
+const CURSO_PROVEEDORES_BASE = Array.from(
+  new Set(CURSOS_EXTERNOS_BASE.map((curso) => curso.proveedor))
+);
+
+const CURSO_AREAS_BASE = Array.from(new Set(CURSOS_EXTERNOS_BASE.map((curso) => curso.area)));
+
 async function main() {
   await prisma.sector.createMany({
     data: SECTORES.map((nombre) => ({ nombre })),
@@ -65,6 +71,16 @@ async function main() {
 
   await prisma.cicloFormativo.createMany({
     data: CICLOS_FORMATIVOS_BASE,
+    skipDuplicates: true,
+  });
+
+  await prisma.cursoProveedor.createMany({
+    data: CURSO_PROVEEDORES_BASE.map((nombre) => ({ nombre })),
+    skipDuplicates: true,
+  });
+
+  await prisma.cursoArea.createMany({
+    data: CURSO_AREAS_BASE.map((nombre) => ({ nombre })),
     skipDuplicates: true,
   });
 
@@ -83,6 +99,32 @@ async function main() {
     data: CURSOS_EXTERNOS_BASE,
     skipDuplicates: true,
   });
+
+  const [proveedores, areas] = await Promise.all([
+    prisma.cursoProveedor.findMany({
+      where: { nombre: { in: CURSO_PROVEEDORES_BASE } },
+      select: { id: true, nombre: true },
+    }),
+    prisma.cursoArea.findMany({
+      where: { nombre: { in: CURSO_AREAS_BASE } },
+      select: { id: true, nombre: true },
+    }),
+  ]);
+  const proveedorIds = new Map(proveedores.map((item) => [item.nombre, item.id]));
+  const areaIds = new Map(areas.map((item) => [item.nombre, item.id]));
+
+  for (const curso of CURSOS_EXTERNOS_BASE) {
+    await prisma.cursoExterno.updateMany({
+      where: {
+        titulo: curso.titulo,
+        proveedor: curso.proveedor,
+      },
+      data: {
+        proveedorId: proveedorIds.get(curso.proveedor),
+        areaId: areaIds.get(curso.area),
+      },
+    });
+  }
 
   console.log("Catalogos base sembrados correctamente.");
 }
