@@ -101,7 +101,7 @@ model Alumno {
   nif               String?          @unique
   nuss              String?          @unique
   telefono          String
-  email             String
+  email             String           @unique
   cursoCiclo        Int              @default(1)
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
@@ -193,7 +193,7 @@ model Profesor {
   nif               String?         @unique
   especialidad      String?
   telefono          String?
-  email             String?
+  email             String          @unique
   cicloFormativoId  Int?
   cicloFormativoRef CicloFormativo? @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
   activo            Boolean         @default(true)

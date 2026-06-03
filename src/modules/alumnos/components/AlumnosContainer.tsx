@@ -53,6 +53,7 @@ export default function AlumnosContainer({
   const formatCursoCiclo = (value: number) => `${value}.\u00BA`;
 
   const [form, setForm] = useState(EMPTY);
+  const [originalEditingEmail, setOriginalEditingEmail] = useState<string | null>(null);
   const [alumnos, setAlumnos] = useState<Alumno[]>([]);
   const [total, setTotal] = useState(0);
   const [formCiclos, setFormCiclos] = useState(ciclosFormativos);
@@ -87,6 +88,7 @@ export default function AlumnosContainer({
 
   const openNewForm = () => {
     setEditingId(null);
+    setOriginalEditingEmail(null);
     setForm(EMPTY);
     setFormCiclos(ciclosFormativos);
     setCvState(EMPTY_CV);
@@ -96,6 +98,7 @@ export default function AlumnosContainer({
 
   const collapseForm = () => {
     setEditingId(null);
+    setOriginalEditingEmail(null);
     setForm(EMPTY);
     setFormCiclos(ciclosFormativos);
     setCvState(EMPTY_CV);
@@ -320,6 +323,7 @@ export default function AlumnosContainer({
       }
 
       setForm(EMPTY);
+      setOriginalEditingEmail(null);
       setCvState(EMPTY_CV);
       setIsFormExpanded(false);
       await reloadToFirstPage();
@@ -384,6 +388,7 @@ export default function AlumnosContainer({
       }
 
       setEditingId(null);
+      setOriginalEditingEmail(null);
       setForm(EMPTY);
       setCvState(EMPTY_CV);
       setIsFormExpanded(false);
@@ -439,6 +444,7 @@ export default function AlumnosContainer({
         : [];
 
     setEditingId(alumno.id);
+    setOriginalEditingEmail(alumno.email ?? null);
     setIsFormExpanded(true);
     setFormCiclos([...ciclosFormativos, ...cicloActualInactivo]);
     setForm({
@@ -601,6 +607,7 @@ export default function AlumnosContainer({
             form={form}
             ciclos={formCiclos}
             cursos={cursos}
+            originalEmail={originalEditingEmail}
             onChange={setFormField}
             onGuardar={handleGuardar}
             onActualizar={handleActualizar}

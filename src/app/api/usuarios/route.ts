@@ -1,6 +1,5 @@
 import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { isLocalAuthMode } from "@/modules/auth/config";
 import { createManagedUser, listManagedUsers } from "@/modules/usuarios/actions";
 import { managedUserCreateSchema } from "@/modules/usuarios/schemas";
 import { requireApiAdminSession } from "@/modules/auth/session";
@@ -53,13 +52,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (isLocalAuthMode() && !parsed.data.password) {
-      return NextResponse.json<ApiResponse<never>>(
-        { ok: false, error: "En modo local debes indicar una contrasena temporal." },
-        { status: 400 }
-      );
-    }
-
     const user = await createManagedUser(parsed.data);
 
     return NextResponse.json<ApiResponse<{ id: number }>>(
@@ -70,6 +62,13 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof Error && error.message === "MANAGED_USER_CREATE_ADMIN_ONLY") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "Desde esta pantalla solo se pueden crear cuentas ADMIN." },
+        { status: 400 }
+      );
+    }
+
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"

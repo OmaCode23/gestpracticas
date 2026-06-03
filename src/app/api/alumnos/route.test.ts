@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AcademicEmailConflictError, EmailDomainNotAllowedError } from "@/shared/identity/academic-email";
 import { GET, POST } from "./route";
 
 const {
@@ -300,6 +301,31 @@ describe("POST /api/alumnos", () => {
     });
   });
 
+  it("devuelve 400 si el dominio del email no esta permitido para alumnos", async () => {
+    createAlumnoMock.mockRejectedValue(new EmailDomainNotAllowedError("ALUMNO"));
+
+    const response = await POST({
+      json: vi.fn().mockResolvedValue({
+        nombre: "Ana",
+        nia: "A-1",
+        nif: "",
+        nuss: "",
+        telefono: "612345678",
+        email: "ana@gmail.com",
+        cicloFormativoId: 4,
+        cursoCiclo: 1,
+        curso: "2025-2026",
+      }),
+    } as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      error: "El dominio del email no está permitido para alumnos.",
+    });
+  });
+
   it("devuelve 400 si el ciclo formativo no es valido", async () => {
     createAlumnoMock.mockRejectedValue(new Error("CICLO_FORMATIVO_INVALIDO"));
 
@@ -376,6 +402,57 @@ describe("POST /api/alumnos", () => {
     expect(nussBody).toEqual({
       ok: false,
       error: "Ya existe un alumno con ese NUSS",
+    });
+  });
+
+  it("devuelve 409 cuando el email ya existe o pertenece a un profesor", async () => {
+    createAlumnoMock.mockRejectedValueOnce(
+      new AcademicEmailConflictError("ALUMNO", "same-entity")
+    );
+
+    const existingAlumnoResponse = await POST({
+      json: vi.fn().mockResolvedValue({
+        nombre: "Ana",
+        nia: "A-1",
+        nif: "",
+        nuss: "",
+        telefono: "612345678",
+        email: "ana@mail.com",
+        cicloFormativoId: 4,
+        cursoCiclo: 1,
+        curso: "2025-2026",
+      }),
+    } as any);
+    const existingAlumnoBody = await existingAlumnoResponse.json();
+
+    createAlumnoMock.mockRejectedValueOnce(
+      new AcademicEmailConflictError("PROFESOR", "other-entity")
+    );
+
+    const profesorEmailResponse = await POST({
+      json: vi.fn().mockResolvedValue({
+        nombre: "Ana",
+        nia: "A-2",
+        nif: "",
+        nuss: "",
+        telefono: "612345678",
+        email: "ana@mail.com",
+        cicloFormativoId: 4,
+        cursoCiclo: 1,
+        curso: "2025-2026",
+      }),
+    } as any);
+    const profesorEmailBody = await profesorEmailResponse.json();
+
+    expect(existingAlumnoResponse.status).toBe(409);
+    expect(existingAlumnoBody).toEqual({
+      ok: false,
+      error: "Ya existe un alumno con ese email.",
+    });
+    expect(profesorEmailResponse.status).toBe(409);
+    expect(profesorEmailBody).toEqual({
+      ok: false,
+      error: "Ese email ya esta asignado a un profesor.",
     });
   });
 

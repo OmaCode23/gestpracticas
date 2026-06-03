@@ -18,6 +18,8 @@ import {
   DEFAULT_NUMERO_CURSOS_VISIBLES,
   DEFAULT_RESULTADOS_POR_PAGINA,
 } from "@/shared/catalogs/academico";
+import { EMAIL_DOMAIN_DEFAULTS } from "@/modules/settings/constants";
+import type { EmailDomainsConfig } from "@/modules/settings/actions/queries";
 import type { ApiResponse } from "@/shared/types/api";
 import SuccessToast from "@/components/ui/SuccessToast";
 
@@ -115,10 +117,12 @@ export default function ConfiguracionPanel({
   sectores: initialSectores,
   ciclosFormativos: initialCiclosFormativos,
   configuracionAcademica: initialConfiguracionAcademica,
+  emailDomains: initialEmailDomains,
 }: {
   sectores: SectorItem[];
   ciclosFormativos: CicloFormativoItem[];
   configuracionAcademica: ConfiguracionAcademica;
+  emailDomains: EmailDomainsConfig;
 }) {
   const router = useRouter();
   const [sectores, setSectores] = useState<SectorItem[]>(initialSectores);
@@ -142,6 +146,15 @@ export default function ConfiguracionPanel({
   const [restoringSectores, setRestoringSectores] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [savingAcademica, setSavingAcademica] = useState(false);
+  const [extraDominiosAlumnos, setExtraDominiosAlumnos] = useState<string[]>(
+    initialEmailDomains.extraDominiosAlumnos
+  );
+  const [extraDominiosProfesores, setExtraDominiosProfesores] = useState<string[]>(
+    initialEmailDomains.extraDominiosProfesores
+  );
+  const [newDomainAlumnos, setNewDomainAlumnos] = useState("");
+  const [newDomainProfesores, setNewDomainProfesores] = useState("");
+  const [savingDominios, setSavingDominios] = useState<"ALUMNO" | "PROFESOR" | null>(null);
   const [notification, setNotification] = useState("");
 
   useEffect(() => {
@@ -155,6 +168,11 @@ export default function ConfiguracionPanel({
   useEffect(() => {
     setConfiguracionAcademica(initialConfiguracionAcademica);
   }, [initialConfiguracionAcademica]);
+
+  useEffect(() => {
+    setExtraDominiosAlumnos(initialEmailDomains.extraDominiosAlumnos);
+    setExtraDominiosProfesores(initialEmailDomains.extraDominiosProfesores);
+  }, [initialEmailDomains]);
 
   const sectoresActivos = sectores.filter((item) => item.activo).length;
   const activos = ciclosFormativos.filter((item) => item.activo).length;
@@ -668,6 +686,70 @@ export default function ConfiguracionPanel({
     } finally {
       setSavingAcademica(false);
     }
+  }
+
+  const DOMAIN_REGEX = /^(?!-)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+
+  async function saveEmailDomains(entity: "ALUMNO" | "PROFESOR", domains: string[]) {
+    setSavingDominios(entity);
+    try {
+      const res = await fetch("/api/settings/email-domains", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entity, domains }),
+      });
+      const json: ApiResponse<EmailDomainsConfig> = await res.json();
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+      if (entity === "ALUMNO") {
+        setExtraDominiosAlumnos(json.data.extraDominiosAlumnos);
+      } else {
+        setExtraDominiosProfesores(json.data.extraDominiosProfesores);
+      }
+      setNotification("Dominios de email guardados correctamente.");
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron guardar los dominios de email.");
+    } finally {
+      setSavingDominios(null);
+    }
+  }
+
+  function handleAddDomain(entity: "ALUMNO" | "PROFESOR") {
+    const raw = entity === "ALUMNO" ? newDomainAlumnos : newDomainProfesores;
+    const domain = raw.trim().toLowerCase().replace(/^@/, "");
+    if (!domain) return;
+    if (!DOMAIN_REGEX.test(domain)) {
+      alert("Formato de dominio no válido. Ejemplo: ejemplo.gva.es");
+      return;
+    }
+    const current = entity === "ALUMNO" ? extraDominiosAlumnos : extraDominiosProfesores;
+    if (current.includes(domain)) {
+      alert("Este dominio ya está en la lista.");
+      return;
+    }
+    const updated = [...current, domain];
+    if (entity === "ALUMNO") {
+      setExtraDominiosAlumnos(updated);
+      setNewDomainAlumnos("");
+    } else {
+      setExtraDominiosProfesores(updated);
+      setNewDomainProfesores("");
+    }
+    void saveEmailDomains(entity, updated);
+  }
+
+  function handleRemoveDomain(entity: "ALUMNO" | "PROFESOR", domain: string) {
+    const current = entity === "ALUMNO" ? extraDominiosAlumnos : extraDominiosProfesores;
+    const updated = current.filter((d) => d !== domain);
+    if (entity === "ALUMNO") {
+      setExtraDominiosAlumnos(updated);
+    } else {
+      setExtraDominiosProfesores(updated);
+    }
+    void saveEmailDomains(entity, updated);
   }
 
   return (
@@ -1284,6 +1366,99 @@ export default function ConfiguracionPanel({
             >
               {savingAcademica ? "Guardando..." : "Guardar configuración"}
             </Button>
+          </div>
+        </Card>
+      </div>
+
+      <div className="mt-8">
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div className="flex w-full flex-wrap items-center gap-3">
+              <CardTitle icon="@" iconVariant="green">
+                Dominios de email permitidos
+              </CardTitle>
+            </div>
+          </CardHeader>
+
+          <div className="divide-y divide-border">
+            {(
+              [
+                {
+                  entity: "ALUMNO" as const,
+                  label: "Alumnos",
+                  defaultDomains: EMAIL_DOMAIN_DEFAULTS.alumnos as readonly string[],
+                  extraDomains: extraDominiosAlumnos,
+                  newDomain: newDomainAlumnos,
+                  setNewDomain: setNewDomainAlumnos,
+                },
+                {
+                  entity: "PROFESOR" as const,
+                  label: "Profesores",
+                  defaultDomains: EMAIL_DOMAIN_DEFAULTS.profesores as readonly string[],
+                  extraDomains: extraDominiosProfesores,
+                  newDomain: newDomainProfesores,
+                  setNewDomain: setNewDomainProfesores,
+                },
+              ]
+            ).map(({ entity, label, defaultDomains, extraDomains, newDomain, setNewDomain }) => (
+              <div key={entity} className="p-6">
+                <p className="mb-3 text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
+                  {label}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {defaultDomains.map((domain) => (
+                    <span
+                      key={domain}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1 text-[0.8rem] font-medium text-text-mid"
+                    >
+                      @{domain}
+                      <span className="rounded-full bg-border px-1.5 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-text-light">
+                        Base
+                      </span>
+                    </span>
+                  ))}
+                  {extraDomains.map((domain) => (
+                    <span
+                      key={domain}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-blue-light bg-blue-50 px-3 py-1 text-[0.8rem] font-medium text-navy"
+                    >
+                      @{domain}
+                      <button
+                        type="button"
+                        aria-label={`Eliminar dominio ${domain}`}
+                        disabled={savingDominios === entity}
+                        onClick={() => handleRemoveDomain(entity, domain)}
+                        className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[0.7rem] text-text-mid transition-colors hover:bg-[#e5d7d0] hover:text-navy disabled:pointer-events-none disabled:opacity-50"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-4 flex items-center gap-2">
+                  <input
+                    className={[INPUT_CLS, "max-w-[280px]"].join(" ")}
+                    placeholder="nuevo-dominio.es"
+                    value={newDomain}
+                    onChange={(e) =>
+                      setNewDomain(e.target.value.toLowerCase().replace(/\s/g, ""))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAddDomain(entity);
+                    }}
+                    disabled={savingDominios === entity}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleAddDomain(entity)}
+                    disabled={savingDominios === entity || !newDomain.trim()}
+                  >
+                    {savingDominios === entity ? "Guardando..." : "Añadir dominio"}
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       </div>

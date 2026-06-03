@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AcademicEmailConflictError, EmailDomainNotAllowedError } from "@/shared/identity/academic-email";
 import { DELETE, GET, PATCH } from "./route";
 
 const {
@@ -102,6 +103,25 @@ describe("PATCH /api/alumnos/[id]", () => {
     });
   });
 
+  it("devuelve 400 si el dominio del email no esta permitido al actualizar", async () => {
+    getAlumnoByIdMock.mockResolvedValue({ id: 3 });
+    updateAlumnoMock.mockRejectedValue(new EmailDomainNotAllowedError("ALUMNO"));
+
+    const response = await PATCH(
+      {
+        json: vi.fn().mockResolvedValue({ email: "ana@gmail.com" }),
+      } as any,
+      { params: { id: "3" } }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({
+      ok: false,
+      error: "El dominio del email no está permitido para alumnos.",
+    });
+  });
+
   it("devuelve 400 cuando el ciclo formativo no es valido", async () => {
     getAlumnoByIdMock.mockResolvedValue({ id: 3 });
     updateAlumnoMock.mockRejectedValue(new Error("CICLO_FORMATIVO_INVALIDO"));
@@ -140,6 +160,48 @@ describe("PATCH /api/alumnos/[id]", () => {
     expect(body).toEqual({
       ok: false,
       error: "Ya existe un alumno con ese NIA",
+    });
+  });
+
+  it("devuelve 409 si el email ya pertenece a un profesor", async () => {
+    getAlumnoByIdMock.mockResolvedValue({ id: 3 });
+    updateAlumnoMock.mockRejectedValue(
+      new AcademicEmailConflictError("PROFESOR", "other-entity")
+    );
+
+    const response = await PATCH(
+      {
+        json: vi.fn().mockResolvedValue({ email: "ana@mail.com" }),
+      } as any,
+      { params: { id: "3" } }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toEqual({
+      ok: false,
+      error: "Ese email ya esta asignado a un profesor.",
+    });
+  });
+
+  it("devuelve 409 si la sincronizacion del usuario falla con un error rehidratado", async () => {
+    getAlumnoByIdMock.mockResolvedValue({ id: 3 });
+    updateAlumnoMock.mockRejectedValue({
+      code: "ACADEMIC_USER_EMAIL_TAKEN",
+    });
+
+    const response = await PATCH(
+      {
+        json: vi.fn().mockResolvedValue({ email: "ana@mail.com" }),
+      } as any,
+      { params: { id: "3" } }
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toEqual({
+      ok: false,
+      error: "No se pudo sincronizar la cuenta de acceso con ese email.",
     });
   });
 

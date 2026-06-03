@@ -8,7 +8,7 @@ function normalizeProfesor(profesor: {
   nif: string | null;
   especialidad: string | null;
   telefono: string | null;
-  email: string | null;
+  email: string;
   cicloFormativoId: number | null;
   activo: boolean;
   createdAt: Date;

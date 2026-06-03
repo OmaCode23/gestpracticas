@@ -287,6 +287,14 @@ node server.js
 5. Si el cambio afecta a la estrategia de catálogos maestros, revisar que la aplicación siga leyendo desde BD y no desde catálogos estáticos.
 6. Si el cambio toca archivos comunes, documentarlo en `cambios-comunes.md`.
 
+## Warnings observados
+
+- En algunos `npm run build` aparece el warning de webpack `Caching failed for pack: Error: Unable to snapshot resolve dependencies`.
+  Posible causa: limitacion o comportamiento ambiental del cache de filesystem de webpack/Next.js en este entorno Windows; tras limpiar `.next` y regenerar el build puede seguir apareciendo, pero no impide compilar ni genera por si mismo un error funcional del proyecto.
+
+- En builds de produccion puede aparecer el warning de Next.js indicando que falta el paquete opcional `sharp` para `Image Optimization`.
+  Posible causa: `sharp` no esta instalado como dependencia, por lo que Next.js cae en una ruta menos optimizada para tratamiento de imagenes; es un warning de rendimiento/optimizacion, no un bloqueo de compilacion.
+
 ## Codificación de caracteres
 
 En archivos de este proyecto se han visto problemas frecuentes de codificación de caracteres especialmente visibles en los acentos. La causa mas probable es una mezcla de codificaciones al editar o guardar archivos; posiblemente a pesar de que se trabaja con `UTF-8`, se produce alguna edicion posterior desde una herramienta o terminal que interpreta o re-guarda en `ANSI` / `Windows-1252`.

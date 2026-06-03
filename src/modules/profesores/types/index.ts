@@ -11,7 +11,7 @@ export type Profesor = {
   nif: string | null;
   especialidad: string | null;
   telefono: string | null;
-  email: string | null;
+  email: string;
   cicloFormativo: string | null;
   cicloFormativoCodigo: string | null;
   cicloFormativoId: number | null;

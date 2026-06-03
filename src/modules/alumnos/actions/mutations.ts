@@ -3,6 +3,11 @@
  */
 
 import { prisma } from "@/database/prisma";
+import {
+  assertAcademicEmailAvailable,
+  assertAcademicEmailDomain,
+} from "@/shared/identity/academic-email";
+import { syncAcademicUserIdentity, syncAcademicUserRemoval } from "@/shared/identity/academic-user";
 import type { AlumnoCrudInput, AlumnoCrudUpdateInput } from "../types";
 import { deleteAlumnoCvLo } from "./cv";
 
@@ -12,17 +17,8 @@ function normalizeOptionalString(value?: string) {
   return trimmed === "" ? null : trimmed;
 }
 
-function normalizeOptionalEmail(value?: string) {
-  const normalized = normalizeOptionalString(value);
-  return typeof normalized === "string" ? normalized.toLowerCase() : normalized;
-}
-
 function normalizeRequiredString(value: string) {
   return value.trim();
-}
-
-function normalizeRequiredEmail(value: string) {
-  return normalizeRequiredString(value).toLowerCase();
 }
 
 async function getCicloFormativoOrThrow(cicloFormativoId: number) {
@@ -72,18 +68,34 @@ async function getCicloFormativoForUpdateOrThrow(id: number, cicloFormativoId: n
 export async function createAlumno(data: AlumnoCrudInput) {
   const cicloFormativo = await getCicloFormativoOrThrow(data.cicloFormativoId);
   const cleanedNif = normalizeOptionalString(data.nif?.toUpperCase());
-  return prisma.alumno.create({
-    data: {
-      nombre: data.nombre.trim(),
-      nia: data.nia.trim(),
-      nif: cleanedNif,
-      nuss: normalizeOptionalString(data.nuss),
-      telefono: normalizeRequiredString(data.telefono),
-      email: normalizeRequiredEmail(data.email),
-      cicloFormativoId: cicloFormativo.id,
-      cursoCiclo: data.cursoCiclo,
-      curso: data.curso.trim(),
-    },
+  await assertAcademicEmailDomain(data.email, "ALUMNO");
+  const email = await assertAcademicEmailAvailable({
+    email: data.email,
+    entity: "ALUMNO",
+  });
+
+  return prisma.$transaction(async (tx) => {
+    const alumno = await tx.alumno.create({
+      data: {
+        nombre: data.nombre.trim(),
+        nia: data.nia.trim(),
+        nif: cleanedNif,
+        nuss: normalizeOptionalString(data.nuss),
+        telefono: normalizeRequiredString(data.telefono),
+        email,
+        cicloFormativoId: cicloFormativo.id,
+        cursoCiclo: data.cursoCiclo,
+        curso: data.curso.trim(),
+      },
+    });
+
+    await syncAcademicUserIdentity(tx, {
+      entity: "ALUMNO",
+      nombre: alumno.nombre,
+      email: alumno.email,
+    });
+
+    return alumno;
   });
 }
 
@@ -92,26 +104,53 @@ export async function updateAlumno(id: number, data: AlumnoCrudUpdateInput) {
     data.cicloFormativoId !== undefined
       ? await getCicloFormativoForUpdateOrThrow(id, data.cicloFormativoId)
       : null;
+  if (data.email !== undefined) {
+    await assertAcademicEmailDomain(data.email, "ALUMNO");
+  }
+  const email =
+    data.email !== undefined
+      ? await assertAcademicEmailAvailable({
+          email: data.email,
+          entity: "ALUMNO",
+          excludeId: id,
+        })
+      : undefined;
 
-  return prisma.alumno.update({
-    where: { id },
-    data: {
-      ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
-      ...(data.nia !== undefined ? { nia: data.nia.trim() } : {}),
-      ...(data.nif !== undefined ? { nif: normalizeOptionalString(data.nif?.toUpperCase()) } : {}),
-      ...(data.nuss !== undefined ? { nuss: normalizeOptionalString(data.nuss) } : {}),
-      ...(data.telefono !== undefined
-        ? { telefono: normalizeRequiredString(data.telefono) }
-        : {}),
-      ...(data.email !== undefined ? { email: normalizeRequiredEmail(data.email) } : {}),
-      ...(cicloFormativo
-        ? {
-            cicloFormativoId: cicloFormativo.id,
-          }
-        : {}),
-      ...(data.cursoCiclo !== undefined ? { cursoCiclo: data.cursoCiclo } : {}),
-      ...(data.curso !== undefined ? { curso: data.curso.trim() } : {}),
-    },
+  return prisma.$transaction(async (tx) => {
+    const previousAlumno = await tx.alumno.findUnique({
+      where: { id },
+      select: { email: true },
+    });
+
+    const alumno = await tx.alumno.update({
+      where: { id },
+      data: {
+        ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
+        ...(data.nia !== undefined ? { nia: data.nia.trim() } : {}),
+        ...(data.nif !== undefined ? { nif: normalizeOptionalString(data.nif?.toUpperCase()) } : {}),
+        ...(data.nuss !== undefined ? { nuss: normalizeOptionalString(data.nuss) } : {}),
+        ...(data.telefono !== undefined
+          ? { telefono: normalizeRequiredString(data.telefono) }
+          : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(cicloFormativo
+          ? {
+              cicloFormativoId: cicloFormativo.id,
+            }
+          : {}),
+        ...(data.cursoCiclo !== undefined ? { cursoCiclo: data.cursoCiclo } : {}),
+        ...(data.curso !== undefined ? { curso: data.curso.trim() } : {}),
+      },
+    });
+
+    await syncAcademicUserIdentity(tx, {
+      entity: "ALUMNO",
+      nombre: alumno.nombre,
+      email: alumno.email,
+      previousEmail: previousAlumno?.email,
+    });
+
+    return alumno;
   });
 }
 
@@ -119,11 +158,18 @@ export async function deleteAlumno(id: number) {
   return prisma.$transaction(async (tx) => {
     const alumno = await tx.alumno.findUnique({
       where: { id },
-      select: { cvOid: true },
+      select: { cvOid: true, email: true },
     });
 
     if (alumno?.cvOid) {
       await deleteAlumnoCvLo(tx, alumno.cvOid);
+    }
+
+    if (alumno?.email) {
+      await syncAcademicUserRemoval(tx, {
+        entity: "ALUMNO",
+        email: alumno.email,
+      });
     }
 
     return tx.alumno.delete({ where: { id } });

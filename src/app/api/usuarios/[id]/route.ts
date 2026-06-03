@@ -45,7 +45,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       );
     }
 
-    await updateManagedUser(userId, parsed.data);
+    await updateManagedUser(userId, session.user.id, parsed.data);
 
     return NextResponse.json<ApiResponse<null>>({
       ok: true,
@@ -56,6 +56,46 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: "Usuario no encontrado." },
         { status: 404 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "MANAGED_USER_NAME_LOCKED") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "El nombre de cuentas ligadas a alumnos o profesores debe editarse desde su ficha funcional.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "MANAGED_USER_EMAIL_LOCKED") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "El email de cuentas ligadas a alumnos o profesores debe editarse desde su ficha funcional.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "MANAGED_USER_ROLE_LOCKED") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "Ese cambio de rol no esta permitido para esta cuenta.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "CANNOT_DEACTIVATE_SELF") {
+      return NextResponse.json<ApiResponse<never>>(
+        {
+          ok: false,
+          error: "No puedes desactivar tu propio usuario administrador.",
+        },
+        { status: 400 }
       );
     }
 
@@ -177,6 +217,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
       if (error.message === "LAST_ACTIVE_ADMIN") {
         return NextResponse.json<ApiResponse<never>>(
           { ok: false, error: "No puedes eliminar el ultimo administrador activo." },
+          { status: 400 }
+        );
+      }
+
+      if (error.message === "MANAGED_USER_DELETE_LOCKED") {
+        return NextResponse.json<ApiResponse<never>>(
+          {
+            ok: false,
+            error: "Solo se pueden eliminar administradores puros creados desde esta pantalla.",
+          },
           { status: 400 }
         );
       }

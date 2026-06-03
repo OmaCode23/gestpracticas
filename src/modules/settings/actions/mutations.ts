@@ -82,3 +82,19 @@ export async function saveConfiguracionAcademica(
 
   return input;
 }
+
+export async function saveExtraEmailDomains(
+  entity: "ALUMNO" | "PROFESOR",
+  domains: string[]
+) {
+  const key =
+    entity === "ALUMNO"
+      ? SETTING_KEYS.emailDominiosExtraAlumnos
+      : SETTING_KEYS.emailDominiosExtraProfesores;
+
+  await prisma.setting.upsert({
+    where: { clave: key },
+    update: { valor: JSON.stringify(domains) },
+    create: { clave: key, valor: JSON.stringify(domains) },
+  });
+}

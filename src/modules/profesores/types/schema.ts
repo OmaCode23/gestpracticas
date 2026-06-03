@@ -48,9 +48,8 @@ export const profesorSchema = z.object({
   email: z
     .string()
     .trim()
-    .regex(EMAIL_REGEX, "El correo electronico no es valido.")
-    .optional()
-    .or(z.literal("")),
+    .min(1, "El correo electronico es obligatorio.")
+    .regex(EMAIL_REGEX, "El correo electronico no es valido."),
   cicloFormativoId: optionalCicloFormativoId,
 });
 

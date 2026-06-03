@@ -1,7 +1,10 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { requireStaffSession } from "@/modules/auth/session";
 import { getCiclosFormativos, getSectores } from "@/modules/catalogos/actions/queries";
-import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
+import {
+  getConfiguracionAcademica,
+  getEmailDomainsConfig,
+} from "@/modules/settings/actions/queries";
 import ConfiguracionPanel from "@/modules/configuracion/components/ConfiguracionPanel";
 
 export const dynamic = "force-dynamic";
@@ -10,11 +13,13 @@ export default async function ConfiguracionPage() {
   noStore();
   await requireStaffSession("/configuracion");
 
-  const [sectores, ciclosFormativos, configuracionAcademica] = await Promise.all([
-    getSectores(),
-    getCiclosFormativos(),
-    getConfiguracionAcademica(),
-  ]);
+  const [sectores, ciclosFormativos, configuracionAcademica, emailDomains] =
+    await Promise.all([
+      getSectores(),
+      getCiclosFormativos(),
+      getConfiguracionAcademica(),
+      getEmailDomainsConfig(),
+    ]);
 
   return (
     <div>
@@ -31,6 +36,7 @@ export default async function ConfiguracionPage() {
         sectores={sectores}
         ciclosFormativos={ciclosFormativos}
         configuracionAcademica={configuracionAcademica}
+        emailDomains={emailDomains}
       />
     </div>
   );

@@ -25,11 +25,17 @@ type ManagedUser = {
   lastLoginAt: string | Date | null;
   mustChangePass: boolean;
   hasLocalAuth: boolean;
+  linkedEntityType: "ALUMNO" | "PROFESOR" | "NONE";
+  nameEditable: boolean;
+  roleEditable: boolean;
+  deleteAllowed: boolean;
+  allowedRoleTargets: Array<"ADMIN" | "PROFESOR" | "ALUMNO">;
 };
 
 type Props = {
   initialUsers: ManagedUser[];
   authMode: AuthMode;
+  currentUserId: number;
 };
 
 type ApiResponse<T> =
@@ -42,8 +48,6 @@ type CreateFormState = {
   nombre: string;
   email: string;
   rol: RoleValue;
-  password: string;
-  confirmPassword: string;
 };
 
 type ResetPasswordState = {
@@ -51,6 +55,8 @@ type ResetPasswordState = {
   nombre: string;
   password: string;
   confirmPassword: string;
+  activateAfterReset: boolean;
+  successMessage: string;
 };
 
 const ROLE_OPTIONS = [
@@ -62,10 +68,19 @@ const ROLE_OPTIONS = [
 const EMPTY_CREATE_FORM: CreateFormState = {
   nombre: "",
   email: "",
-  rol: "PROFESOR",
-  password: "",
-  confirmPassword: "",
+  rol: "ADMIN",
 };
+
+function formatLinkedEntityType(type: ManagedUser["linkedEntityType"]) {
+  switch (type) {
+    case "ALUMNO":
+      return "Alumno";
+    case "PROFESOR":
+      return "Profesor";
+    default:
+      return "Admin puro";
+  }
+}
 
 function PencilButton({
   title,
@@ -213,7 +228,7 @@ function formatRole(role: RoleValue) {
   return ROLE_OPTIONS.find((option) => option.value === role)?.label ?? role;
 }
 
-export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
+export default function UsuariosAdminPanel({ initialUsers, authMode, currentUserId }: Props) {
   const localMode = authMode === "local";
   const editingNameRef = useRef<HTMLDivElement | null>(null);
   const editingRoleRef = useRef<HTMLDivElement | null>(null);
@@ -390,23 +405,6 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
         return;
       }
 
-      if (localMode) {
-        if (!createForm.password || !createForm.confirmPassword) {
-          setCreateError("Debes completar todos los campos obligatorios.");
-          return;
-        }
-
-        if (createForm.password.length < 8) {
-          setCreateError("La contraseña debe tener al menos 8 caracteres.");
-          return;
-        }
-
-        if (createForm.password !== createForm.confirmPassword) {
-          setCreateError("La confirmación de la contraseña no coincide.");
-          return;
-        }
-      }
-
       const response = await fetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -414,8 +412,7 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
           nombre,
           email,
           rol: createForm.rol,
-          activo: true,
-          ...(localMode ? { password: createForm.password } : {}),
+          activo: localMode ? false : true,
         }),
       });
 
@@ -427,6 +424,20 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
 
       await refreshUsers();
       resetCreateForm();
+
+      if (localMode) {
+        setResetPasswordError(null);
+        setResetPasswordState({
+          userId: payload.data.id,
+          nombre,
+          password: "",
+          confirmPassword: "",
+          activateAfterReset: true,
+          successMessage: "Administrador creado y activado correctamente.",
+        });
+        return;
+      }
+
       setNotification("Usuario creado correctamente.");
     } catch (requestError) {
       console.error("[UsuariosAdminPanel:create]", requestError);
@@ -489,6 +500,30 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
   }
 
   async function handleToggleActivo(user: ManagedUser) {
+    if (user.activo) {
+      const confirmed = window.confirm(
+        `Se desactivará el usuario "${user.nombre}" y ya no podrá acceder a la aplicación.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    if (!user.activo && !user.hasLocalAuth && localMode) {
+      setTableError(null);
+      setResetPasswordError(null);
+      setResetPasswordState({
+        userId: user.id,
+        nombre: user.nombre,
+        password: "",
+        confirmPassword: "",
+        activateAfterReset: true,
+        successMessage: "Usuario activado correctamente.",
+      });
+      return;
+    }
+
     setTogglingId(user.id);
     setTableError(null);
 
@@ -548,13 +583,21 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
         return;
       }
 
+      if (resetPasswordState.activateAfterReset) {
+        await updateUser(resetPasswordState.userId, { activo: true });
+      }
+
       await refreshUsers();
       setResetPasswordState(null);
       setResetPasswordError(null);
-      setNotification("Contraseña restablecida correctamente.");
+      setNotification(resetPasswordState.successMessage);
     } catch (requestError) {
       console.error("[UsuariosAdminPanel:reset]", requestError);
-      setResetPasswordError("No se pudo restablecer la contraseña.");
+      setResetPasswordError(
+        requestError instanceof Error
+          ? requestError.message
+          : "No se pudo restablecer la contraseña."
+      );
     } finally {
       setPasswordResetId(null);
     }
@@ -630,6 +673,7 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
               <tr className="text-[0.75rem] uppercase tracking-[0.08em] text-text-light">
                 <th className="px-4 py-3 font-semibold">Nombre</th>
                 <th className="px-4 py-3 font-semibold">Email</th>
+                <th className="px-4 py-3 font-semibold">Origen</th>
                 <th className="px-4 py-3 font-semibold">Rol</th>
                 {localMode ? <th className="px-4 py-3 font-semibold">Contraseña</th> : null}
                 <th className="px-4 py-3 font-semibold">Estado</th>
@@ -640,7 +684,7 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
               {visibleUsers.length === 0 ? (
                 <tr className="border-t border-border bg-white">
                   <td
-                    colSpan={localMode ? 6 : 5}
+                    colSpan={localMode ? 7 : 6}
                     className="px-4 py-8 text-center text-sm text-text-mid"
                   >
                     No se encontraron usuarios.
@@ -697,7 +741,12 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                     ) : (
                       <div className="flex min-w-[12rem] items-start gap-2">
                         <PencilButton
-                          title="Editar nombre"
+                          title={
+                            user.nameEditable
+                              ? "Editar nombre"
+                              : "El nombre se gestiona desde la ficha funcional"
+                          }
+                          disabled={!user.nameEditable}
                           onClick={() => setEditingName({ id: user.id, value: user.nombre })}
                         />
                         <span className="font-medium text-navy">{user.nombre}</span>
@@ -712,6 +761,10 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                     ].join(" ")}
                   >
                     {user.email}
+                  </td>
+
+                  <td className="px-4 py-2.5 text-text-mid">
+                    {formatLinkedEntityType(user.linkedEntityType)}
                   </td>
 
                   <td className="px-4 py-2.5 w-[1%] whitespace-nowrap">
@@ -737,7 +790,9 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                           }}
                           autoFocus
                         >
-                          {ROLE_OPTIONS.map((role) => (
+                          {ROLE_OPTIONS.filter((role) =>
+                            user.allowedRoleTargets.includes(role.value)
+                          ).map((role) => (
                             <option key={role.value} value={role.value}>
                               {role.label}
                             </option>
@@ -764,7 +819,12 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                     ) : (
                       <div className="flex items-start gap-2 whitespace-nowrap">
                         <PencilButton
-                          title="Editar rol"
+                          title={
+                            user.roleEditable
+                              ? "Editar rol"
+                              : "El rol no puede cambiarse desde esta cuenta"
+                          }
+                          disabled={!user.roleEditable}
                           onClick={() => setEditingRole({ id: user.id, value: user.rol })}
                         />
                         <span className="font-medium text-navy">{formatRole(user.rol)}</span>
@@ -790,6 +850,8 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                             nombre: user.nombre,
                             password: "",
                             confirmPassword: "",
+                            activateAfterReset: false,
+                            successMessage: "Contraseña restablecida correctamente.",
                           });
                         }}
                       >
@@ -803,13 +865,19 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                       <button
                         type="button"
                         aria-label={user.activo ? "Desactivar usuario" : "Activar usuario"}
-                        title={user.activo ? "Desactivar" : "Activar"}
+                        title={
+                          user.id === currentUserId
+                            ? "No puedes desactivar tu propio usuario administrador"
+                            : user.activo
+                              ? "Desactivar"
+                              : "Activar"
+                        }
                         onClick={() => void handleToggleActivo(user)}
-                        disabled={togglingId === user.id}
+                        disabled={togglingId === user.id || user.id === currentUserId}
                         className={[
                           "relative inline-flex h-6 w-10 items-center rounded-full transition-colors duration-200",
                           user.activo ? "bg-accent" : "bg-[#d7c7c3]",
-                          togglingId === user.id ? "opacity-70" : "",
+                          togglingId === user.id || user.id === currentUserId ? "opacity-70" : "",
                         ].join(" ")}
                       >
                         <span
@@ -826,17 +894,19 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                   </td>
 
                   <td className="pl-2 pr-4 py-2.5 w-[1%] whitespace-nowrap">
-                    <div className="flex justify-end">
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => void handleDeleteUser(user)}
-                        disabled={deletingId === user.id}
-                        title="Eliminar usuario"
-                      >
-                        {deletingId === user.id ? "Eliminando..." : "Eliminar"}
-                      </Button>
-                    </div>
+                    {user.deleteAllowed && user.id !== currentUserId ? (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => void handleDeleteUser(user)}
+                          disabled={deletingId === user.id}
+                          title="Eliminar usuario"
+                        >
+                          {deletingId === user.id ? "Eliminando..." : "Eliminar"}
+                        </Button>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
@@ -856,7 +926,7 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
           <CardHeader>
             <div className="flex w-full flex-wrap items-center gap-3">
               <CardTitle icon="NU" iconVariant="blue">
-                Nuevo usuario
+                Nuevo administrador
               </CardTitle>
             </div>
           </CardHeader>
@@ -911,44 +981,10 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
                   }))
                 }
               >
-                {ROLE_OPTIONS.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
+                <option value="ADMIN">Administrador</option>
               </select>
             </label>
 
-            {localMode ? (
-              <div className="grid gap-5 md:col-span-2 md:grid-cols-2">
-                <label className="space-y-2">
-                  <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
-                    Contraseña *
-                  </span>
-                  <PasswordInput
-                    value={createForm.password}
-                    onChange={(value) =>
-                      setCreateForm((current) => ({ ...current, password: value }))
-                    }
-                  />
-                </label>
-
-                <label className="space-y-2">
-                  <span className="block text-[0.8rem] font-semibold uppercase tracking-[0.08em] text-text-light">
-                    Confirmar contraseña *
-                  </span>
-                  <PasswordInput
-                    value={createForm.confirmPassword}
-                    onChange={(value) =>
-                      setCreateForm((current) => ({
-                        ...current,
-                        confirmPassword: value,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-            ) : null}
           </div>
 
           <div className="flex justify-end gap-2 border-t border-border bg-surface px-6 py-4">
@@ -961,7 +997,7 @@ export default function UsuariosAdminPanel({ initialUsers, authMode }: Props) {
               onClick={() => void handleCreateUser()}
               disabled={creating}
             >
-              {creating ? "Guardando..." : "Guardar"}
+                {creating ? "Guardando..." : "Crear administrador"}
             </Button>
           </div>
         </Card>

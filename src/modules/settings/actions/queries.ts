@@ -3,7 +3,20 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 import { getCursosAcademicos } from "@/shared/catalogs/academico";
 import { CACHE_TAGS } from "@/shared/cache";
-import { SETTING_DEFAULTS, SETTING_KEYS } from "../constants";
+import { EMAIL_DOMAIN_DEFAULTS, SETTING_DEFAULTS, SETTING_KEYS } from "../constants";
+
+function parseJsonStringArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === "string");
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 function parsePositiveInteger(
   value: string | null | undefined,
@@ -101,4 +114,40 @@ export async function getCursosAcademicosConfigurados(date = new Date()) {
 export async function getResultadosPorPaginaConfigurados() {
   const configuracion = await getConfiguracionAcademica();
   return configuracion.resultadosPorPagina;
+}
+
+export type EmailDomainsConfig = {
+  dominiosAlumnos: string[];
+  dominiosProfesores: string[];
+  extraDominiosAlumnos: string[];
+  extraDominiosProfesores: string[];
+};
+
+const getEmailDomainsConfigCached = unstable_cache(
+  async (): Promise<EmailDomainsConfig> => {
+    const settings = await getSettingsMap([
+      SETTING_KEYS.emailDominiosExtraAlumnos,
+      SETTING_KEYS.emailDominiosExtraProfesores,
+    ]);
+
+    const extraAlumnos = parseJsonStringArray(
+      settings.get(SETTING_KEYS.emailDominiosExtraAlumnos)
+    );
+    const extraProfesores = parseJsonStringArray(
+      settings.get(SETTING_KEYS.emailDominiosExtraProfesores)
+    );
+
+    return {
+      extraDominiosAlumnos: extraAlumnos,
+      extraDominiosProfesores: extraProfesores,
+      dominiosAlumnos: [...EMAIL_DOMAIN_DEFAULTS.alumnos, ...extraAlumnos],
+      dominiosProfesores: [...EMAIL_DOMAIN_DEFAULTS.profesores, ...extraProfesores],
+    };
+  },
+  ["email-domains-config"],
+  { tags: [CACHE_TAGS.settings] }
+);
+
+export async function getEmailDomainsConfig(): Promise<EmailDomainsConfig> {
+  return getEmailDomainsConfigCached();
 }

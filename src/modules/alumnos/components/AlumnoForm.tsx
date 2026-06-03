@@ -38,6 +38,7 @@ interface AlumnoFormProps {
   form: FormState;
   ciclos: { id: number; nombre: string; codigo: string | null }[];
   cursos: string[];
+  originalEmail: string | null;
   onChange: (field: keyof FormState, value: string) => void;
   onGuardar: () => void;
   onActualizar: () => void;
@@ -54,6 +55,7 @@ export default function AlumnoForm({
   form,
   ciclos,
   cursos,
+  originalEmail,
   onChange,
   onGuardar,
   onActualizar,
@@ -87,6 +89,11 @@ export default function AlumnoForm({
 
   const sanitizeEmail = (value: string) =>
     value.trim().toLowerCase().slice(0, 120);
+
+  const hasEmailChangedInEdition =
+    isEditing &&
+    originalEmail !== null &&
+    sanitizeEmail(form.email) !== sanitizeEmail(originalEmail);
 
   const handleSubmit = () => {
     if (isEditing) onActualizar();
@@ -195,6 +202,11 @@ export default function AlumnoForm({
                 placeholder="alumno@educa.gva.es"
                 maxLength={120}
               />
+              {hasEmailChangedInEdition ? (
+                <p className="mt-2 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[0.8rem] leading-relaxed text-amber-900">
+                  Al modificar este email, tambien cambiara el email con el que el alumno podra acceder a la aplicacion como usuario.
+                </p>
+              ) : null}
             </FormGroup>
           </FormRow>
 

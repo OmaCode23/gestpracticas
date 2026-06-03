@@ -3,12 +3,23 @@ import {
   importAlumnos,
   importEmpresas,
   importFormaciones,
+  importProfesores,
   type AlumnoImportRow,
   type EmpresaImportRow,
   type FormacionImportRow,
+  type ProfesorImportRow,
 } from "./import";
 
-const { prismaMock, createEmpresasBatchMock, createImportExportLogMock } = vi.hoisted(() => ({
+const {
+  prismaMock,
+  createEmpresasBatchMock,
+  createImportExportLogMock,
+  getAcademicEmailUsageMock,
+  getEmailDomainsConfigMock,
+  createProfesoresBatchMock,
+  syncAcademicUserIdentityMock,
+  txMock,
+} = vi.hoisted(() => ({
   prismaMock: {
     empresa: {
       findMany: vi.fn(),
@@ -22,6 +33,9 @@ const { prismaMock, createEmpresasBatchMock, createImportExportLogMock } = vi.ho
     cicloFormativo: {
       findMany: vi.fn(),
     },
+    profesor: {
+      findMany: vi.fn(),
+    },
     alumno: {
       findMany: vi.fn(),
       createMany: vi.fn(),
@@ -29,9 +43,28 @@ const { prismaMock, createEmpresasBatchMock, createImportExportLogMock } = vi.ho
     formacionEmpresa: {
       createMany: vi.fn(),
     },
+    $transaction: vi.fn(),
   },
   createEmpresasBatchMock: vi.fn(),
+  createProfesoresBatchMock: vi.fn(),
   createImportExportLogMock: vi.fn(),
+  getAcademicEmailUsageMock: vi.fn(),
+  getEmailDomainsConfigMock: vi.fn(),
+  syncAcademicUserIdentityMock: vi.fn(),
+  txMock: {
+    alumno: {
+      createMany: vi.fn(),
+    },
+    usuario: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    localAuthAccount: {
+      findUnique: vi.fn(),
+      updateMany: vi.fn(),
+    },
+  },
 }));
 
 vi.mock("@/database/prisma", () => ({
@@ -42,17 +75,44 @@ vi.mock("@/modules/empresas/actions/mutations", () => ({
   createEmpresasBatch: createEmpresasBatchMock,
 }));
 
+vi.mock("@/modules/profesores/actions/mutations", () => ({
+  createProfesoresBatch: createProfesoresBatchMock,
+}));
+
 vi.mock("./logs", () => ({
   createImportExportLog: createImportExportLogMock,
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
   getCursosAcademicosConfigurados: vi.fn(async () => ["2025-2026", "2026-2027"]),
+  getEmailDomainsConfig: getEmailDomainsConfigMock,
+}));
+
+vi.mock("@/shared/identity/academic-email", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/shared/identity/academic-email")>();
+  return {
+    ...actual,
+    getAcademicEmailUsage: getAcademicEmailUsageMock,
+  };
+});
+
+vi.mock("@/shared/identity/academic-user", () => ({
+  syncAcademicUserIdentity: syncAcademicUserIdentityMock,
 }));
 
 describe("import actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getAcademicEmailUsageMock.mockResolvedValue({
+      alumnos: new Set<string>(),
+      profesores: new Set<string>(),
+    });
+    getEmailDomainsConfigMock.mockResolvedValue({
+      dominiosAlumnos: ["alu.edu.gva.es", "mail.com"],
+      dominiosProfesores: ["edu.gva.es", "mail.com"],
+      extraDominiosAlumnos: ["mail.com"],
+      extraDominiosProfesores: ["mail.com"],
+    });
     prismaMock.sector.findMany.mockResolvedValue([
       { id: 1, nombre: "Otro" },
       { id: 2, nombre: "Tecnologia" },
@@ -65,6 +125,11 @@ describe("import actions", () => {
       { id: 1, nombre: "DAM" },
       { id: 2, nombre: "DAW" },
     ]);
+    prismaMock.profesor.findMany.mockResolvedValue([]);
+    syncAcademicUserIdentityMock.mockResolvedValue(undefined);
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof txMock) => unknown) =>
+      callback(txMock)
+    );
   });
 
   it("importa empresas validas y registra el exito", async () => {
@@ -193,7 +258,7 @@ describe("import actions", () => {
     ];
 
     prismaMock.alumno.findMany.mockResolvedValue([]);
-    prismaMock.alumno.createMany.mockResolvedValue({ count: 1 });
+    txMock.alumno.createMany.mockResolvedValue({ count: 1 });
 
     const result = await importAlumnos(rows);
 
@@ -202,7 +267,7 @@ describe("import actions", () => {
       message: "Importacion completada (1 registros).",
       importedCount: 1,
     });
-    expect(prismaMock.alumno.createMany).toHaveBeenCalledWith({
+    expect(txMock.alumno.createMany).toHaveBeenCalledWith({
       data: [
         {
           nombre: "Lucia Perez",
@@ -216,6 +281,11 @@ describe("import actions", () => {
           curso: "2025-2026",
         },
       ],
+    });
+    expect(syncAcademicUserIdentityMock).toHaveBeenCalledWith(txMock, {
+      entity: "ALUMNO",
+      nombre: "Lucia Perez",
+      email: "lucia@mail.com",
     });
     expect(createImportExportLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -251,7 +321,7 @@ describe("import actions", () => {
         "Fila 2: ya existe un alumno con el NIA NIA-01."
       );
     }
-    expect(prismaMock.alumno.createMany).not.toHaveBeenCalled();
+    expect(txMock.alumno.createMany).not.toHaveBeenCalled();
     expect(createImportExportLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
         entidad: "Alumnos",
@@ -299,7 +369,45 @@ describe("import actions", () => {
         ])
       );
     }
-    expect(prismaMock.alumno.createMany).not.toHaveBeenCalled();
+    expect(txMock.alumno.createMany).not.toHaveBeenCalled();
+  });
+
+  it("bloquea la importacion de alumnos si el Excel repite email", async () => {
+    const rows: AlumnoImportRow[] = [
+      {
+        nia: "NIA-01",
+        nif: "",
+        nuss: "",
+        nombre: "Lucia Perez",
+        telefono: "600000000",
+        email: "lucia@mail.com",
+        ciclo: "DAM",
+        cursoCiclo: 1,
+        curso: "2025-2026",
+      },
+      {
+        nia: "NIA-02",
+        nif: "",
+        nuss: "",
+        nombre: "Marta Perez",
+        telefono: "600000001",
+        email: "LUCIA@MAIL.COM",
+        ciclo: "DAW",
+        cursoCiclo: 2,
+        curso: "2025-2026",
+      },
+    ];
+
+    prismaMock.alumno.findMany.mockResolvedValue([]);
+
+    const result = await importAlumnos(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        'Email duplicado en el Excel: "lucia@mail.com" aparece en las filas 2 y 3.'
+      );
+    }
   });
 
   it("bloquea la importacion de alumnos si ya existen NIF o NUSS en la base", async () => {
@@ -332,7 +440,73 @@ describe("import actions", () => {
         ])
       );
     }
-    expect(prismaMock.alumno.createMany).not.toHaveBeenCalled();
+    expect(txMock.alumno.createMany).not.toHaveBeenCalled();
+  });
+
+  it("bloquea la importacion de alumnos si el email ya esta asignado a un profesor", async () => {
+    const rows: AlumnoImportRow[] = [
+      {
+        nia: "NIA-01",
+        nif: "",
+        nuss: "",
+        nombre: "Lucia Perez",
+        telefono: "600000000",
+        email: "lucia@mail.com",
+        ciclo: "DAM",
+        cursoCiclo: 1,
+        curso: "2025-2026",
+      },
+    ];
+
+    prismaMock.alumno.findMany.mockResolvedValue([]);
+    getAcademicEmailUsageMock.mockResolvedValue({
+      alumnos: new Set<string>(),
+      profesores: new Set<string>(["lucia@mail.com"]),
+    });
+
+    const result = await importAlumnos(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "Fila 2: el email lucia@mail.com ya esta asignado a un profesor."
+      );
+    }
+  });
+
+  it("rechaza filas de alumnos cuyo dominio de email no esta permitido", async () => {
+    getEmailDomainsConfigMock.mockResolvedValue({
+      dominiosAlumnos: ["alu.edu.gva.es"],
+      dominiosProfesores: ["edu.gva.es"],
+      extraDominiosAlumnos: [],
+      extraDominiosProfesores: [],
+    });
+
+    const rows: AlumnoImportRow[] = [
+      {
+        nia: "NIA-01",
+        nif: "12345678Z",
+        nuss: "123456789012",
+        nombre: "Lucia Perez",
+        telefono: "600000000",
+        email: "lucia@gmail.com",
+        ciclo: "DAM",
+        cursoCiclo: "1",
+        curso: "2025-2026",
+      },
+    ];
+
+    prismaMock.alumno.findMany.mockResolvedValue([]);
+
+    const result = await importAlumnos(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "Fila 2: El dominio del email no está permitido para alumnos."
+      );
+    }
+    expect(txMock.alumno.createMany).not.toHaveBeenCalled();
   });
 
   it("rechaza importaciones vacias en alumnos", async () => {
@@ -512,6 +686,93 @@ describe("import actions", () => {
         registros: 0,
       })
     );
+  });
+
+  it("importa profesores con email obligatorio y normalizado", async () => {
+    const rows: ProfesorImportRow[] = [
+      {
+        nombre: "Ana Tutor",
+        nif: "12345678A",
+        especialidad: "Informatica",
+        telefono: "612345678",
+        email: "ANA.TUTOR@MAIL.COM",
+        cicloFormativo: "DAM",
+      },
+    ];
+
+    createProfesoresBatchMock.mockResolvedValue({ count: 1 });
+
+    const result = await importProfesores(rows);
+
+    expect(result).toEqual({
+      ok: true,
+      message: "Importacion completada (1 registros).",
+      importedCount: 1,
+    });
+    expect(createProfesoresBatchMock).toHaveBeenCalledWith([
+      expect.objectContaining({
+        email: "ANA.TUTOR@MAIL.COM",
+        cicloFormativoId: 1,
+      }),
+    ]);
+  });
+
+  it("bloquea la importacion de profesores si el email ya esta asignado a un alumno", async () => {
+    const rows: ProfesorImportRow[] = [
+      {
+        nombre: "Ana Tutor",
+        nif: "12345678A",
+        especialidad: "Informatica",
+        telefono: "612345678",
+        email: "ana.tutor@mail.com",
+        cicloFormativo: "DAM",
+      },
+    ];
+
+    getAcademicEmailUsageMock.mockResolvedValue({
+      alumnos: new Set<string>(["ana.tutor@mail.com"]),
+      profesores: new Set<string>(),
+    });
+
+    const result = await importProfesores(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "Fila 2: el email ana.tutor@mail.com ya esta asignado a un alumno."
+      );
+    }
+    expect(createProfesoresBatchMock).not.toHaveBeenCalled();
+  });
+
+  it("rechaza filas de profesores cuyo dominio de email no esta permitido", async () => {
+    getEmailDomainsConfigMock.mockResolvedValue({
+      dominiosAlumnos: ["alu.edu.gva.es"],
+      dominiosProfesores: ["edu.gva.es"],
+      extraDominiosAlumnos: [],
+      extraDominiosProfesores: [],
+    });
+
+    const rows: ProfesorImportRow[] = [
+      {
+        nombre: "Ana Tutor",
+        nif: "12345678A",
+        especialidad: "Informatica",
+        telefono: "612345678",
+        email: "ana.tutor@gmail.com",
+        cicloFormativo: "DAM",
+      },
+    ];
+
+    const result = await importProfesores(rows);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain(
+        "Fila 2: El dominio del email no está permitido para profesores."
+      );
+    }
+    expect(createProfesoresBatchMock).not.toHaveBeenCalled();
   });
 
   it("rechaza importaciones vacias en empresas", async () => {

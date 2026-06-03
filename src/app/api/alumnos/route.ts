@@ -22,6 +22,26 @@ import {
 import { importAlumnos, type AlumnoImportRow } from "@/modules/importexport/actions/import";
 import type { ApiResponse } from "@/shared/types/api";
 import { getCursoActual } from "@/shared/catalogs/academico";
+import {
+  AcademicEmailConflictError,
+  EmailDomainNotAllowedError,
+} from "@/shared/identity/academic-email";
+import { AcademicUserSyncError } from "@/shared/identity/academic-user";
+
+function getAcademicUserSyncCode(error: unknown) {
+  if (
+    error instanceof AcademicUserSyncError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code: unknown }).code === "string" &&
+      String((error as { code: string }).code).startsWith("ACADEMIC_USER_"))
+  ) {
+    return (error as { code: string }).code;
+  }
+
+  return null;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -168,12 +188,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (error instanceof EmailDomainNotAllowedError) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El dominio del email no está permitido para alumnos." },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof AcademicEmailConflictError) {
+      const message =
+        error.entity === "ALUMNO"
+          ? "Ya existe un alumno con ese email."
+          : "Ese email ya esta asignado a un profesor.";
+
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: message },
+        { status: 409 }
+      );
+    }
+
+    const academicUserSyncCode = getAcademicUserSyncCode(error);
+    if (academicUserSyncCode) {
+      const message =
+        academicUserSyncCode === "ACADEMIC_USER_ROLE_CONFLICT"
+          ? "Ya existe un usuario con ese email y un rol incompatible."
+          : "No se pudo sincronizar la cuenta de acceso con ese email.";
+
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: message },
+        { status: 409 }
+      );
+    }
+
     if (error?.code === "P2002") {
       const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
       const message = target.includes("nif")
         ? "Ya existe un alumno con ese NIF"
         : target.includes("nuss")
           ? "Ya existe un alumno con ese NUSS"
+          : target.includes("email")
+            ? "Ya existe un alumno con ese email."
           : "Ya existe un alumno con ese NIA";
 
       return NextResponse.json<ApiResponse<never>>(

@@ -13,7 +13,27 @@ import { getAlumnoById } from "@/modules/alumnos/actions/queries";
 import { updateAlumno, deleteAlumno } from "@/modules/alumnos/actions/mutations";
 import { alumnoCrudUpdateSchema } from "@/modules/alumnos/types/schema";
 import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
+import {
+  AcademicEmailConflictError,
+  EmailDomainNotAllowedError,
+} from "@/shared/identity/academic-email";
+import { AcademicUserSyncError } from "@/shared/identity/academic-user";
 import type { ApiResponse } from "@/shared/types/api";
+
+function getAcademicUserSyncCode(error: unknown) {
+  if (
+    error instanceof AcademicUserSyncError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      typeof (error as { code: unknown }).code === "string" &&
+      String((error as { code: string }).code).startsWith("ACADEMIC_USER_"))
+  ) {
+    return (error as { code: string }).code;
+  }
+
+  return null;
+}
 
 function parseId(idParam: string) {
   const id = Number(idParam);
@@ -108,12 +128,46 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       );
     }
 
+    if (error instanceof EmailDomainNotAllowedError) {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El dominio del email no está permitido para alumnos." },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof AcademicEmailConflictError) {
+      const message =
+        error.entity === "ALUMNO"
+          ? "Ya existe un alumno con ese email."
+          : "Ese email ya esta asignado a un profesor.";
+
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: message },
+        { status: 409 }
+      );
+    }
+
+    const academicUserSyncCode = getAcademicUserSyncCode(error);
+    if (academicUserSyncCode) {
+      const message =
+        academicUserSyncCode === "ACADEMIC_USER_ROLE_CONFLICT"
+          ? "Ya existe un usuario con ese email y un rol incompatible."
+          : "No se pudo sincronizar la cuenta de acceso con ese email.";
+
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: message },
+        { status: 409 }
+      );
+    }
+
     if (error?.code === "P2002") {
       const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(", ") : "";
       const message = target.includes("nif")
         ? "Ya existe un alumno con ese NIF"
         : target.includes("nuss")
           ? "Ya existe un alumno con ese NUSS"
+          : target.includes("email")
+            ? "Ya existe un alumno con ese email."
           : "Ya existe un alumno con ese NIA";
 
       return NextResponse.json<ApiResponse<never>>(
@@ -123,8 +177,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
 
     console.error("[PATCH /api/alumnos/:id]", error);
+    const debugMessage =
+      process.env.NODE_ENV !== "production" && error instanceof Error
+        ? `Error al actualizar: ${error.message}`
+        : "Error al actualizar";
     return NextResponse.json<ApiResponse<never>>(
-      { ok: false, error: "Error al actualizar" },
+      { ok: false, error: debugMessage },
       { status: 500 }
     );
   }

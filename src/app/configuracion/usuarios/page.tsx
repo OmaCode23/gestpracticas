@@ -8,9 +8,15 @@ export const dynamic = "force-dynamic";
 
 export default async function UsuariosPage() {
   noStore();
-  await requireAdminSession("/configuracion/usuarios");
+  const session = await requireAdminSession("/configuracion/usuarios");
   const users = await listManagedUsers();
   const authMode = getAuthMode();
 
-  return <UsuariosAdminPanel initialUsers={users} authMode={authMode} />;
+  return (
+    <UsuariosAdminPanel
+      initialUsers={users}
+      authMode={authMode}
+      currentUserId={session.user.id}
+    />
+  );
 }

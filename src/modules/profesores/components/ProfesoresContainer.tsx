@@ -45,6 +45,7 @@ export default function ProfesoresContainer({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [originalEditingEmail, setOriginalEditingEmail] = useState<string | null>(null);
   const [notification, setNotification] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [ciclosFormativos, setCiclosFormativos] = useState<CicloFormativoOption[]>([]);
@@ -154,6 +155,7 @@ export default function ProfesoresContainer({
 
       setForm(EMPTY_FORM);
       setEditingId(null);
+      setOriginalEditingEmail(null);
       closeForm();
       setPage(1);
       await cargarProfesores();
@@ -187,6 +189,7 @@ export default function ProfesoresContainer({
       cicloFormativoId: profesor.cicloFormativoId ? String(profesor.cicloFormativoId) : "",
     });
     setEditingId(profesor.id);
+    setOriginalEditingEmail(profesor.email ?? null);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -215,6 +218,7 @@ export default function ProfesoresContainer({
   const handleLimpiar = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setOriginalEditingEmail(null);
     setFormCiclos(ciclosFormativos);
   };
 
@@ -277,6 +281,7 @@ export default function ProfesoresContainer({
           form={form}
           saving={saving}
           editingId={editingId}
+          originalEmail={originalEditingEmail}
           ciclosFormativos={formCiclos}
           onChange={handleFormChange}
           onClear={handleLimpiar}

@@ -76,11 +76,11 @@ Actualmente ya existe una base funcional implementada con estas piezas:
 - middleware de prefiltrado de acceso con limpieza de cookies invalidas;
 - flujo externo reservado como alternativa abierta para una futura integracion real con proveedor OIDC.
 
-## Modelo funcional previsto
+## Modelo funcional vigente
 
 ### Tabla `Usuario`
 
-La tabla `Usuario` sera la fuente de verdad de autorizacion dentro de la aplicacion.
+La tabla `Usuario` es la fuente de verdad de autorizacion dentro de la aplicacion.
 
 Debe almacenar al menos:
 
@@ -92,7 +92,7 @@ Debe almacenar al menos:
 - `lastLoginAt` o equivalente
 - en el futuro, datos de identidad externa como `authProvider` y `authSubject`
 
-Roles previstos:
+Roles vigentes:
 
 - `ADMIN`
 - `PROFESOR`
@@ -100,7 +100,7 @@ Roles previstos:
 
 ### Tabla de autenticacion local
 
-Se prefiere crear una tabla separada para las credenciales locales, en lugar de guardar la contrasena directamente en `Usuario`.
+La aplicacion usa una tabla separada para las credenciales locales, en lugar de guardar la contrasena directamente en `Usuario`.
 
 Ejemplo conceptual:
 
@@ -188,14 +188,13 @@ Comportamiento adicional del script:
 
 Una vez exista un administrador autenticado, la aplicacion tendra una pantalla de gestion de usuarios accesible solo para `ADMIN`.
 
-Desde esa pantalla se podra:
+En su estado actual, esa pantalla se usa para:
 
-- crear usuarios autorizados;
-- asignar rol;
+- crear usuarios manualmente solo de tipo `ADMIN`;
 - activar o desactivar acceso;
 - eliminar usuarios con restricciones de seguridad;
-- en el modo local, crear o resetear credenciales locales;
-- en el futuro, gestionar el acceso sin almacenar contrasenas locales.
+- en el modo local, resetear credenciales locales;
+- revisar el rol efectivo de cada identidad segun su origen.
 
 En `AUTH_MODE=external` no se mostraran acciones de cambio o reseteo de contrasena.
 
@@ -246,7 +245,7 @@ No puede:
 
 ### `ALUMNO`
 
-Actualmente ya existe un alcance funcional inicial para `ALUMNO`, aunque todavia no equivale a un portal completo de practicas.
+Actualmente `ALUMNO` ya dispone de un portal propio separado del panel interno.
 
 Hoy puede:
 
@@ -262,7 +261,16 @@ No puede:
 - acceder a administracion, configuracion o importacion/exportacion interna;
 - acceder al CRUD global de alumnos, empresas o formacion.
 
-El contenido actual del portal del alumno es todavia inicial y esta preparado para crecer, pero ya queda protegido con un alcance distinto del profesorado y de administracion.
+El portal del alumno ya queda protegido con un alcance propio distinto del profesorado y de administracion, aunque su contenido pueda seguir creciendo funcionalmente.
+
+### Regla de identidad academica
+
+La resolucion de identidad entre login y ficha academica debe ser inequívoca:
+
+- la ficha de `Alumno` del portal se resuelve exclusivamente por `email`;
+- no se admiten fallbacks por nombre ni coincidencias parciales;
+- `Alumno.email` y `Profesor.email` deben tratarse como identificadores funcionales;
+- el mismo email no debe poder quedar asignado a la vez a un alumno y a un profesor.
 
 ## Ambiguedad corregida
 
@@ -301,7 +309,7 @@ Permisos actualmente centralizados:
 - `canManageCatalogs`
 - `canManageAcademicSettings`
 
-Uso previsto:
+Uso actual:
 
 - paginas servidor;
 - rutas API;
@@ -313,13 +321,13 @@ Regla de mantenimiento:
 - despues deben ajustarse las rutas o pantallas que la consumen;
 - y por ultimo deben revisarse los tests asociados.
 
-## Flujo previsto de la aplicacion
+## Flujo actual de la aplicacion
 
 ### Modo local
 
-1. El administrador o el despliegue crea usuarios en `Usuario`.
-2. Si el login es local, existe una credencial temporal asociada.
-3. El usuario inicia sesion con email y contrasena local.
+1. El despliegue crea al menos un `ADMIN` inicial en `Usuario`.
+2. Las altas y ediciones de `Alumno` y `Profesor` crean o sincronizan automaticamente su `Usuario` asociado por email.
+3. Si el login es local, el usuario inicia sesion con email y contrasena local.
 4. La aplicacion crea una sesion segura.
 5. La autorizacion se decide por `Usuario.activo` y `Usuario.rol`.
 
@@ -424,6 +432,8 @@ Criterio de diseño acordado para `portal-alumno`:
 Cuando un modulo nuevo introduce consultas server-side propias, no debe asumir que la proteccion del layout es suficiente si esas consultas pueden reutilizarse desde otros puntos.
 
 Por eso las consultas actuales del portal del alumno revalidan tambien `requireAlumnoSession(...)` antes de leer datos.
+
+Ademas, la resolucion de la ficha del alumno autenticado no debe continuar si el email devuelve cero coincidencias o mas de una coincidencia. En ambos casos la sesion no se considera asociada de forma valida a una ficha academica.
 
 ### 5. Middleware como filtro previo, no como autorizacion completa
 
@@ -549,3 +559,252 @@ Estas pruebas cubren al menos:
 - revalidacion del portal del alumno antes de consultar datos;
 - decision `401` frente a `403` en la capa API;
 - paginas servidor representativas del panel interno que deben exigir personal del centro.
+
+## Estado de la via de autenticacion externa
+
+Aunque la decision de trabajo del proyecto es claramente el login local, la alternativa de autenticacion externa no desaparecio del todo del diseno. Quedo documentada en varias partes de este archivo y conviene dejar aqui un resumen unico del estado real en que se encuentra.
+
+### Idea original
+
+La idea original era que la aplicacion pudiera delegar la autenticacion en un proveedor institucional externo, previsiblemente vinculado a cuentas `@edu.gva.es`, manteniendo en nuestra base de datos solo la autorizacion interna.
+
+Eso implicaba separar dos responsabilidades:
+
+- el proveedor externo autentica la identidad del usuario;
+- nuestra base de datos decide si ese usuario esta autorizado, si esta activo y con que rol entra.
+
+El criterio acordado desde el principio fue que no bastaba con tener una cuenta `@edu.gva.es`: el email autenticado debia existir previamente en la tabla `Usuario` y estar marcado como activo.
+
+### Que se dejo preparado tecnicamente
+
+Aunque no se ha completado una integracion real contra un proveedor institucional, si quedaron preparadas varias piezas para no cerrar esa puerta:
+
+- el modo `AUTH_MODE=external`;
+- variables de entorno especificas para autorizacion externa;
+- una capa de configuracion para ese modo;
+- una ruta de inicio de autorizacion externa;
+- una ruta callback reservada;
+- generacion y validacion de `state` firmado para proteger el flujo;
+- soporte de `authProvider` y `authSubject` en `Usuario`;
+- actualizacion de `lastLoginAt` y creacion de sesion local tras una autenticacion externa valida;
+- posibilidad de simular el callback externo solo para pruebas controladas.
+
+En otras palabras: no hay integracion final cerrada con un servidor externo real, pero si existe un esqueleto tecnico pensado para un futuro flujo tipo OIDC o similar.
+
+### Que parte no se llego a cerrar
+
+La parte que quedo abierta y no debe considerarse terminada es la integracion real con el proveedor institucional. En particular, no queda resuelto en el estado actual del proyecto:
+
+- el intercambio real de `code` por tokens con el proveedor;
+- la verificacion formal de `id_token` o equivalente;
+- la definicion final de scopes y claims disponibles;
+- el procedimiento administrativo o tecnico para registrar la aplicacion en el proveedor real;
+- la confirmacion de que el centro puede usar ese proveedor para una aplicacion propia;
+- la definicion exacta del identificador externo estable que llegaria desde ese sistema.
+
+Por eso, aunque el modo `external` existe como posibilidad de arquitectura y hay codigo de soporte, no debe interpretarse como una funcionalidad desplegada y validada de punta a punta.
+
+### Decision practica adoptada
+
+La decision practica que ha guiado el desarrollo posterior ha sido esta:
+
+- el sistema operativo y soportado de verdad es el login local;
+- la gestion cotidiana de altas, cambios de contrasena y reseteos se hace en local;
+- la via externa se conserva solo como alternativa futura preparada a nivel de arquitectura;
+- si algun dia se retoma, la autorizacion seguira dependiendo de `Usuario`, no del proveedor externo.
+
+### Consecuencia documental
+
+Cuando se lea este documento debe entenderse que:
+
+- `local` describe el sistema actualmente implantado y en uso;
+- `external` describe una via prevista, parcialmente preparada en codigo, pero pospuesta y no completada.
+
+## Modelo de identidades academicas
+
+Con la incorporacion del `portal-alumno`, el modelo de identidades queda fijado asi:
+
+- `Alumno` y `Profesor` son las entidades funcionales de negocio;
+- `Usuario` es la identidad tecnica de acceso a la aplicacion;
+- `LocalAuthAccount` sigue siendo solo la capa de credenciales locales;
+- el identificador funcional comun entre estas piezas es el `email`.
+
+### Regla general
+
+Para identidades academicas:
+
+- cada `Alumno` con email valido tiene su `Usuario` correspondiente;
+- cada `Profesor` con email valido tiene su `Usuario` correspondiente;
+- esas cuentas nacen desactivadas por defecto;
+- la activacion del acceso sigue siendo una decision administrativa explicita.
+
+Para identidades administrativas:
+
+- un `ADMIN` puede existir sin ficha en `Alumno` ni en `Profesor`;
+- puede crearse desde bootstrap o desde la administracion de usuarios.
+
+### Correspondencia por rol
+
+La regla funcional vigente es:
+
+- un `Usuario` con rol `ALUMNO` corresponde obligatoriamente a una ficha valida de `Alumno`;
+- un `Usuario` con rol `PROFESOR` corresponde obligatoriamente a una ficha valida de `Profesor`;
+- un `Usuario` con rol `ADMIN` puede ser un administrador puro o un profesor promovido.
+
+### Fuente de verdad por dato
+
+La fuente de verdad queda separada por responsabilidad:
+
+- `Alumno` y `Profesor` son la fuente de verdad de nombre y email para identidades academicas;
+- `Usuario` es la fuente de verdad de acceso, estado activo, rol efectivo y sesion;
+- `LocalAuthAccount` es la fuente de verdad de la credencial local, vinculada por email.
+
+Consecuencia:
+
+- nombre y email de alumnos y profesores se editan desde su ficha funcional;
+- al cambiarse ahi, se sincronizan automaticamente `Usuario` y, en modo local, `LocalAuthAccount`;
+- nombre y email no deben editarse libremente desde administracion de usuarios para cuentas academicas.
+
+### Reglas de creacion y sincronizacion
+
+#### Alta de alumno
+
+Cuando se crea un `Alumno`:
+
+- su `email` es obligatorio y unico;
+- no puede coincidir con el email de otro alumno ni de un profesor;
+- se crea o sincroniza automaticamente un `Usuario` con ese email;
+- ese `Usuario` queda con rol `ALUMNO` y `activo = false`.
+
+#### Alta de profesor
+
+Cuando se crea un `Profesor`:
+
+- su `email` es obligatorio y unico;
+- no puede coincidir con el email de otro profesor ni de un alumno;
+- se crea o sincroniza automaticamente un `Usuario` con ese email;
+- ese `Usuario` queda con rol `PROFESOR` y `activo = false`, salvo que ya fuese un profesor promovido a `ADMIN`, en cuyo caso conserva `ADMIN`.
+
+#### Alta de administrador
+
+Cuando se necesita un `ADMIN` puro:
+
+- puede crearse directamente por bootstrap o desde administracion de usuarios;
+- no necesita ficha en `Alumno` ni en `Profesor`.
+
+### Regla de acceso efectivo
+
+Crear una ficha funcional no equivale a conceder acceso.
+
+Por tanto:
+
+- crear un `Alumno` o un `Profesor` crea o sincroniza su identidad tecnica;
+- esa identidad nace desactivada por defecto;
+- el acceso efectivo se concede activando el `Usuario`;
+- en `AUTH_MODE=local`, el acceso local puede requerir ademas crear o resetear contrasena;
+- en `AUTH_MODE=external`, basta con que exista un `Usuario` activo y autorizado.
+
+### Regla de email e identidad
+
+La identidad academica queda resuelta de forma inequívoca por email:
+
+- `Alumno.email` es obligatorio y unico;
+- `Profesor.email` es obligatorio y unico;
+- el mismo email no puede estar asignado a la vez a un alumno y a un profesor;
+- el `portal-alumno` resuelve la ficha exclusivamente por email;
+- no existen fallbacks por nombre ni coincidencias parciales.
+
+### Regla de dominios permitidos para email
+
+Ademas de ser unico y coherente con la identidad funcional, el email academico debe pertenecer a un dominio permitido para su entidad:
+
+- para `Alumno`, el dominio base permitido es `@alu.edu.gva.es`;
+- para `Profesor`, el dominio base permitido es `@edu.gva.es`;
+- pueden admitirse dominios adicionales para alumnos o profesores desde la pagina de `Configuracion`;
+- esas ampliaciones se aplican como configuracion funcional del sistema y se validan en altas, ediciones e importaciones.
+
+### Regla de actualizacion de email
+
+Si cambia el email de una ficha academica:
+
+- cambia automaticamente el email del `Usuario` asociado;
+- si existe `LocalAuthAccount`, tambien se actualiza a ese nuevo email;
+- toda la operacion revalida la unicidad y compatibilidad del nuevo email.
+
+### Regla de cambio de rol
+
+#### Alumno
+
+- una identidad procedente de `Alumno` no puede cambiar de rol;
+- su rol efectivo permanece en `ALUMNO`;
+- la administracion de usuarios no debe ofrecer ni aceptar ese cambio.
+
+#### Profesor
+
+- una identidad procedente de `Profesor` puede alternar entre `PROFESOR` y `ADMIN`;
+- ese cambio representa promocion o retirada de privilegios administrativos sobre el mismo profesor.
+
+#### Administrador puro
+
+- un `ADMIN` puro puede seguir existiendo sin ficha funcional;
+- no puede degradarse a `PROFESOR` salvo que exista una ficha de `Profesor` con su mismo email.
+
+### Regla de baja funcional
+
+#### Si se elimina un `Alumno`
+
+- el `Usuario` asociado no queda operativo;
+- se desactiva automaticamente;
+- no se borra automaticamente por defecto.
+
+#### Si se elimina un `Profesor`
+
+- si su cuenta estaba en rol `PROFESOR`, se desactiva;
+- si estaba en rol `ADMIN`, puede mantenerse como administrador puro.
+
+### Regla de administracion de usuarios
+
+La pantalla de administracion de usuarios ya no es alta universal de identidades.
+
+Su funcion actual es:
+
+- crear usuarios manualmente solo para `ADMIN`;
+- activar o desactivar accesos existentes;
+- resetear contrasenas en modo local;
+- permitir el cambio `PROFESOR <-> ADMIN` cuando la identidad procede de un profesor;
+- impedir cambio de rol en usuarios de alumno;
+- impedir edicion manual de nombre y email en cuentas ligadas a `Alumno` o `Profesor`.
+
+Consecuencia visible en UI:
+
+- el bloque de alta manual queda orientado solo a administradores;
+- `ALUMNO` y `PROFESOR` no se crean manualmente desde esa pantalla;
+- la tabla de usuarios puede clasificar el origen de la identidad como `ALUMNO`, `PROFESOR` o `ADMIN` puro.
+- el boton de borrado solo aparece para `ADMIN` puros, es decir, cuentas no ligadas a `Profesor` ni a `Alumno`;
+- el administrador logueado no puede borrarse ni desactivarse a si mismo.
+
+### Implementacion tecnica vigente
+
+La implementacion actual sigue estas reglas:
+
+- las altas, ediciones e importaciones de `Alumno` y `Profesor` sincronizan automaticamente `Usuario`;
+- esa sincronizacion se ejecuta dentro de la misma transaccion logica;
+- las bajas funcionales ajustan tambien el estado del `Usuario` asociado;
+- la relacion entre identidad funcional y cuenta de acceso se resuelve por `email`, no por `id`;
+- la tabla `usuarios` se completo y saneo mediante una migracion de datos especifica, no mediante reconciliacion en cada ejecucion de la app.
+- en modo local, si se activa una cuenta sin contrasena previa, antes de activarla se fuerza el dialogo de reseteo de contrasena;
+- si ese dialogo se cancela, la cuenta permanece desactivada;
+- si se reactiva una cuenta que ya tenia contrasena local, conserva esa misma contrasena.
+
+### Decision operativa vigente
+
+El estado definitivo del modelo queda asi:
+
+- `Alumno` crea o sincroniza automaticamente `Usuario(ALUMNO, activo=false)`;
+- `Profesor` crea o sincroniza automaticamente `Usuario(PROFESOR, activo=false)`;
+- `ALUMNO` no puede cambiar de rol;
+- una identidad procedente de `Profesor` puede alternar entre `PROFESOR` y `ADMIN`;
+- `ADMIN` puro puede seguir creandose manualmente;
+- al crear un `ADMIN` puro en modo local, la cuenta nace desactivada y se abre inmediatamente el flujo de reseteo/definicion de contrasena; solo despues de completarlo queda activada;
+- al activar por primera vez una cuenta academica sin contrasena local previa, se usa ese mismo flujo inmediato de reseteo/definicion de contrasena;
+- la administracion de usuarios es gestion de acceso, no alta universal de cualquier rol.

@@ -1,6 +1,108 @@
 # Cambios en archivos comunes
 
-## 1-6-26 Codex
+- Archivo: `prisma/migrations/20260603150000_backfill_academic_users/migration.sql`
+  Motivo: crear como migracion de datos unica el proceso de completar y sanear la tabla `usuarios` a partir de las fichas academicas ya existentes, es decir, dar de alta la cuenta tecnica de acceso de cada `Alumno` y `Profesor` que aun no la tenia, alinear por email las que ya existian y limpiar usuarios academicos huerfanos, manteniendo los administradores; se hace como migracion y no como codigo de ejecucion normal.
+  Impacto: la pantalla de administracion de usuarios deja de depender de una reconciliacion en cada ejecucion; tras migrar, `usuarios` queda sincronizada con las entidades funcionales existentes.
+
+- Archivo: `src/app/api/alumnos/[id]/route.ts`
+  Motivo: ampliar el mensaje del `catch` generico de actualizacion de alumnos cuando la app corre en desarrollo, mostrando el texto real de la excepcion junto al prefijo `Error al actualizar`.
+  Impacto: los fallos de edicion de alumnos pueden diagnosticarse desde la propia UI local sin exponer detalles internos en produccion, ya que en `NODE_ENV=production` se mantiene el mensaje generico anterior.
+
+- Archivo: `src/modules/usuarios/actions.ts`, `src/modules/usuarios/components/UsuariosAdminPanel.tsx`, `src/app/api/usuarios/[id]/route.ts`, `src/app/api/usuarios/[id]/route.test.ts`
+  Motivo: cerrar las reglas finales de borrado y desactivacion en administracion de usuarios, de modo que el borrado solo aplique a `ADMIN` puros no ligados a `Profesor` ni `Alumno`, y que el administrador logueado no pueda borrarse ni desactivarse a si mismo.
+  Impacto: la UI solo muestra `Eliminar` cuando la operacion realmente esta permitida, el interruptor de estado queda bloqueado para la propia sesion administrativa y la API devuelve errores funcionales en vez de caer despues en `No autorizado.` por invalidar la sesion.
+
+- Archivo: `src/modules/usuarios/components/UsuariosAdminPanel.tsx`, `src/app/api/usuarios/route.ts`, `src/app/api/usuarios/route.test.ts`
+  Motivo: unificar el flujo de primera contrasena en modo local para que, al activar una cuenta sin contrasena previa o al crear un `ADMIN` puro, se abra inmediatamente el dialogo de reseteo/definicion de contrasena antes de activar la cuenta.
+  Impacto: las altas de administradores puros y las primeras activaciones de cuentas academicas quedan obligadas a salir con una contrasena local definida; si el dialogo se cancela, la cuenta permanece desactivada.
+
+- Archivo: `src/modules/usuarios/components/UsuariosAdminPanel.tsx`, `src/modules/usuarios/actions.ts`, `src/modules/auth/actions.ts`
+  Motivo: dejar explicito en el flujo de reactivacion que una cuenta desactivada con contrasena local ya existente no necesita redefinirla de nuevo.
+  Impacto: al reactivar un usuario que ya tenia contrasena, recupera el acceso con esa misma credencial; el dialogo de reseteo inmediato solo se usa cuando `LocalAuthAccount` aun no existe.
+
+## 2-6-26 Sbs
+
+- Archivo: `src/shared/identity/academic-user.ts`
+  Motivo: corregir un error de referencia (`iniciales is not defined`) producido por una errata en el nombre de la variable al calcular las iniciales del usuario al sincronizar la identidad de un alumno o profesor existente.
+  Impacto: la edición de alumnos y profesores deja de lanzar un `ReferenceError` en runtime al actualizar la cuenta de acceso asociada.
+
+- Archivo: `src/modules/profesores/components/ProfesoresContainer.tsx`, `src/modules/profesores/components/ProfesorForm.tsx`
+  Motivo: mostrar en el formulario de edición de profesores el mismo aviso que ya existía en alumnos cuando se modifica el email, indicando que ese cambio también afectará al email con el que el profesor accede a la aplicación.
+  Impacto: el usuario del panel recibe la misma información contextual en ambas entidades antes de confirmar un cambio de email que tiene efecto en el acceso.
+
+- Archivo: `src/modules/settings/constants.ts`
+  Motivo: añadir las claves `email.dominiosExtraAlumnos` y `email.dominiosExtraProfesores` al objeto de claves de settings, y exportar la constante `EMAIL_DOMAIN_DEFAULTS` con los dominios base (`alu.edu.gva.es` para alumnos, `edu.gva.es` para profesores).
+  Impacto: los dominios base quedan como constantes hardcoded que siempre aplican, mientras que los adicionales son los únicos que se persisten en BD.
+
+- Archivo: `src/modules/settings/actions/queries.ts`
+  Motivo: añadir `getEmailDomainsConfig()`, función cacheada bajo `CACHE_TAGS.settings` que devuelve los dominios permitidos completos (base + extra) y los extra por separado para alumnos y profesores.
+  Impacto: cualquier capa del sistema puede consultar la lista de dominios válidos de forma unificada y con caché automática, sin depender de múltiples lecturas directas a BD.
+
+- Archivo: `src/modules/settings/actions/mutations.ts`
+  Motivo: añadir `saveExtraEmailDomains(entity, domains)` que upserta los dominios adicionales de una entidad como JSON en la tabla `Setting`.
+  Impacto: existe una mutación centralizada para actualizar los dominios extra sin lógica dispersa en cada consumidor.
+
+- Archivo: `src/shared/identity/academic-email.ts`
+  Motivo: añadir `EmailDomainNotAllowedError`, el helper síncrono `isEmailDomainAllowed(email, allowedDomains)` y el helper asíncrono `assertAcademicEmailDomain(email, entity)` que lanza el error si el dominio no está en la lista permitida para la entidad.
+  Impacto: la validación de dominios queda encapsulada en la misma capa de identidad que ya gestiona conflictos de email, reutilizable desde mutaciones e importación.
+
+- Archivo: `src/modules/alumnos/actions/mutations.ts`, `src/modules/profesores/actions/mutations.ts`
+  Motivo: añadir `assertAcademicEmailDomain` en las operaciones de alta y edición de alumnos y profesores, antes de la comprobación de unicidad de email.
+  Impacto: crear o editar un alumno con un email fuera del dominio permitido para alumnos, o un profesor fuera del dominio de profesores, queda bloqueado con un error claro.
+
+- Archivo: `src/modules/importexport/actions/import.ts`
+  Motivo: añadir validación de dominio por fila en `importAlumnos` e `importProfesores` usando `isEmailDomainAllowed` con la configuración cargada una sola vez al inicio de la importación.
+  Impacto: las importaciones masivas rechazan filas cuyo email no pertenezca al dominio permitido, con un mensaje por fila (`Fila N: El dominio del email no está permitido para ...`), igual que el resto de validaciones de import.
+
+- Archivo: `src/app/api/alumnos/route.ts`, `src/app/api/alumnos/[id]/route.ts`, `src/app/api/profesores/route.ts`, `src/app/api/profesores/[id]/route.ts`
+  Motivo: capturar `EmailDomainNotAllowedError` en los bloques `catch` de estas rutas y devolver `400` con un mensaje funcional antes de llegar al manejador genérico.
+  Impacto: el cliente recibe una respuesta de error específica y accionable cuando el dominio del email no está permitido, sin mezclarla con errores de servidor.
+
+- Archivo: `src/app/api/settings/email-domains/route.ts` (nuevo)
+  Motivo: crear una ruta `GET /api/settings/email-domains` (usuario autenticado) para leer la configuración de dominios, y `PUT /api/settings/email-domains` (solo admin) para guardar dominios extra de una entidad, invalidando la caché de settings tras cada escritura.
+  Impacto: el panel de Configuración dispone de un endpoint dedicado para gestionar dominios de email, con validación de formato de dominio y deduplicación automática.
+
+- Archivo: `src/app/configuracion/page.tsx`, `src/modules/configuracion/components/ConfiguracionPanel.tsx`
+  Motivo: cargar `getEmailDomainsConfig()` en la entrada server de Configuración y añadir en `ConfiguracionPanel` una nueva sección "Dominios de email permitidos" con dos subsecciones (Alumnos / Profesores), donde los dominios base se muestran como chips no editables con etiqueta "Base" y los dominios extra se pueden añadir o eliminar con guardado inmediato.
+  Impacto: los administradores pueden ampliar los dominios de email aceptados para alumnos y profesores directamente desde la pantalla de Configuración, sin tocar código.
+
+- Archivo: `src/modules/alumnos/actions/mutations.test.ts`, `src/modules/profesores/actions/mutations.test.ts`, `src/app/api/alumnos/route.test.ts`, `src/app/api/alumnos/[id]/route.test.ts`, `src/app/api/profesores/route.test.ts`, `src/app/api/profesores/[id]/route.test.ts`, `src/modules/importexport/actions/import.test.ts`, `src/app/api/settings/email-domains/route.test.ts` (nuevo)
+  Motivo: ampliar la cobertura automatizada para verificar la nueva validacion de dominios de email en todas las capas: rechazo al crear o editar con dominio no permitido en mutaciones, respuesta `400` en las cuatro rutas API afectadas, rechazo por fila en importacion masiva de alumnos y profesores, y contrato completo de `GET`/`PUT /api/settings/email-domains`.
+  Impacto: una regresion que elimine la comprobacion de dominio en cualquier punto del flujo (mutacion, importacion o API) deberia romper la suite; los tests de importacion se actualizan para incluir un dominio base en el mock de `getEmailDomainsConfig` de forma que los casos existentes siguen pasando sin cambios.
+
+- Archivo: `src/shared/identity/academic-user.ts`, `src/modules/alumnos/actions/mutations.ts`, `src/modules/profesores/actions/mutations.ts`, `src/modules/importexport/actions/import.ts`
+  Motivo: iniciar la fase 1 de la evolucion del modelo de identidades, haciendo que altas, ediciones e importaciones de `Alumno` y `Profesor` creen o sincronicen automaticamente su `Usuario` asociado por email dentro de la misma operacion logica.
+  Impacto: las entidades funcionales academicas dejan de depender de un alta manual paralela en `usuarios`; al cambiar nombre o email, la identidad tecnica de acceso se mantiene alineada.
+
+- Archivo: `src/shared/identity/academic-user.ts`, `src/modules/alumnos/actions/mutations.ts`, `src/modules/profesores/actions/mutations.ts`
+  Motivo: completar la regla de baja funcional para que la eliminacion de un alumno o profesor ajuste tambien el acceso asociado.
+  Impacto: al borrar un alumno se desactiva su cuenta de acceso; al borrar un profesor se desactiva su cuenta si seguia en rol `PROFESOR`, pero puede mantenerse activa como `ADMIN` puro si ya habia sido promovido.
+
+- Archivo: `src/modules/usuarios/actions.ts`, `src/modules/usuarios/schemas.ts`, `src/modules/usuarios/components/UsuariosAdminPanel.tsx`, `src/app/api/usuarios/route.ts`, `src/app/api/usuarios/[id]/route.ts`
+  Motivo: reorientar la administracion de usuarios para que deje de crear manualmente cuentas `ALUMNO` y `PROFESOR`, y pase a comportarse como panel de gestion de acceso y privilegios.
+  Impacto: desde la pantalla de usuarios ya solo se pueden crear cuentas `ADMIN`; las cuentas ligadas a `Alumno` o `Profesor` muestran su origen y dejan de sugerir ediciones incoherentes de nombre o rol.
+
+- Archivo: `src/app/api/usuarios/route.test.ts`, `src/app/api/usuarios/[id]/route.test.ts`, `src/modules/alumnos/actions/mutations.test.ts`, `src/modules/profesores/actions/mutations.test.ts`, `src/modules/importexport/actions/import.test.ts`
+  Motivo: ampliar la cobertura automatizada de la fase 1 para validar sincronizacion automatica de identidades academicas y las nuevas restricciones de administracion de usuarios.
+  Impacto: una regresion que vuelva a separar `Alumno`/`Profesor` de `Usuario` o que reabra el alta manual universal de roles deberia romper la suite.
+
+- Archivo: `src/modules/portal-alumno/actions/queries.ts`, `src/modules/portal-alumno/actions/queries.test.ts`
+  Motivo: eliminar cualquier fallback por nombre al resolver la ficha del alumno autenticado y exigir una asociacion univoca por email.
+  Impacto: el `portal-alumno` ya no puede enlazar una sesion con una ficha distinta por coincidencias de nombre; si el email no identifica exactamente a un alumno, se bloquea la resolucion.
+
+- Archivo: `prisma/schema.prisma`, `src/shared/identity/academic-email.ts`, `src/modules/alumnos/actions/mutations.ts`, `src/modules/profesores/actions/mutations.ts`
+  Motivo: convertir el email en identificador funcional obligatorio y unico para `Alumno` y `Profesor`, y reforzar en aplicacion la unicidad cruzada entre ambas tablas.
+  Impacto: no se aceptan nuevas altas o ediciones que reutilicen un email ya asignado a otro alumno o a un profesor, incluso antes de aplicar la restriccion definitiva en base de datos.
+
+- Archivo: `src/modules/profesores/types/schema.ts`, `src/modules/profesores/types/index.ts`, `src/modules/profesores/components/ProfesorForm.tsx`, `src/modules/profesores/fields.ts`, `src/modules/importexport/actions/import.ts`, `src/modules/importexport/actions/import.test.ts`
+  Motivo: alinear el modulo de `profesores` y su importacion Excel con la nueva regla de que el email es obligatorio y forma parte de la identidad.
+  Impacto: el formulario y la importacion de profesores dejan de admitir correos vacios y detectan conflictos de email tanto dentro del Excel como frente a `alumnos`.
+
+- Archivo: `src/app/api/alumnos/route.ts`, `src/app/api/alumnos/[id]/route.ts`, `src/app/api/profesores/route.ts`, `src/app/api/profesores/[id]/route.ts` y sus tests asociados
+  Motivo: devolver errores explicitos cuando el conflicto viene del email, distinguiendo entre duplicado en la misma entidad y reutilizacion por la otra tabla academica.
+  Impacto: las APIs responden con `409` y mensajes mas precisos cuando un email ya esta ocupado por un alumno o por un profesor.
+
+## 1-6-26 Sbs
 
 - Archivo: `prisma/schema.prisma`, `prisma/migrations/20260522000000_add_profesores/migration.sql`
   Motivo: integrar en `rama-sbs` el nuevo modelo `Profesor` llegado desde `master`, manteniendo a la vez el esquema ya existente de autenticacion local/externa, sesiones y roles.
@@ -124,7 +226,7 @@
   Motivo: documentar el estado real de la integracion del login con el portal del alumno, las capas de seguridad implementadas, la visibilidad/acceso actual por rol y la cobertura de pruebas asociada.
   Impacto: la documentacion funcional deja de describir al rol `ALUMNO` como una idea futura abstracta y pasa a reflejar el comportamiento real ya implantado.
 
-## 12-5-26 Codex
+## 12-5-26 Omar
 
 - Archivo: `src/modules/portal-alumno/actions/queries.ts`
   Motivo: ampliar el portal del alumno con dashboard, empresas compatibles, practicas asignadas y estado del CV, dejando la resolucion provisional del alumno lista para sustituirse por autenticacion real.

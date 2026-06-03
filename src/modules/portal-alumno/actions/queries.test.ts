@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     alumno: {
-      findFirst: vi.fn(),
       findMany: vi.fn(),
     },
     empresa: {
@@ -104,12 +103,12 @@ describe("portal alumno queries", () => {
   });
 
   it("resuelve el alumno real asociado a la sesion", async () => {
-    prismaMock.alumno.findFirst.mockResolvedValue(alumnoDb);
+    prismaMock.alumno.findMany.mockResolvedValue([alumnoDb]);
 
     const result = await getPortalAlumnoActual();
 
     expect(requireAlumnoSessionMock).toHaveBeenCalledWith("/portal-alumno");
-    expect(prismaMock.alumno.findFirst).toHaveBeenCalledWith(
+    expect(prismaMock.alumno.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { email: { equals: "ana@iesgrao.es", mode: "insensitive" } },
       })
@@ -117,40 +116,22 @@ describe("portal alumno queries", () => {
     expect(result).toEqual(alumnoPortal);
   });
 
-  it("si no encuentra por email, intenta una coincidencia unica por nombre", async () => {
-    prismaMock.alumno.findFirst.mockResolvedValue(null);
-    prismaMock.alumno.findMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([alumnoDb]);
-
-    const result = await getPortalAlumnoActual();
-
-    expect(result).toEqual(alumnoPortal);
-    expect(prismaMock.alumno.findMany).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        where: {
-          nombre: {
-            contains: "Ana Portal",
-            mode: "insensitive",
-          },
-        },
-      })
-    );
-  });
-
   it("falla si la sesion de alumno no tiene ficha asociada", async () => {
-    prismaMock.alumno.findFirst.mockResolvedValue(null);
-    prismaMock.alumno.findMany.mockResolvedValueOnce([]);
-    prismaMock.alumno.findMany.mockResolvedValueOnce([]);
+    prismaMock.alumno.findMany.mockResolvedValue([]);
 
     await expect(getPortalAlumnoActual()).rejects.toThrow(
       "No existe una ficha de alumno asociada a la sesion actual."
     );
   });
 
+  it("falla si el email de sesion coincide con varias fichas de alumno", async () => {
+    prismaMock.alumno.findMany.mockResolvedValue([alumnoDb, { ...alumnoDb, id: 8 }]);
+
+    await expect(getPortalAlumnoActual()).rejects.toThrow("ALUMNO_SESSION_EMAIL_AMBIGUO");
+  });
+
   it("exige sesion de alumno antes de listar empresas y adapta la salida", async () => {
-    prismaMock.alumno.findFirst.mockResolvedValue(alumnoDb);
+    prismaMock.alumno.findMany.mockResolvedValue([alumnoDb]);
     prismaMock.empresa.findMany.mockResolvedValue([
       {
         id: 3,
@@ -314,7 +295,7 @@ describe("portal alumno queries", () => {
   });
 
   it("compone el dashboard del portal a partir del alumno autenticado", async () => {
-    prismaMock.alumno.findFirst.mockResolvedValue(alumnoDb);
+    prismaMock.alumno.findMany.mockResolvedValue([alumnoDb]);
     prismaMock.empresa.count.mockResolvedValueOnce(10).mockResolvedValueOnce(4);
     prismaMock.formacionEmpresa.count.mockResolvedValue(1);
     prismaMock.empresa.findMany.mockResolvedValue([]);

@@ -7,7 +7,18 @@ import { empresaSchema } from "@/modules/empresas/types/schema";
 import { formacionSchema } from "@/modules/formacion/types/schema";
 import { createProfesoresBatch } from "@/modules/profesores/actions/mutations";
 import { profesorSchema } from "@/modules/profesores/types/schema";
-import { getCursosAcademicosConfigurados } from "@/modules/settings/actions/queries";
+import {
+  getCursosAcademicosConfigurados,
+  getEmailDomainsConfig,
+} from "@/modules/settings/actions/queries";
+import {
+  getAcademicEmailUsage,
+  isEmailDomainAllowed,
+} from "@/shared/identity/academic-email";
+import {
+  AcademicUserSyncError,
+  syncAcademicUserIdentity,
+} from "@/shared/identity/academic-user";
 import { createImportExportLog } from "./logs";
 import type { ZodError } from "zod";
 
@@ -51,7 +62,7 @@ export type ProfesorImportRow = {
   nif?: string;
   especialidad?: string;
   telefono?: string;
-  email?: string;
+  email: string;
   cicloFormativo?: string;
 };
 
@@ -61,6 +72,19 @@ export type ImportResult =
 
 function buildRowValidationErrors(excelRow: number, error: ZodError) {
   return error.errors.map((issue) => `Fila ${excelRow}: ${issue.message}`);
+}
+
+function getAcademicUserSyncMessage(error: AcademicUserSyncError, entity: "alumno" | "profesor") {
+  switch (error.code) {
+    case "ACADEMIC_USER_ROLE_CONFLICT":
+      return entity === "alumno"
+        ? "Existe un usuario con ese email, pero con un rol incompatible para alumno."
+        : "Existe un usuario con ese email, pero con un rol incompatible para profesor.";
+    case "ACADEMIC_USER_EMAIL_TAKEN":
+      return "Ya existe otra cuenta de acceso usando ese email.";
+    case "ACADEMIC_USER_LOCAL_AUTH_EMAIL_TAKEN":
+      return "Ya existe una credencial local incompatible usando ese email.";
+  }
 }
 
 function normalizeEmpresaImportRow(row: EmpresaImportRow): EmpresaInput {
@@ -165,6 +189,7 @@ function buildAlumnoDuplicateErrors(rows: AlumnoInput[]) {
   const seenNia = new Map<string, number>();
   const seenNif = new Map<string, number>();
   const seenNuss = new Map<string, number>();
+  const seenEmail = new Map<string, number>();
   const errors: string[] = [];
 
   rows.forEach((row, index) => {
@@ -172,6 +197,7 @@ function buildAlumnoDuplicateErrors(rows: AlumnoInput[]) {
     const nia = row.nia.trim().toUpperCase();
     const nif = row.nif.trim().toUpperCase();
     const nuss = row.nuss.trim();
+    const email = row.email.trim().toLowerCase();
 
     const firstNiaRow = seenNia.get(nia);
     if (firstNiaRow) {
@@ -195,6 +221,51 @@ function buildAlumnoDuplicateErrors(rows: AlumnoInput[]) {
         errors.push(`NUSS duplicado en el Excel: "${nuss}" aparece en las filas ${firstNussRow} y ${excelRow}.`);
       } else {
         seenNuss.set(nuss, excelRow);
+      }
+    }
+
+    if (email) {
+      const firstEmailRow = seenEmail.get(email);
+      if (firstEmailRow) {
+        errors.push(
+          `Email duplicado en el Excel: "${email}" aparece en las filas ${firstEmailRow} y ${excelRow}.`
+        );
+      } else {
+        seenEmail.set(email, excelRow);
+      }
+    }
+  });
+
+  return errors;
+}
+
+function buildProfesorDuplicateErrors(rows: Array<{ nif?: string; email: string }>) {
+  const seenNif = new Map<string, number>();
+  const seenEmail = new Map<string, number>();
+  const errors: string[] = [];
+
+  rows.forEach((row, index) => {
+    const excelRow = index + 2;
+    const nif = (row.nif ?? "").trim().toUpperCase();
+    const email = row.email.trim().toLowerCase();
+
+    if (nif) {
+      const firstNifRow = seenNif.get(nif);
+      if (firstNifRow) {
+        errors.push(`NIF duplicado en el Excel: "${nif}" aparece en las filas ${firstNifRow} y ${excelRow}.`);
+      } else {
+        seenNif.set(nif, excelRow);
+      }
+    }
+
+    if (email) {
+      const firstEmailRow = seenEmail.get(email);
+      if (firstEmailRow) {
+        errors.push(
+          `Email duplicado en el Excel: "${email}" aparece en las filas ${firstEmailRow} y ${excelRow}.`
+        );
+      } else {
+        seenEmail.set(email, excelRow);
       }
     }
   });
@@ -335,9 +406,10 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
     return { ok: false, message, importedCount: 0, errors: [message] };
   }
 
-  const [cursosValidos, ciclosByName] = await Promise.all([
+  const [cursosValidos, ciclosByName, emailDomainsConfig] = await Promise.all([
     getCursosAcademicosConfigurados(),
     getCiclosFormativosActivosByName(),
+    getEmailDomainsConfig(),
   ]);
   const cursosValidosSet = new Set(cursosValidos);
 
@@ -351,6 +423,12 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
 
     if (!cursosValidosSet.has(parsed.data.curso)) {
       errors.push(`Fila ${excelRow}: El curso no es valido.`);
+    }
+
+    if (!isEmailDomainAllowed(parsed.data.email, emailDomainsConfig.dominiosAlumnos)) {
+      errors.push(
+        `Fila ${excelRow}: El dominio del email no está permitido para alumnos.`
+      );
     }
 
     const cicloFormativo = ciclosByName.get(normalizeKey(parsed.data.ciclo));
@@ -371,18 +449,29 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
   const nias = parsedRows.map((row) => row.nia.trim().toUpperCase()).filter(Boolean);
   const nifs = parsedRows.map((row) => row.nif.trim().toUpperCase()).filter(Boolean);
   const nusses = parsedRows.map((row) => row.nuss.trim()).filter(Boolean);
+  const emails = parsedRows.map((row) => row.email.trim().toLowerCase()).filter(Boolean);
 
-  if (nias.length > 0 || nifs.length > 0 || nusses.length > 0) {
-    const existingAlumnos = await prisma.alumno.findMany({
-      where: {
-        OR: [
-          nias.length > 0 ? { nia: { in: nias } } : undefined,
-          nifs.length > 0 ? { nif: { in: nifs } } : undefined,
-          nusses.length > 0 ? { nuss: { in: nusses } } : undefined,
-        ].filter(Boolean) as { nia?: { in: string[] }; nif?: { in: string[] }; nuss?: { in: string[] } }[],
-      },
-      select: { nia: true, nif: true, nuss: true },
-    });
+  if (nias.length > 0 || nifs.length > 0 || nusses.length > 0 || emails.length > 0) {
+    const [existingAlumnos, academicEmailUsage] = await Promise.all([
+      prisma.alumno.findMany({
+        where: {
+          OR: [
+            nias.length > 0 ? { nia: { in: nias } } : undefined,
+            nifs.length > 0 ? { nif: { in: nifs } } : undefined,
+            nusses.length > 0 ? { nuss: { in: nusses } } : undefined,
+            emails.length > 0
+              ? {
+                  OR: emails.map((email) => ({
+                    email: { equals: email, mode: "insensitive" as const },
+                  })),
+                }
+              : undefined,
+          ].filter(Boolean) as Array<Record<string, unknown>>,
+        },
+        select: { nia: true, nif: true, nuss: true, email: true },
+      }),
+      getAcademicEmailUsage(emails),
+    ]);
 
     const existingNias = new Set(existingAlumnos.map((alumno) => alumno.nia.toUpperCase()));
     const existingNifs = new Set(
@@ -391,11 +480,17 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
     const existingNusses = new Set(
       existingAlumnos.map((alumno) => alumno.nuss ?? "").filter(Boolean)
     );
+    const existingEmails = new Set(
+      existingAlumnos
+        .map((alumno) => alumno.email?.trim().toLowerCase() ?? "")
+        .filter(Boolean)
+    );
 
     parsedRows.forEach((row, index) => {
       const nia = row.nia.trim().toUpperCase();
       const nif = row.nif.trim().toUpperCase();
       const nuss = row.nuss.trim();
+      const email = row.email.trim().toLowerCase();
       const excelRow = normalizedRows.findIndex(
         (candidate) => candidate.nia.trim().toUpperCase() === nia
       ) + 2;
@@ -408,6 +503,12 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
       }
       if (nuss && existingNusses.has(nuss)) {
         errors.push(`Fila ${excelRow || index + 2}: ya existe un alumno con el NUSS ${nuss}.`);
+      }
+      if (email && existingEmails.has(email)) {
+        errors.push(`Fila ${excelRow || index + 2}: ya existe un alumno con el email ${email}.`);
+      }
+      if (email && academicEmailUsage.profesores.has(email)) {
+        errors.push(`Fila ${excelRow || index + 2}: el email ${email} ya esta asignado a un profesor.`);
       }
     });
   }
@@ -424,19 +525,51 @@ export async function importAlumnos(rows: AlumnoImportRow[]): Promise<ImportResu
     return { ok: false, message, importedCount: 0, errors };
   }
 
-  const result = await prisma.alumno.createMany({
-    data: parsedRows.map((row) => ({
-      nombre: row.nombre.trim(),
-      nia: row.nia.trim(),
-      nif: row.nif.trim() || null,
-      nuss: row.nuss.trim() || null,
-      telefono: row.telefono.trim(),
-      email: row.email.trim().toLowerCase(),
-      cicloFormativoId: row.cicloFormativoId,
-      cursoCiclo: row.cursoCiclo,
-      curso: row.curso.trim(),
-    })),
-  });
+  const payload = parsedRows.map((row) => ({
+    nombre: row.nombre.trim(),
+    nia: row.nia.trim(),
+    nif: row.nif.trim() || null,
+    nuss: row.nuss.trim() || null,
+    telefono: row.telefono.trim(),
+    email: row.email.trim().toLowerCase(),
+    cicloFormativoId: row.cicloFormativoId,
+    cursoCiclo: row.cursoCiclo,
+    curso: row.curso.trim(),
+  }));
+
+  let result: { count: number };
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const created = await tx.alumno.createMany({
+        data: payload,
+      });
+
+      for (const row of payload) {
+        await syncAcademicUserIdentity(tx, {
+          entity: "ALUMNO",
+          nombre: row.nombre,
+          email: row.email,
+        });
+      }
+
+      return created;
+    });
+  } catch (error) {
+    if (error instanceof AcademicUserSyncError) {
+      const message = "Importacion cancelada. Revisa 1 incidencia(s).";
+      const details = [getAcademicUserSyncMessage(error, "alumno")];
+      await createImportExportLog({
+        entidad: "Alumnos",
+        accion: "Importacion",
+        registros: 0,
+        estado: "Fallido",
+        detalle: details.join("\n"),
+      });
+      return { ok: false, message, importedCount: 0, errors: details };
+    }
+
+    throw error;
+  }
 
   const message = `Importacion completada (${result.count} registros).`;
 
@@ -591,21 +724,12 @@ export async function importProfesores(rows: ProfesorImportRow[]): Promise<Impor
     return { ok: false, message, importedCount: 0, errors: [message] };
   }
 
-  const ciclosByName = await getCiclosFormativosActivosByName();
+  const [ciclosByName, emailDomainsConfig] = await Promise.all([
+    getCiclosFormativosActivosByName(),
+    getEmailDomainsConfig(),
+  ]);
   const parsedRows: ReturnType<typeof profesorSchema.parse>[] = [];
-
-  const seenNif = new Map<string, number>();
-  rows.forEach((row, index) => {
-    const nif = (row.nif ?? "").trim().toUpperCase();
-    if (!nif) return;
-    const excelRow = index + 2;
-    const firstRow = seenNif.get(nif);
-    if (firstRow) {
-      errors.push(`NIF duplicado en el Excel: "${nif}" aparece en las filas ${firstRow} y ${excelRow}.`);
-      return;
-    }
-    seenNif.set(nif, excelRow);
-  });
+  errors.push(...buildProfesorDuplicateErrors(rows));
 
   rows.forEach((row, index) => {
     const excelRow = index + 2;
@@ -632,22 +756,53 @@ export async function importProfesores(rows: ProfesorImportRow[]): Promise<Impor
       return;
     }
 
+    if (!isEmailDomainAllowed(parsed.data.email, emailDomainsConfig.dominiosProfesores)) {
+      errors.push(
+        `Fila ${excelRow}: El dominio del email no está permitido para profesores.`
+      );
+    }
+
     parsedRows.push(parsed.data);
   });
 
   const nifs = rows.map((r) => (r.nif ?? "").trim().toUpperCase()).filter(Boolean);
+  const emails = rows.map((r) => (r.email ?? "").trim().toLowerCase()).filter(Boolean);
 
-  if (nifs.length > 0) {
-    const existingProfesores = await prisma.profesor.findMany({
-      where: { nif: { in: nifs } },
-      select: { nif: true },
-    });
+  if (nifs.length > 0 || emails.length > 0) {
+    const [existingProfesores, academicEmailUsage] = await Promise.all([
+      prisma.profesor.findMany({
+        where: {
+          OR: [
+            nifs.length > 0 ? { nif: { in: nifs } } : undefined,
+            emails.length > 0
+              ? {
+                  OR: emails.map((email) => ({
+                    email: { equals: email, mode: "insensitive" as const },
+                  })),
+                }
+              : undefined,
+          ].filter(Boolean) as Array<Record<string, unknown>>,
+        },
+        select: { nif: true, email: true },
+      }),
+      getAcademicEmailUsage(emails),
+    ]);
     const existingNifs = new Set(existingProfesores.map((p) => (p.nif ?? "").toUpperCase()));
+    const existingEmails = new Set(
+      existingProfesores.map((p) => p.email.trim().toLowerCase()).filter(Boolean)
+    );
 
     rows.forEach((row, index) => {
       const nif = (row.nif ?? "").trim().toUpperCase();
+      const email = (row.email ?? "").trim().toLowerCase();
       if (nif && existingNifs.has(nif)) {
         errors.push(`Fila ${index + 2}: ya existe un profesor con el NIF ${nif}.`);
+      }
+      if (email && existingEmails.has(email)) {
+        errors.push(`Fila ${index + 2}: ya existe un profesor con el email ${email}.`);
+      }
+      if (email && academicEmailUsage.alumnos.has(email)) {
+        errors.push(`Fila ${index + 2}: el email ${email} ya esta asignado a un alumno.`);
       }
     });
   }
@@ -664,7 +819,25 @@ export async function importProfesores(rows: ProfesorImportRow[]): Promise<Impor
     return { ok: false, message, importedCount: 0, errors };
   }
 
-  const result = await createProfesoresBatch(parsedRows);
+  let result: { count: number };
+  try {
+    result = await createProfesoresBatch(parsedRows);
+  } catch (error) {
+    if (error instanceof AcademicUserSyncError) {
+      const message = "Importacion cancelada. Revisa 1 incidencia(s).";
+      const details = [getAcademicUserSyncMessage(error, "profesor")];
+      await createImportExportLog({
+        entidad: "Profesores",
+        accion: "Importacion",
+        registros: 0,
+        estado: "Fallido",
+        detalle: details.join("\n"),
+      });
+      return { ok: false, message, importedCount: 0, errors: details };
+    }
+
+    throw error;
+  }
   const message = `Importacion completada (${result.count} registros).`;
 
   await createImportExportLog({

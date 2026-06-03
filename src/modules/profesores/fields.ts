@@ -29,6 +29,7 @@ export const PROFESOR_FIELDS: ImportFieldDef[] = [
   {
     key: "email",
     label: "Correo",
+    required: true,
     formLabel: "Correo electronico",
     placeholder: "profesor@ies.es",
   },

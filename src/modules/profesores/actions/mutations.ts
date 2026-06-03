@@ -1,15 +1,15 @@
 import { prisma } from "@/database/prisma";
+import {
+  assertAcademicEmailAvailable,
+  assertAcademicEmailDomain,
+} from "@/shared/identity/academic-email";
+import { syncAcademicUserIdentity, syncAcademicUserRemoval } from "@/shared/identity/academic-user";
 import type { ProfesorInput, ProfesorUpdateInput } from "../types";
 
 function normalizeOptionalString(value?: string) {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
-}
-
-function normalizeOptionalEmail(value?: string) {
-  const normalized = normalizeOptionalString(value);
-  return typeof normalized === "string" ? normalized.toLowerCase() : normalized;
 }
 
 async function getCicloFormativoOrThrow(cicloFormativoId: number) {
@@ -28,16 +28,31 @@ export async function createProfesor(data: ProfesorInput) {
     typeof data.cicloFormativoId === "number"
       ? await getCicloFormativoOrThrow(data.cicloFormativoId)
       : null;
+  await assertAcademicEmailDomain(data.email, "PROFESOR");
+  const email = await assertAcademicEmailAvailable({
+    email: data.email,
+    entity: "PROFESOR",
+  });
 
-  return prisma.profesor.create({
-    data: {
-      nombre: data.nombre.trim(),
-      nif: normalizeOptionalString(data.nif) ?? null,
-      especialidad: normalizeOptionalString(data.especialidad) ?? null,
-      telefono: normalizeOptionalString(data.telefono) ?? null,
-      email: normalizeOptionalEmail(data.email) ?? null,
-      cicloFormativoId: cicloFormativo?.id ?? null,
-    },
+  return prisma.$transaction(async (tx) => {
+    const profesor = await tx.profesor.create({
+      data: {
+        nombre: data.nombre.trim(),
+        nif: normalizeOptionalString(data.nif) ?? null,
+        especialidad: normalizeOptionalString(data.especialidad) ?? null,
+        telefono: normalizeOptionalString(data.telefono) ?? null,
+        email,
+        cicloFormativoId: cicloFormativo?.id ?? null,
+      },
+    });
+
+    await syncAcademicUserIdentity(tx, {
+      entity: "PROFESOR",
+      nombre: profesor.nombre,
+      email: profesor.email,
+    });
+
+    return profesor;
   });
 }
 
@@ -64,15 +79,39 @@ export async function createProfesoresBatch(data: ProfesorInput[]) {
     throw new Error("CICLO_FORMATIVO_INVALIDO");
   }
 
-  return prisma.profesor.createMany({
-    data: data.map((item) => ({
+  await Promise.all(data.map((item) => assertAcademicEmailDomain(item.email, "PROFESOR")));
+  const normalizedEmails = await Promise.all(
+    data.map((item) =>
+      assertAcademicEmailAvailable({
+        email: item.email,
+        entity: "PROFESOR",
+      })
+    )
+  );
+
+  return prisma.$transaction(async (tx) => {
+    const payload = data.map((item, index) => ({
       nombre: item.nombre.trim(),
       nif: normalizeOptionalString(item.nif) ?? null,
       especialidad: normalizeOptionalString(item.especialidad) ?? null,
       telefono: normalizeOptionalString(item.telefono) ?? null,
-      email: normalizeOptionalEmail(item.email) ?? null,
+      email: normalizedEmails[index],
       cicloFormativoId: typeof item.cicloFormativoId === "number" ? item.cicloFormativoId : null,
-    })),
+    }));
+
+    const result = await tx.profesor.createMany({
+      data: payload,
+    });
+
+    for (const item of payload) {
+      await syncAcademicUserIdentity(tx, {
+        entity: "PROFESOR",
+        nombre: item.nombre,
+        email: item.email,
+      });
+    }
+
+    return result;
   });
 }
 
@@ -83,26 +122,67 @@ export async function updateProfesor(id: number, data: ProfesorUpdateInput) {
       : data.cicloFormativoId === null
         ? null
         : undefined;
+  if (data.email !== undefined) {
+    await assertAcademicEmailDomain(data.email, "PROFESOR");
+  }
+  const email =
+    data.email !== undefined
+      ? await assertAcademicEmailAvailable({
+          email: data.email,
+          entity: "PROFESOR",
+          excludeId: id,
+        })
+      : undefined;
 
-  return prisma.profesor.update({
-    where: { id },
-    data: {
-      ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
-      ...(data.nif !== undefined ? { nif: normalizeOptionalString(data.nif) } : {}),
-      ...(data.especialidad !== undefined
-        ? { especialidad: normalizeOptionalString(data.especialidad) }
-        : {}),
-      ...(data.telefono !== undefined
-        ? { telefono: normalizeOptionalString(data.telefono) }
-        : {}),
-      ...(data.email !== undefined ? { email: normalizeOptionalEmail(data.email) } : {}),
-      ...(cicloFormativo !== undefined
-        ? { cicloFormativoId: cicloFormativo?.id ?? null }
-        : {}),
-    },
+  return prisma.$transaction(async (tx) => {
+    const previousProfesor = await tx.profesor.findUnique({
+      where: { id },
+      select: { email: true },
+    });
+
+    const profesor = await tx.profesor.update({
+      where: { id },
+      data: {
+        ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
+        ...(data.nif !== undefined ? { nif: normalizeOptionalString(data.nif) } : {}),
+        ...(data.especialidad !== undefined
+          ? { especialidad: normalizeOptionalString(data.especialidad) }
+          : {}),
+        ...(data.telefono !== undefined
+          ? { telefono: normalizeOptionalString(data.telefono) }
+          : {}),
+        ...(email !== undefined ? { email } : {}),
+        ...(cicloFormativo !== undefined
+          ? { cicloFormativoId: cicloFormativo?.id ?? null }
+          : {}),
+      },
+    });
+
+    await syncAcademicUserIdentity(tx, {
+      entity: "PROFESOR",
+      nombre: profesor.nombre,
+      email: profesor.email,
+      previousEmail: previousProfesor?.email,
+    });
+
+    return profesor;
   });
 }
 
 export async function deleteProfesor(id: number) {
-  return prisma.profesor.delete({ where: { id } });
+  return prisma.$transaction(async (tx) => {
+    const profesor = await tx.profesor.findUnique({
+      where: { id },
+      select: { email: true },
+    });
+
+    if (profesor?.email) {
+      await syncAcademicUserRemoval(tx, {
+        entity: "PROFESOR",
+        email: profesor.email,
+      });
+    }
+
+    return tx.profesor.delete({ where: { id } });
+  });
 }

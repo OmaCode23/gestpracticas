@@ -21,6 +21,7 @@ type ProfesorFormProps = {
   form: ProfesorFormState;
   saving: boolean;
   editingId: number | null;
+  originalEmail: string | null;
   ciclosFormativos: Array<{ id: number; nombre: string }>;
   onChange: (key: keyof ProfesorFormState, value: string) => void;
   onClear: () => void;
@@ -35,6 +36,7 @@ export default function ProfesorForm({
   form,
   saving,
   editingId,
+  originalEmail,
   ciclosFormativos,
   onChange,
   onClear,
@@ -52,6 +54,13 @@ export default function ProfesorForm({
   const handleNombreChange = (value: string) => {
     onChange("nombre", value.replace(/\d/g, "").slice(0, 100));
   };
+
+  const sanitizeEmail = (value: string) => value.trim().toLowerCase().slice(0, 120);
+
+  const hasEmailChangedInEdition =
+    editingId !== null &&
+    originalEmail !== null &&
+    sanitizeEmail(form.email) !== sanitizeEmail(originalEmail);
 
   const insertEmailAt = () => {
     const current = form.email ?? "";
@@ -129,7 +138,7 @@ export default function ProfesorForm({
             />
           </FormGroup>
 
-          <FormGroup label={FIELD_BY_KEY.email.formLabel ?? "Correo electronico"}>
+          <FormGroup label={`${FIELD_BY_KEY.email.formLabel ?? "Correo electronico"} *`}>
             <div className="flex gap-2">
               <input
                 className={INPUT_CLS}
@@ -147,6 +156,11 @@ export default function ProfesorForm({
                 @
               </button>
             </div>
+            {hasEmailChangedInEdition ? (
+              <p className="mt-2 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[0.8rem] leading-relaxed text-amber-900">
+                Al modificar este email, también cambiará el email con el que el profesor podrá acceder a la aplicación como usuario.
+              </p>
+            ) : null}
           </FormGroup>
         </FormRow>
       </div>
