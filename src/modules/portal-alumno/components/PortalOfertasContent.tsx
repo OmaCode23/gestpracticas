@@ -1,5 +1,6 @@
 import { Badge, Card, SectionLabel } from "@/components/ui";
 import { getOfertasPracticasPublicadas } from "@/modules/ofertas/actions/queries";
+import PortalAlumnoActionButton from "./PortalAlumnoActionButton";
 
 export default async function PortalOfertasContent() {
   const ofertas = await getOfertasPracticasPublicadas();
@@ -36,6 +37,11 @@ export default async function PortalOfertasContent() {
               {oferta.descripcion ? (
                 <p className="mt-4 text-sm leading-relaxed text-text-mid">{oferta.descripcion}</p>
               ) : null}
+              <PortalAlumnoActionButton
+                endpoint={`/api/portal-alumno/ofertas/${oferta.id}/aplicar`}
+                label="¡Aplicar aquí!"
+                doneLabel="Solicitud registrada"
+              />
             </Card>
           ))}
           {ofertas.length === 0 ? (

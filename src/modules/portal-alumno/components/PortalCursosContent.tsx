@@ -1,5 +1,6 @@
 import { Badge, Card, SectionLabel } from "@/components/ui";
 import { getCursosExternosPublicados } from "@/modules/cursos/actions/queries";
+import PortalAlumnoActionButton from "./PortalAlumnoActionButton";
 
 export default async function PortalCursosContent() {
   const cursos = await getCursosExternosPublicados();
@@ -32,6 +33,11 @@ export default async function PortalCursosContent() {
             {curso.descripcion ? (
               <p className="mt-4 text-sm leading-relaxed text-text-mid">{curso.descripcion}</p>
             ) : null}
+            <PortalAlumnoActionButton
+              endpoint={`/api/portal-alumno/cursos/${curso.id}/apuntar`}
+              label="¡Me apunto!"
+              doneLabel="Inscripción registrada"
+            />
           </Card>
         ))}
         {cursos.length === 0 ? (
