@@ -18,16 +18,30 @@ async function getCicloFormativoOrThrow(cicloFormativoId: number) {
   return ciclo;
 }
 
+async function getEmpresaOrThrow(empresaId: number) {
+  const empresa = await prisma.empresa.findUnique({
+    where: { id: empresaId },
+    select: { id: true, nombre: true },
+  });
+
+  if (!empresa) throw new Error("EMPRESA_INVALIDA");
+
+  return empresa;
+}
+
 export async function createOfertaPractica(data: OfertaPracticaInput) {
-  const cicloFormativo =
+  const [empresa, cicloFormativo] = await Promise.all([
+    getEmpresaOrThrow(data.empresaId),
     typeof data.cicloFormativoId === "number"
-      ? await getCicloFormativoOrThrow(data.cicloFormativoId)
-      : null;
+      ? getCicloFormativoOrThrow(data.cicloFormativoId)
+      : Promise.resolve(null),
+  ]);
 
   return prisma.ofertaPractica.create({
     data: {
       titulo: data.titulo.trim(),
-      empresa: data.empresa.trim(),
+      empresa: empresa.nombre,
+      empresaId: empresa.id,
       cicloFormativoId: cicloFormativo?.id ?? null,
       plazas: data.plazas,
       requisitos: normalizeOptionalString(data.requisitos) ?? null,
@@ -39,6 +53,8 @@ export async function createOfertaPractica(data: OfertaPracticaInput) {
 }
 
 export async function updateOfertaPractica(id: number, data: OfertaPracticaUpdateInput) {
+  const empresa =
+    typeof data.empresaId === "number" ? await getEmpresaOrThrow(data.empresaId) : undefined;
   const cicloFormativo =
     typeof data.cicloFormativoId === "number"
       ? await getCicloFormativoOrThrow(data.cicloFormativoId)
@@ -50,7 +66,7 @@ export async function updateOfertaPractica(id: number, data: OfertaPracticaUpdat
     where: { id },
     data: {
       ...(data.titulo !== undefined ? { titulo: data.titulo.trim() } : {}),
-      ...(data.empresa !== undefined ? { empresa: data.empresa.trim() } : {}),
+      ...(empresa !== undefined ? { empresa: empresa.nombre, empresaId: empresa.id } : {}),
       ...(cicloFormativo !== undefined
         ? { cicloFormativoId: cicloFormativo?.id ?? null }
         : {}),

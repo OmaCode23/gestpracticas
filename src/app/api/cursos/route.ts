@@ -64,6 +64,20 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
+    if (error instanceof Error && error.message === "CURSO_PROVEEDOR_INVALIDO") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El proveedor seleccionado no existe o esta inactivo." },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === "CURSO_AREA_INVALIDA") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "El area seleccionada no existe o esta inactiva." },
+        { status: 400 }
+      );
+    }
+
     if (error?.code === "P2002") {
       return NextResponse.json<ApiResponse<never>>(
         { ok: false, error: "Ya existe un curso con ese titulo y proveedor." },

@@ -17,9 +17,14 @@ type CicloFormativoOption = {
   activo?: boolean;
 };
 
+type EmpresaOption = {
+  id: number;
+  nombre: string;
+};
+
 const EMPTY_FORM: OfertaFormState = {
   titulo: "",
-  empresa: "",
+  empresaId: "",
   cicloFormativoId: "",
   plazas: "1",
   requisitos: "",
@@ -48,6 +53,7 @@ export default function OfertasContainer({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [notification, setNotification] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [empresas, setEmpresas] = useState<EmpresaOption[]>([]);
   const [ciclosFormativos, setCiclosFormativos] = useState<CicloFormativoOption[]>([]);
   const [formCiclos, setFormCiclos] = useState<CicloFormativoOption[]>([]);
 
@@ -97,6 +103,26 @@ export default function OfertasContainer({
     }
   }
 
+  async function cargarEmpresas() {
+    try {
+      const res = await fetch("/api/empresas?all=true&fields=picker", { cache: "no-store" });
+      const json: ApiResponse<{
+        items: EmpresaOption[];
+        total: number;
+        page: number;
+        perPage: number;
+        totalPages: number;
+      }> = await res.json();
+
+      if (!json.ok) throw new Error(json.error);
+
+      setEmpresas(json.data.items);
+    } catch (error) {
+      console.error(error);
+      alert("No se pudieron cargar las empresas.");
+    }
+  }
+
   async function cargarCiclos() {
     try {
       const res = await fetch("/api/catalogos/ciclos-formativos", { cache: "no-store" });
@@ -119,6 +145,7 @@ export default function OfertasContainer({
 
   useEffect(() => {
     void cargarCiclos();
+    void cargarEmpresas();
   }, []);
 
   useEffect(() => {
@@ -131,6 +158,7 @@ export default function OfertasContainer({
   const handleGuardar = async () => {
     const parsed = ofertaPracticaSchema.safeParse({
       ...form,
+      empresaId: form.empresaId || undefined,
       cicloFormativoId: form.cicloFormativoId || null,
     });
 
@@ -189,7 +217,7 @@ export default function OfertasContainer({
     setFormCiclos([...ciclosFormativos, ...cicloActualInactivo]);
     setForm({
       titulo: oferta.titulo,
-      empresa: oferta.empresa,
+      empresaId: oferta.empresaId ? String(oferta.empresaId) : "",
       cicloFormativoId: oferta.cicloFormativoId ? String(oferta.cicloFormativoId) : "",
       plazas: String(oferta.plazas),
       requisitos: oferta.requisitos ?? "",
@@ -290,6 +318,7 @@ export default function OfertasContainer({
           form={form}
           saving={saving}
           editingId={editingId}
+          empresas={empresas}
           ciclosFormativos={formCiclos}
           onChange={handleFormChange}
           onClear={handleLimpiar}

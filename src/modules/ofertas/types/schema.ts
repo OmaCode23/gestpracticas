@@ -10,6 +10,14 @@ const optionalCicloFormativoId = z.preprocess(
   z.coerce.number().int().positive().nullable()
 );
 
+const requiredEmpresaId = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === "") return undefined;
+    return value;
+  },
+  z.coerce.number().int("La empresa es obligatoria.").positive("La empresa es obligatoria.")
+);
+
 const optionalText = (max: number, message: string) =>
   z.string().trim().max(max, message).optional().or(z.literal(""));
 
@@ -19,11 +27,7 @@ export const ofertaPracticaSchema = z.object({
     .trim()
     .min(1, "El titulo es obligatorio.")
     .max(140, "El titulo no puede superar los 140 caracteres."),
-  empresa: z
-    .string()
-    .trim()
-    .min(1, "La empresa es obligatoria.")
-    .max(120, "La empresa no puede superar los 120 caracteres."),
+  empresaId: requiredEmpresaId,
   cicloFormativoId: optionalCicloFormativoId,
   plazas: z.coerce
     .number()

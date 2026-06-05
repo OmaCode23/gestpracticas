@@ -7,6 +7,7 @@ type OfertaDbRecord = {
   id: number;
   titulo: string;
   empresa: string;
+  empresaId: number | null;
   cicloFormativoId: number | null;
   plazas: number;
   requisitos: string | null;
@@ -20,9 +21,19 @@ type OfertaDbRecord = {
     nombre: string;
     codigo: string | null;
   } | null;
+  empresaRef: {
+    id: number;
+    nombre: string;
+  } | null;
 };
 
 const OFERTA_INCLUDE = {
+  empresaRef: {
+    select: {
+      id: true,
+      nombre: true,
+    },
+  },
   cicloFormativoRef: {
     select: {
       id: true,
@@ -36,7 +47,8 @@ function normalizeOferta(oferta: OfertaDbRecord): OfertaPractica {
   return {
     id: oferta.id,
     titulo: oferta.titulo,
-    empresa: oferta.empresa,
+    empresaId: oferta.empresaRef?.id ?? oferta.empresaId ?? null,
+    empresa: oferta.empresaRef?.nombre ?? oferta.empresa,
     cicloFormativoId: oferta.cicloFormativoRef?.id ?? oferta.cicloFormativoId ?? null,
     cicloFormativo: oferta.cicloFormativoRef?.nombre ?? null,
     cicloFormativoCodigo: oferta.cicloFormativoRef?.codigo ?? null,
@@ -74,6 +86,11 @@ export async function getOfertasPracticas(
             OR: [
               { titulo: { contains: filters.search, mode: "insensitive" as const } },
               { empresa: { contains: filters.search, mode: "insensitive" as const } },
+              {
+                empresaRef: {
+                  is: { nombre: { contains: filters.search, mode: "insensitive" as const } },
+                },
+              },
               { requisitos: { contains: filters.search, mode: "insensitive" as const } },
               { periodo: { contains: filters.search, mode: "insensitive" as const } },
             ],

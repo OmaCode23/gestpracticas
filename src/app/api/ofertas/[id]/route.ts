@@ -97,6 +97,13 @@ export async function PATCH(
       );
     }
 
+    if (error instanceof Error && error.message === "EMPRESA_INVALIDA") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "La empresa seleccionada no existe." },
+        { status: 400 }
+      );
+    }
+
     console.error("[PATCH /api/ofertas/:id]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al actualizar la oferta" },

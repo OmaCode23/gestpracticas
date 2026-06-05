@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { Badge, Card, CardHeader, CardTitle, SectionLabel } from "@/components/ui";
 import { formatFileSize } from "@/modules/alumnos/utils/cv";
 import { getPortalAlumnoDashboard } from "@/modules/portal-alumno/actions/queries";
+import PortalAlumnoActionButton from "@/modules/portal-alumno/components/PortalAlumnoActionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -188,6 +189,11 @@ export default async function PortalAlumnoPage() {
               <p className="mt-2 text-sm text-text-mid">
                 {curso.area} / {curso.nivel} / {curso.modalidad}
               </p>
+              <PortalAlumnoActionButton
+                endpoint={`/api/portal-alumno/cursos/${curso.id}/apuntar`}
+                label="¡Me apunto!"
+                doneLabel="Inscripción registrada"
+              />
             </Card>
           ))}
           {cursos.length === 0 ? (

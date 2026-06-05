@@ -75,6 +75,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (error instanceof Error && error.message === "EMPRESA_INVALIDA") {
+      return NextResponse.json<ApiResponse<never>>(
+        { ok: false, error: "La empresa seleccionada no existe." },
+        { status: 400 }
+      );
+    }
+
     console.error("[POST /api/ofertas]", error);
     return NextResponse.json<ApiResponse<never>>(
       { ok: false, error: "Error al crear la oferta" },

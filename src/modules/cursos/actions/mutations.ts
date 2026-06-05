@@ -12,12 +12,41 @@ function normalizeOptionalUrl(value?: string) {
   return typeof normalized === "string" ? normalized : normalized ?? null;
 }
 
+async function getCursoProveedorOrThrow(proveedorId: number) {
+  const proveedor = await prisma.cursoProveedor.findFirst({
+    where: { id: proveedorId, activo: true },
+    select: { id: true, nombre: true },
+  });
+
+  if (!proveedor) throw new Error("CURSO_PROVEEDOR_INVALIDO");
+
+  return proveedor;
+}
+
+async function getCursoAreaOrThrow(areaId: number) {
+  const area = await prisma.cursoArea.findFirst({
+    where: { id: areaId, activo: true },
+    select: { id: true, nombre: true },
+  });
+
+  if (!area) throw new Error("CURSO_AREA_INVALIDA");
+
+  return area;
+}
+
 export async function createCursoExterno(data: CursoExternoInput) {
+  const [proveedor, area] = await Promise.all([
+    getCursoProveedorOrThrow(data.proveedorId),
+    getCursoAreaOrThrow(data.areaId),
+  ]);
+
   return prisma.cursoExterno.create({
     data: {
       titulo: data.titulo.trim(),
-      proveedor: data.proveedor.trim(),
-      area: data.area.trim(),
+      proveedor: proveedor.nombre,
+      proveedorId: proveedor.id,
+      area: area.nombre,
+      areaId: area.id,
       nivel: data.nivel.trim(),
       modalidad: data.modalidad.trim(),
       duracion: normalizeOptionalString(data.duracion) ?? null,
@@ -29,12 +58,21 @@ export async function createCursoExterno(data: CursoExternoInput) {
 }
 
 export async function updateCursoExterno(id: number, data: CursoExternoUpdateInput) {
+  const proveedor =
+    typeof data.proveedorId === "number"
+      ? await getCursoProveedorOrThrow(data.proveedorId)
+      : undefined;
+  const area =
+    typeof data.areaId === "number" ? await getCursoAreaOrThrow(data.areaId) : undefined;
+
   return prisma.cursoExterno.update({
     where: { id },
     data: {
       ...(data.titulo !== undefined ? { titulo: data.titulo.trim() } : {}),
-      ...(data.proveedor !== undefined ? { proveedor: data.proveedor.trim() } : {}),
-      ...(data.area !== undefined ? { area: data.area.trim() } : {}),
+      ...(proveedor !== undefined
+        ? { proveedor: proveedor.nombre, proveedorId: proveedor.id }
+        : {}),
+      ...(area !== undefined ? { area: area.nombre, areaId: area.id } : {}),
       ...(data.nivel !== undefined ? { nivel: data.nivel.trim() } : {}),
       ...(data.modalidad !== undefined ? { modalidad: data.modalidad.trim() } : {}),
       ...(data.duracion !== undefined

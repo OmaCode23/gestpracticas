@@ -2,6 +2,7 @@ import { prisma } from "@/database/prisma";
 import { CICLOS_FORMATIVOS_BASE } from "@/shared/catalogs/academico";
 import { SECTORES } from "@/shared/catalogs/empresa";
 import type { CicloFormativoInput, CicloFormativoUpdateInput } from "../types/ciclos";
+import type { CursoCatalogoInput, CursoCatalogoUpdateInput } from "../types/cursos";
 import type { SectorInput, SectorUpdateInput } from "../types/sectores";
 
 const CICLOS_BASE_BY_CODE = new Map(
@@ -375,6 +376,110 @@ export async function deleteCicloFormativo(id: number) {
   }
 
   return prisma.cicloFormativo.delete({
+    where: { id },
+  });
+}
+
+async function getCursoProveedorUsageCounts(id: number) {
+  const proveedor = await prisma.cursoProveedor.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          cursos: true,
+        },
+      },
+    },
+  });
+
+  return {
+    cursosCount: proveedor?._count.cursos ?? 0,
+  };
+}
+
+async function getCursoAreaUsageCounts(id: number) {
+  const area = await prisma.cursoArea.findUnique({
+    where: { id },
+    select: {
+      _count: {
+        select: {
+          cursos: true,
+        },
+      },
+    },
+  });
+
+  return {
+    cursosCount: area?._count.cursos ?? 0,
+  };
+}
+
+export async function createCursoProveedor(data: CursoCatalogoInput) {
+  return prisma.cursoProveedor.create({
+    data: {
+      nombre: normalizeNombre(data.nombre),
+      activo: data.activo ?? true,
+    },
+  });
+}
+
+export async function updateCursoProveedor(id: number, data: CursoCatalogoUpdateInput) {
+  return prisma.cursoProveedor.update({
+    where: { id },
+    data: {
+      ...(data.nombre !== undefined ? { nombre: normalizeNombre(data.nombre) } : {}),
+      ...(data.activo !== undefined ? { activo: data.activo } : {}),
+    },
+  });
+}
+
+export async function deleteCursoProveedor(id: number) {
+  const { cursosCount } = await getCursoProveedorUsageCounts(id);
+
+  if (cursosCount > 0) {
+    const error = new Error("CURSO_PROVEEDOR_EN_USO");
+    (error as Error & { meta?: { cursosCount: number } }).meta = {
+      cursosCount,
+    };
+    throw error;
+  }
+
+  return prisma.cursoProveedor.delete({
+    where: { id },
+  });
+}
+
+export async function createCursoArea(data: CursoCatalogoInput) {
+  return prisma.cursoArea.create({
+    data: {
+      nombre: normalizeNombre(data.nombre),
+      activo: data.activo ?? true,
+    },
+  });
+}
+
+export async function updateCursoArea(id: number, data: CursoCatalogoUpdateInput) {
+  return prisma.cursoArea.update({
+    where: { id },
+    data: {
+      ...(data.nombre !== undefined ? { nombre: normalizeNombre(data.nombre) } : {}),
+      ...(data.activo !== undefined ? { activo: data.activo } : {}),
+    },
+  });
+}
+
+export async function deleteCursoArea(id: number) {
+  const { cursosCount } = await getCursoAreaUsageCounts(id);
+
+  if (cursosCount > 0) {
+    const error = new Error("CURSO_AREA_EN_USO");
+    (error as Error & { meta?: { cursosCount: number } }).meta = {
+      cursosCount,
+    };
+    throw error;
+  }
+
+  return prisma.cursoArea.delete({
     where: { id },
   });
 }

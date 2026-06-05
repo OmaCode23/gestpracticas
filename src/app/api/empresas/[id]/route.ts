@@ -109,6 +109,9 @@ export async function PATCH(
     const empresa = await updateEmpresa(id, parsed.data);
     revalidatePath("/");
     revalidatePath("/empresas");
+    revalidatePath("/ofertas");
+    revalidatePath("/portal-alumno");
+    revalidatePath("/portal-alumno/ofertas");
 
     return NextResponse.json<ApiResponse<typeof empresa>>({
       ok: true,
@@ -181,6 +184,9 @@ export async function DELETE(
     await deleteEmpresa(id);
     revalidatePath("/");
     revalidatePath("/empresas");
+    revalidatePath("/ofertas");
+    revalidatePath("/portal-alumno");
+    revalidatePath("/portal-alumno/ofertas");
 
     return NextResponse.json<ApiResponse<null>>({
       ok: true,

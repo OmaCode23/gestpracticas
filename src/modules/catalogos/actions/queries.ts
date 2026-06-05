@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/database/prisma";
 import { CACHE_TAGS } from "@/shared/cache";
+import { CURSO_MODALIDADES, CURSO_NIVELES } from "@/shared/catalogs/cursos";
 
 async function getEmpresaCatalogosUncached() {
   const [sectores, localidades, ciclosFormativos] = await Promise.all([
@@ -126,6 +127,80 @@ const getCiclosFormativosActivosOptionsCached = unstable_cache(
   }
 );
 
+async function getCursoProveedoresUncached() {
+  return prisma.cursoProveedor.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      activo: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          cursos: true,
+        },
+      },
+    },
+  });
+}
+
+const getCursoProveedoresCached = unstable_cache(
+  getCursoProveedoresUncached,
+  ["curso-proveedores"],
+  {
+    tags: [CACHE_TAGS.catalogos],
+  }
+);
+
+async function getCursoAreasUncached() {
+  return prisma.cursoArea.findMany({
+    orderBy: { nombre: "asc" },
+    select: {
+      id: true,
+      nombre: true,
+      activo: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          cursos: true,
+        },
+      },
+    },
+  });
+}
+
+const getCursoAreasCached = unstable_cache(getCursoAreasUncached, ["curso-areas"], {
+  tags: [CACHE_TAGS.catalogos],
+});
+
+async function getCursoCatalogosUncached() {
+  const [proveedores, areas] = await Promise.all([
+    prisma.cursoProveedor.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true },
+    }),
+    prisma.cursoArea.findMany({
+      where: { activo: true },
+      orderBy: { nombre: "asc" },
+      select: { id: true, nombre: true },
+    }),
+  ]);
+
+  return {
+    proveedores,
+    areas,
+    niveles: [...CURSO_NIVELES],
+    modalidades: [...CURSO_MODALIDADES],
+  };
+}
+
+const getCursoCatalogosCached = unstable_cache(getCursoCatalogosUncached, ["curso-catalogos"], {
+  tags: [CACHE_TAGS.catalogos],
+});
+
 export async function getEmpresaCatalogos() {
   return getEmpresaCatalogosCached();
 }
@@ -144,4 +219,16 @@ export async function getCiclosFormativosActivos() {
 
 export async function getCiclosFormativosActivosOptions() {
   return getCiclosFormativosActivosOptionsCached();
+}
+
+export async function getCursoProveedores() {
+  return getCursoProveedoresCached();
+}
+
+export async function getCursoAreas() {
+  return getCursoAreasCached();
+}
+
+export async function getCursoCatalogos() {
+  return getCursoCatalogosCached();
 }

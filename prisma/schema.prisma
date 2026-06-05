@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -29,17 +29,17 @@ enum OfertaEstado {
 }
 
 model Usuario {
-  id           Int                @id @default(autoincrement())
+  id           Int               @id @default(autoincrement())
   nombre       String
-  email        String             @unique
+  email        String            @unique
   iniciales    String?
-  rol          UserRole           @default(PROFESOR)
-  activo       Boolean            @default(true)
+  rol          UserRole          @default(PROFESOR)
+  activo       Boolean           @default(true)
   authProvider AuthProvider?
-  authSubject  String?            @unique
-  lastLoginAt  DateTime?          @map("last_login_at")
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  authSubject  String?           @unique
+  lastLoginAt  DateTime?         @map("last_login_at")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
   logs         ImportExportLog[]
   sessions     Session[]
 
@@ -73,64 +73,67 @@ model Session {
 }
 
 model Empresa {
-  id                Int              @id @default(autoincrement())
+  id                Int                @id @default(autoincrement())
   nombre            String
-  cif               String           @unique
+  cif               String             @unique
   direccion         String?
   localidadId       Int
-  localidadRef      Localidad        @relation(fields: [localidadId], references: [id], onDelete: Restrict)
+  localidadRef      Localidad          @relation(fields: [localidadId], references: [id], onDelete: Restrict)
   sectorId          Int
-  sectorRef         Sector           @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  sectorRef         Sector             @relation(fields: [sectorId], references: [id], onDelete: Restrict)
   cicloFormativoId  Int?
-  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  cicloFormativoRef CicloFormativo?    @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
   telefono          String?
   email             String?
   contacto          String?
   emailContacto     String?
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   formaciones       FormacionEmpresa[]
+  ofertasPracticas  OfertaPractica[]
 
   @@map("empresas")
 }
 
 model Alumno {
-  id                Int              @id @default(autoincrement())
-  nombre            String
-  nia               String           @unique
-  nif               String?          @unique
-  nuss              String?          @unique
-  telefono          String
-  email             String           @unique
-  cursoCiclo        Int              @default(1)
-  cicloFormativoId  Int?
-  cicloFormativoRef CicloFormativo?  @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
-  curso             String
-  cvOid             Int?             @map("cv_oid")
-  cvNombre          String?          @map("cv_nombre")
-  cvMimeType        String?          @map("cv_mime_type")
-  cvTamano          Int?             @map("cv_tamano")
-  cvUpdatedAt       DateTime?        @map("cv_updated_at")
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  formaciones       FormacionEmpresa[]
+  id                  Int                       @id @default(autoincrement())
+  nombre              String
+  nia                 String                    @unique
+  nif                 String?                   @unique
+  nuss                String?                   @unique
+  telefono            String
+  email               String                    @unique
+  cursoCiclo          Int                       @default(1)
+  cicloFormativoId    Int?
+  cicloFormativoRef   CicloFormativo?           @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  curso               String
+  cvOid               Int?                      @map("cv_oid")
+  cvNombre            String?                   @map("cv_nombre")
+  cvMimeType          String?                   @map("cv_mime_type")
+  cvTamano            Int?                      @map("cv_tamano")
+  cvUpdatedAt         DateTime?                 @map("cv_updated_at")
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  formaciones         FormacionEmpresa[]
+  interesesOfertas    OfertaPracticaInteres[]
+  inscripcionesCursos CursoExternoInscripcion[]
 
   @@map("alumnos")
 }
 
 model FormacionEmpresa {
-  id                 Int      @id @default(autoincrement())
-  empresaId          Int
-  empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Restrict)
-  alumnoId           Int
-  alumno             Alumno   @relation(fields: [alumnoId], references: [id], onDelete: Restrict)
-  periodo            String?
-  descripcion        String?
-  tutorLaboral       String?
-  emailTutorLaboral  String?
-  curso              String
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  empresaId         Int
+  empresa           Empresa  @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  alumnoId          Int
+  alumno            Alumno   @relation(fields: [alumnoId], references: [id], onDelete: Restrict)
+  periodo           String?
+  descripcion       String?
+  tutorLaboral      String?
+  emailTutorLaboral String?
+  curso             String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("formaciones_empresa")
 }
@@ -173,15 +176,15 @@ model Localidad {
 }
 
 model CicloFormativo {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  codigo    String?   @unique
-  activo    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  empresas  Empresa[]
-  alumnos   Alumno[]
-  profesores Profesor[]
+  id               Int              @id @default(autoincrement())
+  nombre           String           @unique
+  codigo           String?          @unique
+  activo           Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  empresas         Empresa[]
+  alumnos          Alumno[]
+  profesores       Profesor[]
   ofertasPracticas OfertaPractica[]
 
   @@map("ciclos_formativos")
@@ -204,41 +207,104 @@ model Profesor {
 }
 
 model CursoExterno {
-  id          Int      @id @default(autoincrement())
-  titulo      String
-  proveedor   String
-  area        String
-  nivel       String
-  modalidad   String
-  duracion    String?
-  descripcion String?
-  enlace      String?
-  activo      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int                       @id @default(autoincrement())
+  titulo        String
+  proveedor     String
+  proveedorId   Int?                      @map("proveedor_id")
+  proveedorRef  CursoProveedor?           @relation(fields: [proveedorId], references: [id], onDelete: SetNull)
+  area          String
+  areaId        Int?                      @map("area_id")
+  areaRef       CursoArea?                @relation(fields: [areaId], references: [id], onDelete: SetNull)
+  nivel         String
+  modalidad     String
+  duracion      String?
+  descripcion   String?
+  enlace        String?
+  activo        Boolean                   @default(true)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  inscripciones CursoExternoInscripcion[]
 
   @@unique([titulo, proveedor])
   @@index([activo])
+  @@index([proveedorId])
+  @@index([areaId])
   @@map("cursos_externos")
 }
 
+model CursoProveedor {
+  id        Int            @id @default(autoincrement())
+  nombre    String         @unique
+  activo    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  cursos    CursoExterno[]
+
+  @@index([activo])
+  @@map("curso_proveedores")
+}
+
+model CursoArea {
+  id        Int            @id @default(autoincrement())
+  nombre    String         @unique
+  activo    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  cursos    CursoExterno[]
+
+  @@index([activo])
+  @@map("curso_areas")
+}
+
 model OfertaPractica {
-  id                Int             @id @default(autoincrement())
+  id                Int                     @id @default(autoincrement())
   titulo            String
   empresa           String
+  empresaId         Int?                    @map("empresa_id")
+  empresaRef        Empresa?                @relation(fields: [empresaId], references: [id], onDelete: SetNull)
   cicloFormativoId  Int?
-  cicloFormativoRef CicloFormativo? @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
-  plazas            Int             @default(1)
+  cicloFormativoRef CicloFormativo?         @relation(fields: [cicloFormativoId], references: [id], onDelete: SetNull)
+  plazas            Int                     @default(1)
   requisitos        String?
   periodo           String?
   descripcion       String?
-  estado            OfertaEstado    @default(PUBLICADA)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  estado            OfertaEstado            @default(PUBLICADA)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  interesesAlumnos  OfertaPracticaInteres[]
 
   @@index([estado])
+  @@index([empresaId])
   @@index([cicloFormativoId])
   @@map("ofertas_practicas")
+}
+
+model OfertaPracticaInteres {
+  id        Int            @id @default(autoincrement())
+  alumnoId  Int            @map("alumno_id")
+  alumno    Alumno         @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  ofertaId  Int            @map("oferta_id")
+  oferta    OfertaPractica @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([alumnoId, ofertaId])
+  @@index([ofertaId])
+  @@map("ofertas_practicas_intereses")
+}
+
+model CursoExternoInscripcion {
+  id        Int          @id @default(autoincrement())
+  alumnoId  Int          @map("alumno_id")
+  alumno    Alumno       @relation(fields: [alumnoId], references: [id], onDelete: Cascade)
+  cursoId   Int          @map("curso_id")
+  curso     CursoExterno @relation(fields: [cursoId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([alumnoId, cursoId])
+  @@index([cursoId])
+  @@map("cursos_externos_inscripciones")
 }
 
 model Setting {

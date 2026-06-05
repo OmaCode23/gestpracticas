@@ -47,6 +47,19 @@ type SectorItem = {
   };
 };
 
+type CursoCatalogoItem = {
+  id: number;
+  nombre: string;
+  activo: boolean;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  _count: {
+    cursos: number;
+  };
+};
+
+type CursoCatalogoKind = "proveedor" | "area";
+
 type ConfiguracionAcademica = {
   mesCambioCurso: number;
   numeroCursosVisibles: number;
@@ -94,6 +107,32 @@ const MODO_CURSO_RADIOS = [
 
 const BASE_CICLO_CODES = new Set(CICLOS_FORMATIVOS_BASE.map((item) => item.codigo));
 
+const CURSO_CATALOGO_CONFIG: Record<
+  CursoCatalogoKind,
+  {
+    title: string;
+    singular: string;
+    endpoint: string;
+    icon: string;
+    iconVariant: "green" | "amber";
+  }
+> = {
+  proveedor: {
+    title: "Proveedores de cursos",
+    singular: "proveedor",
+    endpoint: "/api/catalogos/curso-proveedores",
+    icon: "PR",
+    iconVariant: "green",
+  },
+  area: {
+    title: "Áreas de cursos",
+    singular: "area",
+    endpoint: "/api/catalogos/curso-areas",
+    icon: "AR",
+    iconVariant: "amber",
+  },
+};
+
 function formatDate(value: Date | string) {
   return new Intl.DateTimeFormat("es-ES", {
     dateStyle: "short",
@@ -116,11 +155,15 @@ function isSectorInUse(sector: SectorItem) {
 export default function ConfiguracionPanel({
   sectores: initialSectores,
   ciclosFormativos: initialCiclosFormativos,
+  cursoProveedores: initialCursoProveedores,
+  cursoAreas: initialCursoAreas,
   configuracionAcademica: initialConfiguracionAcademica,
   emailDomains: initialEmailDomains,
 }: {
   sectores: SectorItem[];
   ciclosFormativos: CicloFormativoItem[];
+  cursoProveedores: CursoCatalogoItem[];
+  cursoAreas: CursoCatalogoItem[];
   configuracionAcademica: ConfiguracionAcademica;
   emailDomains: EmailDomainsConfig;
 }) {
@@ -128,11 +171,25 @@ export default function ConfiguracionPanel({
   const [sectores, setSectores] = useState<SectorItem[]>(initialSectores);
   const [ciclosFormativos, setCiclosFormativos] =
     useState<CicloFormativoItem[]>(initialCiclosFormativos);
+  const [cursoProveedores, setCursoProveedores] =
+    useState<CursoCatalogoItem[]>(initialCursoProveedores);
+  const [cursoAreas, setCursoAreas] = useState<CursoCatalogoItem[]>(initialCursoAreas);
   const [configuracionAcademica, setConfiguracionAcademica] =
     useState<ConfiguracionAcademica>(initialConfiguracionAcademica);
   const [createSectorName, setCreateSectorName] = useState("");
+  const [createCursoCatalogoName, setCreateCursoCatalogoName] = useState<
+    Record<CursoCatalogoKind, string>
+  >({
+    proveedor: "",
+    area: "",
+  });
   const [createForm, setCreateForm] = useState<FormState>(EMPTY_FORM);
   const [editingSectorName, setEditingSectorName] = useState<{
+    id: number;
+    value: string;
+  } | null>(null);
+  const [editingCursoCatalogoName, setEditingCursoCatalogoName] = useState<{
+    kind: CursoCatalogoKind;
     id: number;
     value: string;
   } | null>(null);
@@ -143,6 +200,8 @@ export default function ConfiguracionPanel({
   } | null>(null);
   const [savingSector, setSavingSector] = useState(false);
   const [savingCycle, setSavingCycle] = useState(false);
+  const [savingCursoCatalogo, setSavingCursoCatalogo] =
+    useState<CursoCatalogoKind | null>(null);
   const [restoringSectores, setRestoringSectores] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [savingAcademica, setSavingAcademica] = useState(false);
@@ -166,6 +225,14 @@ export default function ConfiguracionPanel({
   }, [initialCiclosFormativos]);
 
   useEffect(() => {
+    setCursoProveedores(initialCursoProveedores);
+  }, [initialCursoProveedores]);
+
+  useEffect(() => {
+    setCursoAreas(initialCursoAreas);
+  }, [initialCursoAreas]);
+
+  useEffect(() => {
     setConfiguracionAcademica(initialConfiguracionAcademica);
   }, [initialConfiguracionAcademica]);
 
@@ -176,6 +243,8 @@ export default function ConfiguracionPanel({
 
   const sectoresActivos = sectores.filter((item) => item.activo).length;
   const activos = ciclosFormativos.filter((item) => item.activo).length;
+  const cursoProveedoresActivos = cursoProveedores.filter((item) => item.activo).length;
+  const cursoAreasActivas = cursoAreas.filter((item) => item.activo).length;
 
   function resetCreateForm() {
     setCreateForm(EMPTY_FORM);
@@ -183,6 +252,10 @@ export default function ConfiguracionPanel({
 
   function closeSectorInlineEdit() {
     setEditingSectorName(null);
+  }
+
+  function closeCursoCatalogoInlineEdit() {
+    setEditingCursoCatalogoName(null);
   }
 
   function closeInlineEdit() {
@@ -213,6 +286,24 @@ export default function ConfiguracionPanel({
     }
 
     setCiclosFormativos(json.data);
+  }
+
+  async function reloadCursoCatalogo(kind: CursoCatalogoKind) {
+    const config = CURSO_CATALOGO_CONFIG[kind];
+    const res = await fetch(config.endpoint, {
+      cache: "no-store",
+    });
+    const json: ApiResponse<CursoCatalogoItem[]> = await res.json();
+
+    if (!json.ok) {
+      throw new Error(json.error);
+    }
+
+    if (kind === "proveedor") {
+      setCursoProveedores(json.data);
+    } else {
+      setCursoAreas(json.data);
+    }
   }
 
   async function reloadConfiguracionAcademica() {
@@ -259,6 +350,43 @@ export default function ConfiguracionPanel({
       alert("No se pudo guardar el sector.");
     } finally {
       setSavingSector(false);
+    }
+  }
+
+  async function handleCreateCursoCatalogo(kind: CursoCatalogoKind) {
+    const config = CURSO_CATALOGO_CONFIG[kind];
+    const nombre = createCursoCatalogoName[kind].trim();
+
+    if (!nombre) {
+      alert("El nombre es obligatorio.");
+      return;
+    }
+
+    try {
+      setSavingCursoCatalogo(kind);
+
+      const res = await fetch(config.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nombre }),
+      });
+
+      const json: ApiResponse<CursoCatalogoItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadCursoCatalogo(kind);
+      router.refresh();
+      setCreateCursoCatalogoName((prev) => ({ ...prev, [kind]: "" }));
+      setNotification(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} creado correctamente.`);
+    } catch (error) {
+      console.error(error);
+      alert(`No se pudo guardar el ${config.singular}.`);
+    } finally {
+      setSavingCursoCatalogo(null);
     }
   }
 
@@ -315,6 +443,14 @@ export default function ConfiguracionPanel({
     });
   }
 
+  function openCursoCatalogoInlineEdit(kind: CursoCatalogoKind, item: CursoCatalogoItem) {
+    setEditingCursoCatalogoName({
+      kind,
+      id: item.id,
+      value: item.nombre,
+    });
+  }
+
   async function saveSectorInlineEdit() {
     if (!editingSectorName) return;
 
@@ -350,6 +486,46 @@ export default function ConfiguracionPanel({
       alert("No se pudo actualizar el sector.");
     } finally {
       setSavingSector(false);
+    }
+  }
+
+  async function saveCursoCatalogoInlineEdit() {
+    if (!editingCursoCatalogoName) return;
+
+    const config = CURSO_CATALOGO_CONFIG[editingCursoCatalogoName.kind];
+
+    if (!editingCursoCatalogoName.value.trim()) {
+      alert("El nombre es obligatorio.");
+      return;
+    }
+
+    try {
+      setSavingCursoCatalogo(editingCursoCatalogoName.kind);
+
+      const res = await fetch(`${config.endpoint}/${editingCursoCatalogoName.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: editingCursoCatalogoName.value,
+        }),
+      });
+
+      const json: ApiResponse<CursoCatalogoItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadCursoCatalogo(editingCursoCatalogoName.kind);
+      router.refresh();
+      closeCursoCatalogoInlineEdit();
+      setNotification(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} actualizado correctamente.`);
+    } catch (error) {
+      console.error(error);
+      alert(`No se pudo actualizar el ${config.singular}.`);
+    } finally {
+      setSavingCursoCatalogo(null);
     }
   }
 
@@ -426,6 +602,39 @@ export default function ConfiguracionPanel({
     }
   }
 
+  async function handleToggleCursoCatalogoActivo(
+    kind: CursoCatalogoKind,
+    item: CursoCatalogoItem
+  ) {
+    const config = CURSO_CATALOGO_CONFIG[kind];
+
+    try {
+      const res = await fetch(`${config.endpoint}/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ activo: !item.activo }),
+      });
+
+      const json: ApiResponse<CursoCatalogoItem> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadCursoCatalogo(kind);
+      router.refresh();
+      setNotification(
+        item.activo
+          ? `${config.singular[0].toUpperCase()}${config.singular.slice(1)} desactivado correctamente.`
+          : `${config.singular[0].toUpperCase()}${config.singular.slice(1)} activado correctamente.`
+      );
+    } catch (error) {
+      console.error(error);
+      alert(`No se pudo actualizar el estado del ${config.singular}.`);
+    }
+  }
+
   async function handleToggleActivo(ciclo: CicloFormativoItem) {
     try {
       const res = await fetch(`/api/catalogos/ciclos-formativos/${ciclo.id}`, {
@@ -484,6 +693,41 @@ export default function ConfiguracionPanel({
     } catch (error) {
       console.error(error);
       alert("No se pudo eliminar el sector.");
+    }
+  }
+
+  async function handleDeleteCursoCatalogo(kind: CursoCatalogoKind, item: CursoCatalogoItem) {
+    const config = CURSO_CATALOGO_CONFIG[kind];
+
+    if (item._count.cursos > 0) {
+      alert(`No se puede eliminar porque el ${config.singular} esta en uso.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Se eliminara el ${config.singular} "${item.nombre}". Solo se puede borrar si no aparece en ningun curso. ¿Continuar?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${config.endpoint}/${item.id}`, {
+        method: "DELETE",
+      });
+
+      const json: ApiResponse<null> = await res.json();
+
+      if (!json.ok) {
+        alert(json.error);
+        return;
+      }
+
+      await reloadCursoCatalogo(kind);
+      router.refresh();
+      setNotification(`${config.singular[0].toUpperCase()}${config.singular.slice(1)} eliminado correctamente.`);
+    } catch (error) {
+      console.error(error);
+      alert(`No se pudo eliminar el ${config.singular}.`);
     }
   }
 
@@ -750,6 +994,185 @@ export default function ConfiguracionPanel({
       setExtraDominiosProfesores(updated);
     }
     void saveEmailDomains(entity, updated);
+  }
+
+  function renderCursoCatalogoCard(
+    kind: CursoCatalogoKind,
+    items: CursoCatalogoItem[],
+    activosCount: number
+  ) {
+    const config = CURSO_CATALOGO_CONFIG[kind];
+
+    return (
+      <Card className="overflow-hidden">
+        <CardHeader>
+          <div className="flex w-full flex-wrap items-center gap-3">
+            <CardTitle icon={config.icon} iconVariant={config.iconVariant}>
+              {config.title}
+            </CardTitle>
+            <Tag>{`${activosCount} activos / ${items.length} totales`}</Tag>
+          </div>
+        </CardHeader>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full rounded-none bg-transparent text-left text-sm">
+            <thead className="bg-surface">
+              <tr className="text-[0.75rem] uppercase tracking-[0.08em] text-text-light">
+                <th className="px-6 py-3 font-semibold">Nombre</th>
+                <th className="px-6 py-3 font-semibold">Modificado</th>
+                <th className="px-6 py-3 font-semibold">Cursos</th>
+                <th className="px-6 py-3 font-semibold">Estado</th>
+                <th className="px-6 py-3 text-right font-semibold">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr
+                  key={item.id}
+                  className="border-t border-border odd:bg-white even:bg-surface/40"
+                >
+                  <td className="px-6 py-4">
+                    {editingCursoCatalogoName?.kind === kind &&
+                    editingCursoCatalogoName.id === item.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          className={INPUT_CLS}
+                          value={editingCursoCatalogoName.value}
+                          onChange={(e) =>
+                            setEditingCursoCatalogoName((prev) =>
+                              prev ? { ...prev, value: e.target.value } : prev
+                            )
+                          }
+                          maxLength={120}
+                          autoFocus
+                        />
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={saveCursoCatalogoInlineEdit}
+                          disabled={savingCursoCatalogo === kind}
+                        >
+                          {savingCursoCatalogo === kind ? "..." : "OK"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={closeCursoCatalogoInlineEdit}
+                        >
+                          X
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openCursoCatalogoInlineEdit(kind, item)}
+                          title="Editar nombre"
+                          aria-label="Editar nombre"
+                          className="mt-1.5 inline-flex h-4 w-4 items-center justify-center rounded-md border border-border bg-surface2 text-[0.46rem] text-text-mid transition-colors hover:bg-[#e5d7d0] hover:text-navy"
+                        >
+                          {"\u270F\uFE0F"}
+                        </button>
+                        <span className="font-medium text-navy">{item.nombre}</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-text-mid">
+                    {formatDate(item.updatedAt)}
+                  </td>
+                  <td className="px-6 py-4 text-text-mid">{item._count.cursos}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={
+                          item.activo
+                            ? `Desactivar ${config.singular}`
+                            : `Activar ${config.singular}`
+                        }
+                        title={item.activo ? "Desactivar" : "Activar"}
+                        onClick={() => handleToggleCursoCatalogoActivo(kind, item)}
+                        className={[
+                          "relative inline-flex h-6 w-10 items-center rounded-full transition-colors duration-200",
+                          item.activo ? "bg-accent" : "bg-[#d7c7c3]",
+                        ].join(" ")}
+                      >
+                        <span
+                          className={[
+                            "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200",
+                            item.activo ? "translate-x-5" : "translate-x-1",
+                          ].join(" ")}
+                        />
+                      </button>
+                      <span className="min-w-[92px] text-left text-[0.82rem] font-medium text-text-mid">
+                        {item.activo ? "Activado" : "Desactivado"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteCursoCatalogo(kind, item)}
+                        title={
+                          item._count.cursos > 0
+                            ? `No se puede eliminar porque el ${config.singular} esta en uso.`
+                            : `Eliminar ${config.singular}`
+                        }
+                      >
+                        Eliminar
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+
+              <tr className="border-y border-border bg-[#f3e7da] hover:bg-[#f3e7da]">
+                <td className="px-6 py-4 align-middle">
+                  <input
+                    className={INPUT_CLS}
+                    value={createCursoCatalogoName[kind]}
+                    onChange={(e) =>
+                      setCreateCursoCatalogoName((prev) => ({
+                        ...prev,
+                        [kind]: e.target.value,
+                      }))
+                    }
+                    placeholder={`Nuevo ${config.singular}`}
+                    maxLength={120}
+                  />
+                </td>
+                <td className="px-6 py-4 text-text-light">Nuevo registro</td>
+                <td className="px-6 py-4 text-text-light">-</td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleCreateCursoCatalogo(kind)}
+                      disabled={savingCursoCatalogo === kind}
+                    >
+                      {savingCursoCatalogo === kind ? "Guardando..." : "Guardar"}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setCreateCursoCatalogoName((prev) => ({ ...prev, [kind]: "" }))
+                      }
+                    >
+                      Limpiar
+                    </Button>
+                  </div>
+                </td>
+                <td className="px-6 py-4" />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    );
   }
 
   return (
@@ -1213,6 +1636,14 @@ export default function ConfiguracionPanel({
             </Button>
           </div>
         </Card>
+      </div>
+
+      <div className="mt-8">
+        {renderCursoCatalogoCard("proveedor", cursoProveedores, cursoProveedoresActivos)}
+      </div>
+
+      <div className="mt-8">
+        {renderCursoCatalogoCard("area", cursoAreas, cursoAreasActivas)}
       </div>
 
       <div className="mt-8">

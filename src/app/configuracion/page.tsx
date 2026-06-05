@@ -1,6 +1,11 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { requireStaffSession } from "@/modules/auth/session";
-import { getCiclosFormativos, getSectores } from "@/modules/catalogos/actions/queries";
+import {
+  getCiclosFormativos,
+  getCursoAreas,
+  getCursoProveedores,
+  getSectores,
+} from "@/modules/catalogos/actions/queries";
 import {
   getConfiguracionAcademica,
   getEmailDomainsConfig,
@@ -13,10 +18,19 @@ export default async function ConfiguracionPage() {
   noStore();
   await requireStaffSession("/configuracion");
 
-  const [sectores, ciclosFormativos, configuracionAcademica, emailDomains] =
+  const [
+    sectores,
+    ciclosFormativos,
+    cursoProveedores,
+    cursoAreas,
+    configuracionAcademica,
+    emailDomains,
+  ] =
     await Promise.all([
       getSectores(),
       getCiclosFormativos(),
+      getCursoProveedores(),
+      getCursoAreas(),
       getConfiguracionAcademica(),
       getEmailDomainsConfig(),
     ]);
@@ -35,6 +49,8 @@ export default async function ConfiguracionPage() {
       <ConfiguracionPanel
         sectores={sectores}
         ciclosFormativos={ciclosFormativos}
+        cursoProveedores={cursoProveedores}
+        cursoAreas={cursoAreas}
         configuracionAcademica={configuracionAcademica}
         emailDomains={emailDomains}
       />
