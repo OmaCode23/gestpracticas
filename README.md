@@ -129,6 +129,7 @@ Ademas de la configuracion general, para poder entrar en la aplicacion hay que p
 - elegir `AUTH_MODE`;
 - `AUTH_MODE=local` usa el sistema de login propio actual del proyecto;
 - `AUTH_MODE=external` deja preparada una alternativa futura basada en un proveedor externo;
+- si la aplicacion se sirve por HTTP en produccion, definir `AUTH_COOKIE_SECURE=0`; en HTTPS usar `AUTH_COOKIE_SECURE=1` o dejar la variable sin definir;
 - ejecutar `npm run db:bootstrap-admin` para crear el primer usuario `ADMIN`.
 
 Ejemplo en modo local:

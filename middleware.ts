@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AUTH_COOKIE_NAME } from "@/modules/auth/config";
+import { AUTH_COOKIE_NAME, shouldUseSecureAuthCookies } from "@/modules/auth/config";
 
 const PUBLIC_PATHS = new Set(["/login"]);
 
@@ -14,7 +14,7 @@ function clearAuthCookie(response: NextResponse) {
   response.cookies.set(AUTH_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureAuthCookies(),
     path: "/",
     maxAge: 0,
   });

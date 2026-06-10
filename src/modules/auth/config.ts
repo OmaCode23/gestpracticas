@@ -51,3 +51,17 @@ export function getExternalAuthSettings(): ExternalAuthSettings | null {
 export function isExternalMockCallbackEnabled() {
   return process.env.EXTERNAL_AUTH_ALLOW_MOCK_CALLBACK?.trim() === "1";
 }
+
+export function shouldUseSecureAuthCookies() {
+  const raw = process.env.AUTH_COOKIE_SECURE?.trim().toLowerCase();
+
+  if (raw === "1" || raw === "true" || raw === "yes") {
+    return true;
+  }
+
+  if (raw === "0" || raw === "false" || raw === "no") {
+    return false;
+  }
+
+  return process.env.NODE_ENV === "production";
+}

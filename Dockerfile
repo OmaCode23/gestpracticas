@@ -17,13 +17,14 @@ RUN npm prune --omit=dev
 FROM base AS runner
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
-ENV PORT=3000
+ENV PORT=3005
 
 RUN addgroup -g 1001 -S nodejs \
   && adduser -S nextjs -u 1001
 
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules/typescript ./node_modules/typescript
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/src/shared/catalogs ./src/shared/catalogs
 COPY --from=builder /app/scripts/with-db-env.mjs ./scripts/with-db-env.mjs
@@ -40,7 +41,7 @@ RUN chown -R nextjs:nodejs /app \
   && chmod +x /app/scripts/container/*.sh
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 3005
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["./scripts/container/start-prod.sh"]

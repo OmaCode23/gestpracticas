@@ -5,6 +5,7 @@ import {
   EXTERNAL_AUTH_STATE_COOKIE_NAME,
   EXTERNAL_AUTH_STATE_TTL_SECONDS,
   getExternalAuthSettings,
+  shouldUseSecureAuthCookies,
 } from "@/modules/auth/config";
 import {
   buildSignedSessionValue,
@@ -79,7 +80,7 @@ export function createExternalAuthorizationRequest(nextPath?: string | null) {
   cookies().set(EXTERNAL_AUTH_STATE_COOKIE_NAME, signedState, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureAuthCookies(),
     path: "/",
     maxAge: EXTERNAL_AUTH_STATE_TTL_SECONDS,
   });
@@ -99,7 +100,7 @@ export function consumeExternalState(state: string) {
   cookies().set(EXTERNAL_AUTH_STATE_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureAuthCookies(),
     path: "/",
     maxAge: 0,
   });

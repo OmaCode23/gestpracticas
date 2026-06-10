@@ -30,7 +30,7 @@ function readOption(args, names) {
 }
 
 function readPort(args) {
-  const value = readOption(args, ["-p", "--port"]) || process.env.PORT || process.env.APP_PORT || "3000";
+  const value = readOption(args, ["-p", "--port"]) || process.env.PORT || process.env.APP_PORT || "3005";
   const port = Number(value);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
