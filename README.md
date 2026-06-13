@@ -309,13 +309,20 @@ Recomendacion de trabajo para el equipo:
 - Antes de convertir un archivo existente, comprobar primero como lo interpreta VS Code para no estropear texto que ya esta correcto.
 - No cambiar la codificacion de un archivo solo porque la terminal muestre mal los acentos.
 - Cuando aparezca texto corrupto, revisar primero la codificacion de la terminal y despues la del archivo.
+- Antes de "arreglar" la codificacion, comprobar si el problema afecta al archivo real o solo a la salida de la terminal.
+- Si el archivo esta bien en `UTF-8` y solo se ve mal en consola, no tocar el contenido.
+- Si solo unas lineas concretas quedaron corruptas tras una insercion o edicion, corregir solo esas lineas y evitar recodificar el archivo completo.
 - Crear archivos nuevos desde VS Code y guardarlos antes de editarlos desde otras herramientas o asistentes.
 - Tener especial cuidado en Windows al editar desde distintas herramientas sobre el mismo archivo.
 - Mantener una unica codificacion en todo el repositorio para evitar corrupciones silenciosas en merges, revisiones y copias entre terminal, editor y git.
 - Priorizar siempre la codificacion real de los archivos del proyecto por encima de como los represente una terminal concreta.
 - `TypeScript`, `TSX`, `JavaScript`, `JSON`, `CSS`, `MD`, `Prisma`, `YAML` y ficheros de texto del proyecto deben mantenerse en `UTF-8 sin BOM`.
+- En cuanto a finales de linea, conviene normalizar preferentemente a `LF` en lugar de `CRLF`, por ser la opcion mas estandar en proyectos actuales y reducir fricciones entre entornos. Esa normalizacion no se ha aplicado todavia porque supondria reescribir practicamente todos los archivos del proyecto.
 - Si hace falta revisar texto con acentos en consola clasica, usar `chcp 65001`.
 - En PowerShell conviene trabajar con salida y guardado en `UTF-8`.
+- En algunos entornos, PowerShell puede no llegar a cargar el perfil que fuerza `UTF-8` si la politica de ejecucion bloquea scripts; en ese caso la sesion puede quedarse con `code page 850`, `InputEncoding` no UTF-8 o `$OutputEncoding` en `us-ascii`, aunque el proyecto y VS Code esten bien configurados.
+- Una configuracion habitual de PowerShell para permitir la carga del perfil del usuario es `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned -Force`, pero algunos hosts gestionados o herramientas embebidas pueden seguir arrancando con restricciones propias y no aplicar el perfil aunque esa politica ya este guardada.
+- Si aparecen acentos rotos en PowerShell, conviene comprobar expresamente `Get-ExecutionPolicy -List`, `chcp`, `[Console]::InputEncoding`, `[Console]::OutputEncoding` y `$OutputEncoding` antes de asumir que el archivo se ha guardado mal.
 - Evitar re-guardar archivos fuente desde scripts o comandos que usen codificaciones heredadas por defecto.
 - En VS Code, se recomienda añadir en su configuración global`settings.json`:
 ```json
