@@ -7,7 +7,6 @@ $staticDir = Join-Path $projectRoot ".next\static"
 $publicDir = Join-Path $projectRoot "public"
 $readmeSourcePath = Join-Path $projectRoot "README-produccion.txt"
 $backupSourcePath = Join-Path $projectRoot "gestpracticas_prod.backup"
-$legacyBackupSourcePath = Join-Path $projectRoot "gestpracticas_demo.backup"
 
 if (-not (Test-Path $standaloneDir)) {
   throw "No se ha encontrado .next\\standalone. Ejecuta primero 'npm run build'."
@@ -55,8 +54,6 @@ Copy-Item -LiteralPath $readmeSourcePath -Destination (Join-Path $outputDir "REA
 
 if (Test-Path $backupSourcePath) {
   Copy-Item -LiteralPath $backupSourcePath -Destination (Join-Path $outputDir "gestpracticas_prod.backup") -Force
-} elseif (Test-Path $legacyBackupSourcePath) {
-  Copy-Item -LiteralPath $legacyBackupSourcePath -Destination (Join-Path $outputDir "gestpracticas_demo.backup") -Force
 }
 
 Write-Host "Paquete de produccion generado en: $outputDir"

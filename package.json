@@ -13,7 +13,6 @@
     "docker:db:up": "docker compose up -d db pgbouncer",
     "docker:down": "docker compose down",
     "package:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/package-prod.ps1",
-    "package:demo": "powershell -ExecutionPolicy Bypass -File ./scripts/package-demo.ps1",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "next lint",

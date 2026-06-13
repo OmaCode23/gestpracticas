@@ -2,9 +2,9 @@
 
 ## Enfoque actual y alternativa futura
 
-Actualmente la aplicacion queda planteada con un sistema de autenticacion propio ya operativo y documentado en este archivo.
+Actualmente la aplicacion usa y soporta de forma efectiva un sistema de autenticacion propio ya operativo y documentado en este archivo.
 
-Ademas, se mantiene abierta la posibilidad de migrar en el futuro a autenticacion externa con cuentas institucionales `@edu.gva.es`, previsiblemente a traves del sistema de identidad de la Generalitat si el responsable TIC confirma que:
+Ademas, la implementacion se ha diseÃ±ado para que en el futuro pueda migrarse o adaptarse con el menor impacto posible hacia una autenticacion externa con cuentas institucionales `@edu.gva.es`, previsiblemente a traves del sistema de identidad de la Generalitat, si el responsable TIC confirma que:
 
 - existe un proveedor de identidad utilizable por aplicaciones del centro;
 - puede registrarse una aplicacion propia;
@@ -39,21 +39,27 @@ La idea arquitectonica es separar:
 - identidad autorizada en la aplicacion;
 - credenciales del modo de acceso que se use en cada momento.
 
-## Modos de autenticacion
+## Estado funcional del login
 
-La aplicacion debe diferenciar explicitamente dos modos mediante `AUTH_MODE`:
+El flujo normal, implantado y soportado de verdad en la aplicacion es el login local.
 
-- `local`: modo de autenticacion propio del proyecto, con credenciales locales.
-- `external`: modo alternativo para una integracion futura con autenticacion externa, sin gestion de contrasenas en la aplicacion.
+La preparacion para un futuro modo `external` existe a nivel de arquitectura y de algunas piezas de codigo, pero no debe interpretarse como una integracion terminada ni como parte de la puesta en marcha normal del proyecto.
 
-Consecuencias:
+Consecuencias del estado actual:
 
-- en `local` si existen contrasenas temporales, cambio de contrasena y reseteo por administrador;
-- en `external` la aplicacion no crea, guarda, cambia ni resetea contrasenas.
+- el modo real de trabajo es `local`, con credenciales locales;
+- la gestion cotidiana de usuarios, contrasenas y reseteos se hace en local;
+- la via `external` queda solo como preparacion de futuro y no como funcionalidad operativa cerrada.
 
 ## Variables de entorno relevantes
 
+Para la instalacion y uso normal actuales:
+
 - `AUTH_SECRET`: secreto para firma de sesion y estado de autenticacion.
+- `AUTH_COOKIE_SECURE`: ajuste necesario cuando la aplicacion se sirve por `HTTP` y la cookie no puede marcarse como `Secure`.
+
+Como preparacion para una futura ampliacion no implantada:
+
 - `AUTH_MODE`: `local` o `external`.
 - `EXTERNAL_AUTH_AUTHORIZE_URL`: endpoint de autorizacion del proveedor externo.
 - `EXTERNAL_AUTH_CLIENT_ID`: identificador de cliente de la aplicacion registrada.
@@ -67,7 +73,7 @@ Actualmente ya existe una base funcional implementada con estas piezas:
 
 - sesion en servidor con cookie `httpOnly`;
 - tabla `Usuario` como fuente de verdad de autorizacion;
-- soporte de `AUTH_MODE=local` y `AUTH_MODE=external`;
+- soporte operativo del login local y base parcial preparada para una futura via `external`;
 - bootstrap del primer administrador;
 - gestion de usuarios accesible solo para `ADMIN`;
 - proteccion de paginas y rutas API relevantes en servidor;
@@ -155,34 +161,25 @@ Pasos previos:
 
 1. aplicar las migraciones de Prisma;
 2. definir `AUTH_SECRET`;
-3. elegir el modo de autenticacion con `AUTH_MODE`.
+3. si la aplicacion se sirve por `HTTP`, definir `AUTH_COOKIE_SECURE=0`.
 
-Si se va a trabajar con login local, el modo debe ser:
-
-- `AUTH_MODE=local`
-
-Y el administrador inicial se crea con email, nombre y contrasena:
+En el estado actual del proyecto, el administrador inicial se crea con email, nombre y contrasena:
 
 ```bash
 npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
 ```
 
-Si se quiere dejar la aplicacion alineada con el futuro login externo, el modo debe ser:
-
-- `AUTH_MODE=external`
-
-Y el administrador inicial se autoriza solo por email y nombre, sin contrasena local:
-
-```bash
-npm run db:bootstrap-admin -- --email admin@edu.gva.es --name "Administrador"
-```
-
 Comportamiento adicional del script:
 
 - si no se pasa `--email`, lo solicita por consola;
-- si `AUTH_MODE=local` y no se pasa `--password`, tambien lo solicita por consola;
+- si no se pasa `--password`, tambien lo solicita por consola en el flujo local actual;
 - si se ejecuta de nuevo con el mismo email, actualiza ese usuario como `ADMIN` activo;
 - si se ejecuta con otro email, no desactiva automaticamente al administrador anterior.
+
+Nota de arquitectura futura:
+
+- el script ya esta planteado para poder adaptarse a un posible modo `external`;
+- esa via no forma parte de la puesta en marcha actual y no debe considerarse implantada.
 
 ## Gestion posterior de usuarios
 
@@ -196,7 +193,7 @@ En su estado actual, esa pantalla se usa para:
 - en el modo local, resetear credenciales locales;
 - revisar el rol efectivo de cada identidad segun su origen.
 
-En `AUTH_MODE=external` no se mostraran acciones de cambio o reseteo de contrasena.
+Si en el futuro llegara a implantarse una autenticacion externa real, no se mostrarian acciones de cambio o reseteo de contrasena local.
 
 ## Matriz de permisos por rol
 
@@ -323,7 +320,7 @@ Regla de mantenimiento:
 
 ## Flujo actual de la aplicacion
 
-### Modo local
+### Modo local actual
 
 1. El despliegue crea al menos un `ADMIN` inicial en `Usuario`.
 2. Las altas y ediciones de `Alumno` y `Profesor` crean o sincronizan automaticamente su `Usuario` asociado por email.
@@ -331,9 +328,11 @@ Regla de mantenimiento:
 4. La aplicacion crea una sesion segura.
 5. La autorizacion se decide por `Usuario.activo` y `Usuario.rol`.
 
-### Modo external
+### Via externa futura prevista
 
-1. El usuario inicia sesion en `edu.gva.es`.
+Si algun dia se completa una integracion externa real, el flujo previsto seria este:
+
+1. El usuario inicia sesion en `edu.gva.es` o en el proveedor equivalente.
 2. La aplicacion recibe la identidad autenticada.
 3. Se busca el email en `Usuario`.
 4. Si el usuario existe y esta activo, se permite el acceso.
@@ -513,7 +512,6 @@ Acceso efectivo:
 Se acuerda mantener como solucion base:
 
 - autenticacion local operativa;
-- configuracion explicita por `AUTH_MODE`;
 - autorizacion definitiva basada en `Usuario`;
 - roles `ADMIN`, `PROFESOR` y preparacion para `ALUMNO`;
 - pantalla de administracion de usuarios;
@@ -533,7 +531,7 @@ Restricciones adicionales ya implementadas:
 
 - un administrador no puede eliminar su propio usuario;
 - no se puede eliminar el ultimo administrador activo;
-- en `AUTH_MODE=external` no se muestran ni se usan flujos de contrasena local;
+- si algun dia se implanta una via `external` real, no se mostraran ni se usaran flujos de contrasena local;
 - en el modulo `Import / Export`, el profesorado puede exportar y descargar plantillas, pero no importar.
 - el `portal-alumno` exige sesion valida y rol `ALUMNO` tanto en layout como en sus consultas server-side principales.
 - el CV del alumno en su portal usa una API propia separada de las APIs internas del panel.
