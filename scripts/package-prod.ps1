@@ -5,7 +5,6 @@ $outputDir = Join-Path $projectRoot "dist-prod"
 $standaloneDir = Join-Path $projectRoot ".next\standalone"
 $staticDir = Join-Path $projectRoot ".next\static"
 $publicDir = Join-Path $projectRoot "public"
-$readmeSourcePath = Join-Path $projectRoot "README-produccion.txt"
 $backupSourcePath = Join-Path $projectRoot "gestpracticas_prod.backup"
 
 if (-not (Test-Path $standaloneDir)) {
@@ -45,12 +44,6 @@ if (Test-Path (Join-Path $projectRoot ".env")) {
 
   $updatedEnvLines | Set-Content -LiteralPath $targetEnvPath
 }
-
-if (-not (Test-Path $readmeSourcePath)) {
-  throw "No se ha encontrado README-produccion.txt en la raiz del proyecto."
-}
-
-Copy-Item -LiteralPath $readmeSourcePath -Destination (Join-Path $outputDir "README-produccion.txt") -Force
 
 if (Test-Path $backupSourcePath) {
   Copy-Item -LiteralPath $backupSourcePath -Destination (Join-Path $outputDir "gestpracticas_prod.backup") -Force

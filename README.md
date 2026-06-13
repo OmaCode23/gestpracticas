@@ -29,9 +29,6 @@ Sistema de gestion de practicas de empresa para institutos.
 ## Documentacion relacionada
 
 - `sistema-login.md`: login actual, seguridad server-side y matriz de permisos.
-- `explicacion-docker.md`: explicacion tecnica del flujo Docker.
-- `pruebas-manuales.md` y `pruebas-manuales2.md`: guias de prueba manual.
-- `cambios-comunes.md`: decisiones o cambios transversales del proyecto.
 
 ## Resumen de acceso por rol
 
@@ -291,21 +288,39 @@ Si en `Configuracion` se activa el modo historico:
 
 ## Produccion sin Docker
 
-Si necesitas ejecutar la aplicacion compilada fuera de Docker:
+Antes de preparar el despliegue actual con Docker, el proyecto incorporo una via de entrega basada en un paquete de produccion independiente. Esa via sigue existiendo como alternativa historica para ejecutar la aplicacion fuera de Docker.
 
-```bash
-npm run build
-npm run start
-```
-
-Tambien puede generarse un paquete de despliegue separado:
+Para generarlo:
 
 ```bash
 npm run build
 npm run package:prod
 ```
 
-El resultado se genera en `dist-prod/` e incluye la salida `standalone` de Next.js y los archivos minimos necesarios para arrancar la aplicacion.
+El resultado se genera en `dist-prod/` e incluye:
+
+- la aplicacion Next.js compilada en modo `standalone`;
+- los archivos estaticos necesarios para ejecucion;
+- `package.json`;
+- `.env`, si existe en la raiz al generar el paquete;
+- `gestpracticas_prod.backup`, si existe en la raiz.
+
+Requisitos del equipo destino:
+
+- Node.js >= 18.17.0, recomendado Node.js 20 LTS o superior;
+- PostgreSQL.
+
+Uso previsto del paquete:
+
+1. Crear manualmente la base de datos de destino, por ejemplo `gestpracticas_prod`, y restaurar en ella el backup si el paquete lo incluye.
+2. Ajustar el `.env` del paquete si hace falta. Si usas `DATABASE_URL`, debe apuntar a la base de datos correcta. Si la aplicacion se sirve por `HTTP`, define `AUTH_COOKIE_SECURE=0`; si se sirve por `HTTPS`, usa `AUTH_COOKIE_SECURE=1` o deja la variable sin definir.
+3. Arrancar desde `dist-prod/` con:
+
+```bash
+node server.js
+```
+
+La aplicacion quedara disponible en el puerto configurado para el servidor standalone, normalmente `3005` en este proyecto si se mantiene la configuracion actual.
 
 ## Procedimiento recomendado al cambiar el esquema
 
