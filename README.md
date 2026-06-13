@@ -129,6 +129,7 @@ Ademas de la configuracion general, para poder entrar en la aplicacion hay que p
 - elegir `AUTH_MODE`;
 - `AUTH_MODE=local` usa el sistema de login propio actual del proyecto;
 - `AUTH_MODE=external` deja preparada una alternativa futura basada en un proveedor externo;
+- si la aplicacion se sirve por HTTP en produccion, definir `AUTH_COOKIE_SECURE=0`; en HTTPS usar `AUTH_COOKIE_SECURE=1` o dejar la variable sin definir;
 - ejecutar `npm run db:bootstrap-admin` para crear el primer usuario `ADMIN`.
 
 Ejemplo en modo local:
@@ -317,7 +318,7 @@ Recomendacion de trabajo para el equipo:
 - Mantener una unica codificacion en todo el repositorio para evitar corrupciones silenciosas en merges, revisiones y copias entre terminal, editor y git.
 - Priorizar siempre la codificacion real de los archivos del proyecto por encima de como los represente una terminal concreta.
 - `TypeScript`, `TSX`, `JavaScript`, `JSON`, `CSS`, `MD`, `Prisma`, `YAML` y ficheros de texto del proyecto deben mantenerse en `UTF-8 sin BOM`.
-- En cuanto a finales de linea, conviene normalizar preferentemente a `LF` en lugar de `CRLF`, por ser la opcion mas estandar en proyectos actuales y reducir fricciones entre entornos. Esa normalizacion no se ha aplicado todavia porque supondria reescribir practicamente todos los archivos del proyecto.
+- En cuanto a finales de linea, la convencion del repositorio es usar `LF`, por ser la opcion mas estandar en proyectos actuales y reducir fricciones entre entornos.
 - Si hace falta revisar texto con acentos en consola clasica, usar `chcp 65001`.
 - En PowerShell conviene trabajar con salida y guardado en `UTF-8`.
 - En algunos entornos, PowerShell puede no llegar a cargar el perfil que fuerza `UTF-8` si la politica de ejecucion bloquea scripts; en ese caso la sesion puede quedarse con `code page 850`, `InputEncoding` no UTF-8 o `$OutputEncoding` en `us-ascii`, aunque el proyecto y VS Code esten bien configurados.

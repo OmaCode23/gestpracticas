@@ -2,7 +2,11 @@ import type { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/database/prisma";
-import { AUTH_COOKIE_NAME, isLocalAuthMode } from "@/modules/auth/config";
+import {
+  AUTH_COOKIE_NAME,
+  isLocalAuthMode,
+  shouldUseSecureAuthCookies,
+} from "@/modules/auth/config";
 import { isAdminRole, isAlumnoRole, isStaffRole } from "@/modules/auth/permissions";
 import {
   buildSignedSessionValue,
@@ -32,7 +36,7 @@ function buildCookieOptions() {
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureAuthCookies(),
     path: "/",
   };
 }
@@ -69,7 +73,7 @@ export async function invalidateCurrentSession() {
   cookies().set(AUTH_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureAuthCookies(),
     path: "/",
     maxAge: 0,
   });
