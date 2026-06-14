@@ -11,6 +11,7 @@
     "docker:build": "docker compose build",
     "docker:up": "docker compose up -d",
     "docker:db:up": "docker compose up -d db pgbouncer",
+    "docker:db:down": "docker compose stop db pgbouncer",
     "docker:down": "docker compose down",
     "package:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/package-prod.ps1",
     "test": "vitest run",
