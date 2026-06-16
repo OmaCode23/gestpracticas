@@ -8,6 +8,7 @@ Sistema de gestión de prácticas de empresa para institutos.
 - TypeScript
 - Tailwind CSS
 - Prisma + PostgreSQL
+- Docker / Docker Compose
 - Zod
 - Vitest
 
@@ -98,7 +99,7 @@ Notas:
 
 ## Flujo en desarrollo
 
-### Puesta en marcha en desarrollo
+### Instalación o reinstalación de la aplicación en desarrollo
 
 En algunos entornos Windows, ciertos comandos pueden requerir `cmd` o `npm.cmd` en lugar de `PowerShell` o `npm`.
 
@@ -136,7 +137,7 @@ Para bajar los contenedores PostgreSQL y PgBouncer al terminar:
 npm run docker:db:down
 ```
 
-### Arranque en día normal de desarrollo
+### Ejecución en día normal de desarrollo
 
 ```bash
 # Levantar solo PostgreSQL y PgBouncer en Docker
@@ -144,15 +145,13 @@ npm run docker:db:up
 
 # Arrancar la aplicación en desarrollo
 npm run dev
-```
 
-La aplicación quedará disponible en `http://localhost:3005` por defecto, o en el puerto indicado por `APP_PORT`.
-
-Para bajar los contenedores PostgreSQL y PgBouncer al terminar:
-
-```bash
+# Al terminar, bajar los contenedores PostgreSQL y PgBouncer
 npm run docker:db:down
 ```
+
+Tras arrancar, la aplicación quedará disponible en `http://localhost:3005`, o en el puerto indicado por `APP_PORT`.
+
 
 Nota recomendada de trabajo:
 
@@ -168,11 +167,11 @@ este enfoque mantiene el hot reload y la depuración cómodos, pero su ventaja p
 5. Revisar la migración generada en `prisma/migrations/`.
 6. Si el cambio afecta a catálogos base, revisar también `prisma/seed.ts`.
 
-## Flujo en producción
+## Flujo tipo producción sobre máquina local
 
-### Puesta en marcha en producción con Docker
+### Instalación tipo producción sobre la máquina local
 
-Este flujo está pensado para despliegue o validación tipo producción. En este caso no hace falta ejecutar `npm install`, `npm run db:migrate`, `npm run db:generate` ni `npm run db:seed` manualmente en el host: la instalación de dependencias y la generación del cliente Prisma quedan integradas en el build de la imagen, y las migraciones junto con el seed se ejecutan automáticamente al arrancar el contenedor `app`.
+Este flujo está pensado para validación tipo producción con Docker. En este caso no hace falta ejecutar `npm install`, `npm run db:migrate`, `npm run db:generate` ni `npm run db:seed` manualmente en el host: la instalación de dependencias y la generación del cliente Prisma quedan integradas en el build de la imagen, y las migraciones junto con el seed se ejecutan automáticamente al arrancar el contenedor `app`.
 
 ```bash
 # 1. Construir la imagen de la aplicación, instalar dependencias y generar el cliente Prisma dentro del proceso de build
@@ -181,22 +180,88 @@ npm run docker:build
 # 2. Levantar los contenedores (`db`, `pgbouncer` y `app`); al arrancar `app`, el contenedor aplica las migraciones pendientes y ejecuta el seed automáticamente
 npm run docker:up
 
-# 3. La primera vez, crear el administrador inicial
+# 3. Crear el administrador inicial
 npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
-
-# 4. Bajar los contenedores
-npm run docker:down
 ```
 
-
-### Arranque en producción
+### Arranque
 
 Subir los contenedores con:
 `npm run docker:up`
 
+### Detención
+
 Cuando se necesite, bajar los contenedores con:
 `npm run docker:down`
 
+## Instalación y puesta en marcha en producción sobre servidor final
+
+Este flujo está pensado para instalar la aplicación en un servidor Linux accesible por `SSH`. A diferencia del flujo local, aquí la aplicación, PostgreSQL y PgBouncer se ejecutan en el propio servidor dentro de contenedores Docker.
+
+Requisitos habituales en el servidor:
+
+- Acceso por `SSH`.
+- Docker Engine instalado.
+- Plugin `Docker Compose` disponible.
+- Una forma de transferir el proyecto al servidor, por ejemplo `scp` o un repositorio Git.
+
+```bash
+# 1. Conectarse al servidor desde una máquina de la misma red (el servidor virtual está disponible en http://app-daw.ies.grao)
+ssh ubuntu@app-daw.ies.grao
+
+# 2. Instalar Docker oficial (incluye Docker Compose v2)
+curl -fsSL https://get.docker.com | sudo sh
+
+# 3. Añadir el usuario al grupo `docker` (para evitar `sudo` en los comandos docker)
+sudo usermod -aG docker $USER
+
+# Salir y volver a conectar para que se apliquen los cambios en los grupos
+exit
+ssh ubuntu@app-daw.ies.grao
+id
+
+# 4. Crear una carpeta de trabajo en el servidor
+mkdir ~/gestpracticas_home
+
+# 5. Desde otro terminal, copiar los archivos de la aplicación al servidor
+scp /ruta/local/gestpracticas.zip ubuntu@app-daw.ies.grao:/home/ubuntu/gestpracticas_home
+
+# 6. De vuelta al terminal conectado por ssh, descomprimir los archivos de la aplicación y entrar en su carpeta
+cd ~/gestpracticas_home
+unzip gestpracticas.zip
+cd gestpracticas
+
+# 7. Editar el archivo `.env`
+nano .env
+
+# 8. Construir la imagen y levantar los contenedores
+docker compose build
+docker compose up -d
+docker compose ps
+
+# 9. La primera vez, crear el administrador inicial (ejecutando el script dentro del contenedor `app`)
+docker compose exec app npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
+```
+
+Nota: es posible que sea necesario, que la persona administradora del servidor, habilite ciertos permisos, sockets y puertos (falla la creación y levantamiento de los contenedores si no se tienen).
+
+### Arranque habitual
+
+Si la imagen ya está construida y solo quieres volver a arrancar el sistema:
+
+```bash
+docker compose up -d
+```
+
+### Detención
+
+Para detener los contenedores:
+
+```bash
+docker compose down
+```
+
+Para un despliegue más completo en servidor, con proxy inverso, HTTPS, backups y mantenimiento, conviene seguir además el manual de despliegue específico del proyecto.
 
 ## Administrador inicial
 
@@ -204,6 +269,11 @@ Para poder acceder a la aplicación, hace falta que exista al menos un usuario a
 
 ```bash
 npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
+```
+
+O desde la consola externa al contenedor docker:
+```bash
+docker compose exec app npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial --name "Administrador"
 ```
 
 La explicación completa del sistema de login actual y de la posible evolución futura está en `sistema-login.md`.
@@ -252,7 +322,7 @@ npm run docker:db:down
 
 ### Requisitos
 
-- Tener Docker Desktop instalado, o disponer del servicio de Docker equivalente en el equipo.
+- Tener Docker Desktop instalado, o disponer de Docker Engine con el plugin Docker Compose disponible.
 - Tener el servicio Docker en ejecución antes de lanzar comandos `docker compose` o `npm run docker:*`.
 
 ## Scripts disponibles
