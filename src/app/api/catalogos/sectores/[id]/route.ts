@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { ensureApiAdmin } from "@/modules/auth/api";
+import { ensureApiUser } from "@/modules/auth/api";
 import { deleteSector, updateSector } from "@/modules/catalogos/actions/mutations";
 import { getSectores } from "@/modules/catalogos/actions/queries";
 import { sectorUpdateSchema } from "@/modules/catalogos/types/sectores";
@@ -18,7 +18,7 @@ async function getSectorById(id: number) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const authResponse = await ensureApiAdmin();
+  const authResponse = await ensureApiUser();
   if (authResponse) {
     return authResponse;
   }
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const authResponse = await ensureApiAdmin();
+  const authResponse = await ensureApiUser();
   if (authResponse) {
     return authResponse;
   }

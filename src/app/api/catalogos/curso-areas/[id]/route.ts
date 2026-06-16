@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { ensureApiAdmin } from "@/modules/auth/api";
+import { ensureApiUser } from "@/modules/auth/api";
 import { deleteCursoArea, updateCursoArea } from "@/modules/catalogos/actions/mutations";
 import { getCursoAreas } from "@/modules/catalogos/actions/queries";
 import { cursoCatalogoUpdateSchema } from "@/modules/catalogos/types/cursos";
@@ -31,7 +31,7 @@ async function getAreaById(id: number) {
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const authResponse = await ensureApiAdmin();
+  const authResponse = await ensureApiUser();
   if (authResponse) {
     return authResponse;
   }
@@ -87,7 +87,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const authResponse = await ensureApiAdmin();
+  const authResponse = await ensureApiUser();
   if (authResponse) {
     return authResponse;
   }

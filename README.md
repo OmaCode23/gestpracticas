@@ -34,7 +34,7 @@ Sistema de gestión de prácticas de empresa para institutos.
 ## Resumen de acceso por rol
 
 - `ADMIN`: usa el panel interno completo, incluida la gestión de usuarios.
-- `PROFESOR`: usa el panel interno funcional, incluida la página de `profesores`, sin gestión de usuarios ni operaciones administrativas restringidas.
+- `PROFESOR`: usa el panel interno funcional, incluida la página de `profesores` y las opciones visibles de `Configuración`, pero sin gestión de usuarios ni importación masiva desde Excel.
 - `ALUMNO`: no usa el panel interno; su espacio funcional es `portal-alumno`.
 
 Regla importante:
@@ -99,11 +99,9 @@ Notas:
 
 ## Flujo en desarrollo
 
+Nota: Para la ejecución de los comandos Docker, el servicio Docker debe estar en ejecución.
+
 ### Instalación o reinstalación de la aplicación en desarrollo
-
-En algunos entornos Windows, ciertos comandos pueden requerir `cmd` o `npm.cmd` en lugar de `PowerShell` o `npm`.
-
-Si vas a usar los comandos Docker del proyecto, asegúrate antes de tener Docker Desktop, o el servicio de Docker equivalente, instalado y en ejecución.
 
 ```bash
 # 1. Instalar dependencias
@@ -169,6 +167,8 @@ este enfoque mantiene el hot reload y la depuración cómodos, pero su ventaja p
 
 ## Flujo tipo producción sobre máquina local
 
+Nota: Para la ejecución de los comandos Docker, el servicio Docker debe estar en ejecución.
+
 ### Instalación tipo producción sobre la máquina local
 
 Este flujo está pensado para validación tipo producción con Docker. En este caso no hace falta ejecutar `npm install`, `npm run db:migrate`, `npm run db:generate` ni `npm run db:seed` manualmente en el host: la instalación de dependencias y la generación del cliente Prisma quedan integradas en el build de la imagen, y las migraciones junto con el seed se ejecutan automáticamente al arrancar el contenedor `app`.
@@ -189,10 +189,17 @@ npm run db:bootstrap-admin -- --email admin@edu.gva.es --password TuClaveInicial
 Subir los contenedores con:
 `npm run docker:up`
 
+Tras arrancar, la aplicación quedará disponible en `http://localhost:3005`, o en el puerto indicado por `APP_PORT`.
+
 ### Detención
 
 Cuando se necesite, bajar los contenedores con:
 `npm run docker:down`
+
+### Si hay cambios en el código
+
+Si hay cambios en el código, volver a construir la imagen de la aplicación con:
+`npm run docker:build`
 
 ## Instalación y puesta en marcha en producción sobre servidor final
 

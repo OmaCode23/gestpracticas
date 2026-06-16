@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
+import { ensureApiUser } from "@/modules/auth/api";
 import { createSector } from "@/modules/catalogos/actions/mutations";
 import { getSectores } from "@/modules/catalogos/actions/queries";
 import { sectorSchema } from "@/modules/catalogos/types/sectores";
@@ -31,7 +31,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const authResponse = await ensureApiAdmin();
+    const authResponse = await ensureApiUser();
     if (authResponse) {
       return authResponse;
     }

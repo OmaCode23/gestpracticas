@@ -21,9 +21,9 @@ export function canImportExcel(role: UserRole) {
 }
 
 export function canManageCatalogs(role: UserRole) {
-  return isAdminRole(role);
+  return isStaffRole(role);
 }
 
 export function canManageAcademicSettings(role: UserRole) {
-  return isAdminRole(role);
+  return isStaffRole(role);
 }

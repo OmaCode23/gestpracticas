@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { z } from "zod";
-import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
+import { ensureApiUser } from "@/modules/auth/api";
 import {
   getEmailDomainsConfig,
 } from "@/modules/settings/actions/queries";
@@ -62,7 +62,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    const authResponse = await ensureApiAdmin();
+    const authResponse = await ensureApiUser();
     if (authResponse) return authResponse;
 
     const body = await req.json();

@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const { getSectoresMock, createSectorMock, revalidatePathMock, revalidateTagMock } = vi.hoisted(() => ({
-  getSectoresMock: vi.fn(),
-  createSectorMock: vi.fn(),
+const {
+  getCursoProveedoresMock,
+  createCursoProveedorMock,
+  revalidatePathMock,
+  revalidateTagMock,
+} = vi.hoisted(() => ({
+  getCursoProveedoresMock: vi.fn(),
+  createCursoProveedorMock: vi.fn(),
   revalidatePathMock: vi.fn(),
   revalidateTagMock: vi.fn(),
 }));
@@ -13,11 +18,11 @@ const { ensureApiUserMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/modules/catalogos/actions/queries", () => ({
-  getSectores: getSectoresMock,
+  getCursoProveedores: getCursoProveedoresMock,
 }));
 
 vi.mock("@/modules/catalogos/actions/mutations", () => ({
-  createSector: createSectorMock,
+  createCursoProveedor: createCursoProveedorMock,
 }));
 
 vi.mock("next/cache", () => ({
@@ -29,21 +34,14 @@ vi.mock("@/modules/auth/api", () => ({
   ensureApiUser: ensureApiUserMock,
 }));
 
-describe("GET /api/catalogos/sectores", () => {
+describe("GET /api/catalogos/curso-proveedores", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
   });
 
-  it("devuelve el listado de sectores", async () => {
-    getSectoresMock.mockResolvedValue([
-      {
-        id: 1,
-        nombre: "Tecnologia",
-        activo: true,
-        _count: { empresas: 2 },
-      },
-    ]);
+  it("devuelve el listado de proveedores", async () => {
+    getCursoProveedoresMock.mockResolvedValue([{ id: 1, nombre: "Labora", activo: true }]);
 
     const response = await GET();
     const body = await response.json();
@@ -51,14 +49,7 @@ describe("GET /api/catalogos/sectores", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,
-      data: [
-        {
-          id: 1,
-          nombre: "Tecnologia",
-          activo: true,
-          _count: { empresas: 2 },
-        },
-      ],
+      data: [{ id: 1, nombre: "Labora", activo: true }],
     });
   });
 
@@ -75,11 +66,11 @@ describe("GET /api/catalogos/sectores", () => {
       ok: false,
       error: "No autenticado.",
     });
-    expect(getSectoresMock).not.toHaveBeenCalled();
+    expect(getCursoProveedoresMock).not.toHaveBeenCalled();
   });
 });
 
-describe("POST /api/catalogos/sectores", () => {
+describe("POST /api/catalogos/curso-proveedores", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
@@ -91,9 +82,7 @@ describe("POST /api/catalogos/sectores", () => {
     );
 
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Tecnologia",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "Labora" }),
     } as any);
 
     const body = await response.json();
@@ -103,14 +92,12 @@ describe("POST /api/catalogos/sectores", () => {
       ok: false,
       error: "No autorizado.",
     });
-    expect(createSectorMock).not.toHaveBeenCalled();
+    expect(createCursoProveedorMock).not.toHaveBeenCalled();
   });
 
   it("rechaza cuerpos invalidos", async () => {
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "" }),
     } as any);
 
     const body = await response.json();
@@ -123,14 +110,10 @@ describe("POST /api/catalogos/sectores", () => {
   });
 
   it("devuelve 409 cuando el nombre ya existe", async () => {
-    createSectorMock.mockRejectedValue({
-      code: "P2002",
-    });
+    createCursoProveedorMock.mockRejectedValue({ code: "P2002" });
 
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Tecnologia",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "Labora" }),
     } as any);
 
     const body = await response.json();
@@ -138,34 +121,30 @@ describe("POST /api/catalogos/sectores", () => {
     expect(response.status).toBe(409);
     expect(body).toEqual({
       ok: false,
-      error: "Ya existe un sector con ese nombre.",
+      error: "Ya existe un proveedor con ese nombre.",
     });
   });
 
-  it("crea el sector y revalida configuracion", async () => {
-    createSectorMock.mockResolvedValue({
+  it("crea el proveedor y revalida catalogos relacionados", async () => {
+    createCursoProveedorMock.mockResolvedValue({
       id: 3,
-      nombre: "Logistica",
+      nombre: "Servef",
       activo: true,
     });
 
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Logistica",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "Servef" }),
     } as any);
 
     const body = await response.json();
 
-    expect(createSectorMock).toHaveBeenCalledWith({
-      nombre: "Logistica",
-    });
+    expect(createCursoProveedorMock).toHaveBeenCalledWith({ nombre: "Servef" });
     expect(response.status).toBe(201);
     expect(body).toEqual({
       ok: true,
       data: {
         id: 3,
-        nombre: "Logistica",
+        nombre: "Servef",
         activo: true,
       },
     });

@@ -10,6 +10,10 @@ const { getCiclosFormativosMock, updateCicloFormativoMock, deleteCicloFormativoM
     revalidateTagMock: vi.fn(),
   }));
 
+const { ensureApiUserMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+}));
+
 vi.mock("@/modules/catalogos/actions/queries", () => ({
   getCiclosFormativos: getCiclosFormativosMock,
 }));
@@ -24,9 +28,36 @@ vi.mock("next/cache", () => ({
   revalidateTag: revalidateTagMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+}));
+
 describe("PATCH /api/catalogos/ciclos-formativos/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si el usuario no pertenece al personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await PATCH(
+      {
+        json: vi.fn().mockResolvedValue({ nombre: "Nuevo DAM" }),
+      } as any,
+      { params: { id: "4" } }
+    );
+
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(updateCicloFormativoMock).not.toHaveBeenCalled();
   });
 
   it("devuelve 400 si el ciclo base no es editable", async () => {
@@ -96,6 +127,23 @@ describe("PATCH /api/catalogos/ciclos-formativos/[id]", () => {
 describe("DELETE /api/catalogos/ciclos-formativos/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si el usuario no pertenece al personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await DELETE({} as any, { params: { id: "4" } });
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(deleteCicloFormativoMock).not.toHaveBeenCalled();
   });
 
   it("devuelve 400 si el ciclo base no es eliminable", async () => {

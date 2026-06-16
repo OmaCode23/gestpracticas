@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { ensureApiAdmin, ensureApiUser } from "@/modules/auth/api";
+import { ensureApiUser } from "@/modules/auth/api";
 import { getConfiguracionAcademica } from "@/modules/settings/actions/queries";
 import { saveConfiguracionAcademica } from "@/modules/settings/actions/mutations";
 import { CACHE_TAGS } from "@/shared/cache";
@@ -33,7 +33,7 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    const authResponse = await ensureApiAdmin();
+    const authResponse = await ensureApiUser();
     if (authResponse) {
       return authResponse;
     }

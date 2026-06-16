@@ -11,9 +11,8 @@ const {
   revalidateTagMock: vi.fn(),
 }));
 
-const { ensureApiUserMock, ensureApiAdminMock } = vi.hoisted(() => ({
+const { ensureApiUserMock } = vi.hoisted(() => ({
   ensureApiUserMock: vi.fn(),
-  ensureApiAdminMock: vi.fn(),
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
@@ -30,7 +29,6 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/modules/auth/api", () => ({
   ensureApiUser: ensureApiUserMock,
-  ensureApiAdmin: ensureApiAdminMock,
 }));
 
 const mockConfig = {
@@ -74,7 +72,7 @@ describe("GET /api/settings/email-domains", () => {
 describe("PUT /api/settings/email-domains", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    ensureApiAdminMock.mockResolvedValue(null);
+    ensureApiUserMock.mockResolvedValue(null);
     saveExtraEmailDomainsMock.mockResolvedValue(undefined);
     getEmailDomainsConfigMock.mockResolvedValue({
       ...mockConfig,
@@ -143,8 +141,8 @@ describe("PUT /api/settings/email-domains", () => {
     expect(body.ok).toBe(false);
   });
 
-  it("devuelve 403 si el usuario no es administrador", async () => {
-    ensureApiAdminMock.mockResolvedValueOnce(
+  it("devuelve 403 si el usuario no pertenece al personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
       Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
     );
 

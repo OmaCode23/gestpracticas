@@ -14,9 +14,8 @@ const {
   revalidateTagMock: vi.fn(),
 }));
 
-const { ensureApiUserMock, ensureApiAdminMock } = vi.hoisted(() => ({
+const { ensureApiUserMock } = vi.hoisted(() => ({
   ensureApiUserMock: vi.fn(),
-  ensureApiAdminMock: vi.fn(),
 }));
 
 vi.mock("@/modules/settings/actions/queries", () => ({
@@ -34,14 +33,12 @@ vi.mock("next/cache", () => ({
 
 vi.mock("@/modules/auth/api", () => ({
   ensureApiUser: ensureApiUserMock,
-  ensureApiAdmin: ensureApiAdminMock,
 }));
 
 describe("GET /api/settings/academico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
-    ensureApiAdminMock.mockResolvedValue(null);
   });
 
   it("fuerza modo dinamico para evitar regresiones del build de produccion", () => {
@@ -105,11 +102,10 @@ describe("PUT /api/settings/academico", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
-    ensureApiAdminMock.mockResolvedValue(null);
   });
 
-  it("devuelve 403 si la capa de auth exige rol admin", async () => {
-    ensureApiAdminMock.mockResolvedValueOnce(
+  it("devuelve 403 si la capa de auth exige rol de personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
       Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
     );
 

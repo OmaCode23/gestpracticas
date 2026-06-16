@@ -1,25 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET, POST } from "./route";
 
-const { getCiclosFormativosMock, createCicloFormativoMock, revalidatePathMock, revalidateTagMock } = vi.hoisted(
-  () => ({
-    getCiclosFormativosMock: vi.fn(),
-    createCicloFormativoMock: vi.fn(),
-    revalidatePathMock: vi.fn(),
-    revalidateTagMock: vi.fn(),
-  })
-);
+const {
+  getCursoAreasMock,
+  createCursoAreaMock,
+  revalidatePathMock,
+  revalidateTagMock,
+} = vi.hoisted(() => ({
+  getCursoAreasMock: vi.fn(),
+  createCursoAreaMock: vi.fn(),
+  revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
+}));
 
 const { ensureApiUserMock } = vi.hoisted(() => ({
   ensureApiUserMock: vi.fn(),
 }));
 
 vi.mock("@/modules/catalogos/actions/queries", () => ({
-  getCiclosFormativos: getCiclosFormativosMock,
+  getCursoAreas: getCursoAreasMock,
 }));
 
 vi.mock("@/modules/catalogos/actions/mutations", () => ({
-  createCicloFormativo: createCicloFormativoMock,
+  createCursoArea: createCursoAreaMock,
 }));
 
 vi.mock("next/cache", () => ({
@@ -31,14 +34,14 @@ vi.mock("@/modules/auth/api", () => ({
   ensureApiUser: ensureApiUserMock,
 }));
 
-describe("GET /api/catalogos/ciclos-formativos", () => {
+describe("GET /api/catalogos/curso-areas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
   });
 
-  it("devuelve el listado de ciclos", async () => {
-    getCiclosFormativosMock.mockResolvedValue([{ id: 1, nombre: "DAM", codigo: "DAM" }]);
+  it("devuelve el listado de areas", async () => {
+    getCursoAreasMock.mockResolvedValue([{ id: 1, nombre: "Informatica", activo: true }]);
 
     const response = await GET();
     const body = await response.json();
@@ -46,12 +49,28 @@ describe("GET /api/catalogos/ciclos-formativos", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,
-      data: [{ id: 1, nombre: "DAM", codigo: "DAM" }],
+      data: [{ id: 1, nombre: "Informatica", activo: true }],
     });
+  });
+
+  it("devuelve 401 si falta autenticacion", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autenticado." }, { status: 401 })
+    );
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autenticado.",
+    });
+    expect(getCursoAreasMock).not.toHaveBeenCalled();
   });
 });
 
-describe("POST /api/catalogos/ciclos-formativos", () => {
+describe("POST /api/catalogos/curso-areas", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
@@ -63,10 +82,7 @@ describe("POST /api/catalogos/ciclos-formativos", () => {
     );
 
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Ciclo propio",
-        codigo: "CP-1",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "Informatica" }),
     } as any);
 
     const body = await response.json();
@@ -76,31 +92,12 @@ describe("POST /api/catalogos/ciclos-formativos", () => {
       ok: false,
       error: "No autorizado.",
     });
-    expect(createCicloFormativoMock).not.toHaveBeenCalled();
+    expect(createCursoAreaMock).not.toHaveBeenCalled();
   });
 
   it("rechaza cuerpos invalidos", async () => {
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "",
-        codigo: "",
-      }),
-    } as any);
-
-    const body = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(body.ok).toBe(false);
-  });
-
-  it("devuelve 400 si se usa un codigo reservado fuera del catalogo base", async () => {
-    createCicloFormativoMock.mockRejectedValue(new Error("CICLO_FORMATIVO_CODIGO_RESERVADO"));
-
-    const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Mi DAM",
-        codigo: "DAM",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "" }),
     } as any);
 
     const body = await response.json();
@@ -108,34 +105,46 @@ describe("POST /api/catalogos/ciclos-formativos", () => {
     expect(response.status).toBe(400);
     expect(body).toEqual({
       ok: false,
-      error: "Ese codigo esta reservado para un ciclo formativo base. Usa la restauracion de valores por defecto.",
+      error: "El nombre es obligatorio.",
     });
   });
 
-  it("crea el ciclo y revalida configuracion", async () => {
-    createCicloFormativoMock.mockResolvedValue({
-      id: 8,
-      nombre: "Ciclo propio",
-      codigo: "CP-1",
-      activo: true,
-    });
+  it("devuelve 409 cuando el nombre ya existe", async () => {
+    createCursoAreaMock.mockRejectedValue({ code: "P2002" });
 
     const response = await POST({
-      json: vi.fn().mockResolvedValue({
-        nombre: "Ciclo propio",
-        codigo: "CP-1",
-      }),
+      json: vi.fn().mockResolvedValue({ nombre: "Informatica" }),
     } as any);
 
     const body = await response.json();
 
+    expect(response.status).toBe(409);
+    expect(body).toEqual({
+      ok: false,
+      error: "Ya existe un area con ese nombre.",
+    });
+  });
+
+  it("crea el area y revalida catalogos relacionados", async () => {
+    createCursoAreaMock.mockResolvedValue({
+      id: 3,
+      nombre: "Sanidad",
+      activo: true,
+    });
+
+    const response = await POST({
+      json: vi.fn().mockResolvedValue({ nombre: "Sanidad" }),
+    } as any);
+
+    const body = await response.json();
+
+    expect(createCursoAreaMock).toHaveBeenCalledWith({ nombre: "Sanidad" });
     expect(response.status).toBe(201);
     expect(body).toEqual({
       ok: true,
       data: {
-        id: 8,
-        nombre: "Ciclo propio",
-        codigo: "CP-1",
+        id: 3,
+        nombre: "Sanidad",
         activo: true,
       },
     });

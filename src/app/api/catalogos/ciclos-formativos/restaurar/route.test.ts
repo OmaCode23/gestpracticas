@@ -7,6 +7,10 @@ const { restoreCiclosFormativosBaseMock, revalidatePathMock, revalidateTagMock }
   revalidateTagMock: vi.fn(),
 }));
 
+const { ensureApiUserMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+}));
+
 vi.mock("@/modules/catalogos/actions/mutations", () => ({
   restoreCiclosFormativosBase: restoreCiclosFormativosBaseMock,
 }));
@@ -16,9 +20,30 @@ vi.mock("next/cache", () => ({
   revalidateTag: revalidateTagMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+}));
+
 describe("POST /api/catalogos/ciclos-formativos/restaurar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si el usuario no pertenece al personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await POST();
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(restoreCiclosFormativosBaseMock).not.toHaveBeenCalled();
   });
 
   it("devuelve 400 si hay conflicto con codigos reservados en uso", async () => {

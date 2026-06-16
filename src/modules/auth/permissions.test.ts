@@ -40,10 +40,12 @@ describe("auth permissions", () => {
     expect(canImportExcel("ALUMNO")).toBe(false);
   });
 
-  it("reserva configuracion y catalogos al administrador", () => {
+  it("abre catalogos y ajustes academicos al personal", () => {
     expect(canManageCatalogs("ADMIN")).toBe(true);
     expect(canManageAcademicSettings("ADMIN")).toBe(true);
-    expect(canManageCatalogs("PROFESOR")).toBe(false);
-    expect(canManageAcademicSettings("PROFESOR")).toBe(false);
+    expect(canManageCatalogs("PROFESOR")).toBe(true);
+    expect(canManageAcademicSettings("PROFESOR")).toBe(true);
+    expect(canManageCatalogs("ALUMNO")).toBe(false);
+    expect(canManageAcademicSettings("ALUMNO")).toBe(false);
   });
 });

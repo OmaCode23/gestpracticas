@@ -1,26 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DELETE, PATCH } from "./route";
 
-const { getSectoresMock, updateSectorMock, deleteSectorMock, revalidatePathMock, revalidateTagMock } =
-  vi.hoisted(() => ({
-    getSectoresMock: vi.fn(),
-    updateSectorMock: vi.fn(),
-    deleteSectorMock: vi.fn(),
-    revalidatePathMock: vi.fn(),
-    revalidateTagMock: vi.fn(),
-  }));
+const {
+  getCursoProveedoresMock,
+  updateCursoProveedorMock,
+  deleteCursoProveedorMock,
+  revalidatePathMock,
+  revalidateTagMock,
+} = vi.hoisted(() => ({
+  getCursoProveedoresMock: vi.fn(),
+  updateCursoProveedorMock: vi.fn(),
+  deleteCursoProveedorMock: vi.fn(),
+  revalidatePathMock: vi.fn(),
+  revalidateTagMock: vi.fn(),
+}));
 
 const { ensureApiUserMock } = vi.hoisted(() => ({
   ensureApiUserMock: vi.fn(),
 }));
 
 vi.mock("@/modules/catalogos/actions/queries", () => ({
-  getSectores: getSectoresMock,
+  getCursoProveedores: getCursoProveedoresMock,
 }));
 
 vi.mock("@/modules/catalogos/actions/mutations", () => ({
-  updateSector: updateSectorMock,
-  deleteSector: deleteSectorMock,
+  updateCursoProveedor: updateCursoProveedorMock,
+  deleteCursoProveedor: deleteCursoProveedorMock,
 }));
 
 vi.mock("next/cache", () => ({
@@ -32,7 +37,7 @@ vi.mock("@/modules/auth/api", () => ({
   ensureApiUser: ensureApiUserMock,
 }));
 
-describe("PATCH /api/catalogos/sectores/[id]", () => {
+describe("PATCH /api/catalogos/curso-proveedores/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
@@ -44,12 +49,9 @@ describe("PATCH /api/catalogos/sectores/[id]", () => {
     );
 
     const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Tecnologia" }),
-      } as any,
+      { json: vi.fn().mockResolvedValue({ nombre: "Nuevo proveedor" }) } as any,
       { params: { id: "4" } }
     );
-
     const body = await response.json();
 
     expect(response.status).toBe(403);
@@ -57,17 +59,14 @@ describe("PATCH /api/catalogos/sectores/[id]", () => {
       ok: false,
       error: "No autorizado.",
     });
-    expect(updateSectorMock).not.toHaveBeenCalled();
+    expect(updateCursoProveedorMock).not.toHaveBeenCalled();
   });
 
   it("rechaza ids invalidos", async () => {
     const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Tecnologia" }),
-      } as any,
+      { json: vi.fn().mockResolvedValue({ nombre: "Nuevo proveedor" }) } as any,
       { params: { id: "0" } }
     );
-
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -77,16 +76,13 @@ describe("PATCH /api/catalogos/sectores/[id]", () => {
     });
   });
 
-  it("devuelve 404 si el sector no existe", async () => {
-    getSectoresMock.mockResolvedValue([]);
+  it("devuelve 404 si el proveedor no existe", async () => {
+    getCursoProveedoresMock.mockResolvedValue([]);
 
     const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Tecnologia" }),
-      } as any,
+      { json: vi.fn().mockResolvedValue({ nombre: "Nuevo proveedor" }) } as any,
       { params: { id: "4" } }
     );
-
     const body = await response.json();
 
     expect(response.status).toBe(404);
@@ -97,85 +93,51 @@ describe("PATCH /api/catalogos/sectores/[id]", () => {
   });
 
   it("devuelve 409 cuando el nombre ya existe", async () => {
-    getSectoresMock.mockResolvedValue([{ id: 4, nombre: "Tecnologia" }]);
-    updateSectorMock.mockRejectedValue({
-      code: "P2002",
-    });
+    getCursoProveedoresMock.mockResolvedValue([{ id: 4, nombre: "Labora" }]);
+    updateCursoProveedorMock.mockRejectedValue({ code: "P2002" });
 
     const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Industria" }),
-      } as any,
+      { json: vi.fn().mockResolvedValue({ nombre: "Servef" }) } as any,
       { params: { id: "4" } }
     );
-
     const body = await response.json();
 
     expect(response.status).toBe(409);
     expect(body).toEqual({
       ok: false,
-      error: "Ya existe un sector con ese nombre.",
+      error: "Ya existe un proveedor con ese nombre.",
     });
   });
 
-  it("devuelve 400 cuando se intenta renombrar un sector en uso", async () => {
-    getSectoresMock.mockResolvedValue([{ id: 4, nombre: "Tecnologia" }]);
-    updateSectorMock.mockRejectedValue({
-      message: "SECTOR_EN_USO",
-      meta: { empresasCount: 3 },
-    });
-
-    const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Industria" }),
-      } as any,
-      { params: { id: "4" } }
-    );
-
-    const body = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(body).toEqual({
-      ok: false,
-      error: "No se puede editar porque el sector esta siendo usado en 3 empresa(s).",
-    });
-  });
-
-  it("actualiza el sector y revalida configuracion", async () => {
-    getSectoresMock.mockResolvedValue([{ id: 4, nombre: "Tecnologia" }]);
-    updateSectorMock.mockResolvedValue({
+  it("actualiza el proveedor y revalida catalogos relacionados", async () => {
+    getCursoProveedoresMock.mockResolvedValue([{ id: 4, nombre: "Labora" }]);
+    updateCursoProveedorMock.mockResolvedValue({
       id: 4,
-      nombre: "Industria",
-      activo: false,
+      nombre: "Servef",
+      activo: true,
     });
 
     const response = await PATCH(
-      {
-        json: vi.fn().mockResolvedValue({ nombre: "Industria", activo: false }),
-      } as any,
+      { json: vi.fn().mockResolvedValue({ nombre: "Servef" }) } as any,
       { params: { id: "4" } }
     );
-
     const body = await response.json();
 
-    expect(updateSectorMock).toHaveBeenCalledWith(4, {
-      nombre: "Industria",
-      activo: false,
-    });
+    expect(updateCursoProveedorMock).toHaveBeenCalledWith(4, { nombre: "Servef" });
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,
       data: {
         id: 4,
-        nombre: "Industria",
-        activo: false,
+        nombre: "Servef",
+        activo: true,
       },
     });
     expect(revalidatePathMock).toHaveBeenCalledWith("/configuracion");
   });
 });
 
-describe("DELETE /api/catalogos/sectores/[id]", () => {
+describe("DELETE /api/catalogos/curso-proveedores/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     ensureApiUserMock.mockResolvedValue(null);
@@ -194,11 +156,11 @@ describe("DELETE /api/catalogos/sectores/[id]", () => {
       ok: false,
       error: "No autorizado.",
     });
-    expect(deleteSectorMock).not.toHaveBeenCalled();
+    expect(deleteCursoProveedorMock).not.toHaveBeenCalled();
   });
 
-  it("devuelve 404 si el sector no existe", async () => {
-    getSectoresMock.mockResolvedValue([]);
+  it("devuelve 404 si el proveedor no existe", async () => {
+    getCursoProveedoresMock.mockResolvedValue([]);
 
     const response = await DELETE({} as any, { params: { id: "4" } });
     const body = await response.json();
@@ -210,11 +172,11 @@ describe("DELETE /api/catalogos/sectores/[id]", () => {
     });
   });
 
-  it("devuelve 400 cuando el sector esta en uso", async () => {
-    getSectoresMock.mockResolvedValue([{ id: 4, nombre: "Tecnologia" }]);
-    deleteSectorMock.mockRejectedValue({
-      message: "SECTOR_EN_USO",
-      meta: { empresasCount: 3 },
+  it("devuelve 400 cuando el proveedor esta en uso", async () => {
+    getCursoProveedoresMock.mockResolvedValue([{ id: 4, nombre: "Labora" }]);
+    deleteCursoProveedorMock.mockRejectedValue({
+      message: "CURSO_PROVEEDOR_EN_USO",
+      meta: { cursosCount: 3 },
     });
 
     const response = await DELETE({} as any, { params: { id: "4" } });
@@ -223,18 +185,18 @@ describe("DELETE /api/catalogos/sectores/[id]", () => {
     expect(response.status).toBe(400);
     expect(body).toEqual({
       ok: false,
-      error: "No se puede eliminar porque el sector esta siendo usado en 3 empresa(s).",
+      error: "No se puede eliminar porque el proveedor esta siendo usado en 3 curso(s).",
     });
   });
 
-  it("elimina el sector y revalida configuracion", async () => {
-    getSectoresMock.mockResolvedValue([{ id: 4, nombre: "Tecnologia" }]);
-    deleteSectorMock.mockResolvedValue(undefined);
+  it("elimina el proveedor y revalida catalogos relacionados", async () => {
+    getCursoProveedoresMock.mockResolvedValue([{ id: 4, nombre: "Labora" }]);
+    deleteCursoProveedorMock.mockResolvedValue(undefined);
 
     const response = await DELETE({} as any, { params: { id: "4" } });
     const body = await response.json();
 
-    expect(deleteSectorMock).toHaveBeenCalledWith(4);
+    expect(deleteCursoProveedorMock).toHaveBeenCalledWith(4);
     expect(response.status).toBe(200);
     expect(body).toEqual({
       ok: true,

@@ -7,6 +7,10 @@ const { restoreSectoresBaseMock, revalidatePathMock, revalidateTagMock } = vi.ho
   revalidateTagMock: vi.fn(),
 }));
 
+const { ensureApiUserMock } = vi.hoisted(() => ({
+  ensureApiUserMock: vi.fn(),
+}));
+
 vi.mock("@/modules/catalogos/actions/mutations", () => ({
   restoreSectoresBase: restoreSectoresBaseMock,
 }));
@@ -16,9 +20,30 @@ vi.mock("next/cache", () => ({
   revalidateTag: revalidateTagMock,
 }));
 
+vi.mock("@/modules/auth/api", () => ({
+  ensureApiUser: ensureApiUserMock,
+}));
+
 describe("POST /api/catalogos/sectores/restaurar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    ensureApiUserMock.mockResolvedValue(null);
+  });
+
+  it("devuelve 403 si el usuario no pertenece al personal", async () => {
+    ensureApiUserMock.mockResolvedValueOnce(
+      Response.json({ ok: false, error: "No autorizado." }, { status: 403 })
+    );
+
+    const response = await POST();
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toEqual({
+      ok: false,
+      error: "No autorizado.",
+    });
+    expect(restoreSectoresBaseMock).not.toHaveBeenCalled();
   });
 
   it("restaura sectores base y revalida configuracion", async () => {
